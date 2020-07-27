@@ -1,0 +1,13 @@
+cd $1/Shape
+rm Shape.gif
+convert -delay $2 -loop 0 *.png Shape.gif
+cd ..
+cd E-field
+rm E-field.gif
+convert -delay $2 -loop 0 *.png E-field.gif
+cd ..
+cd ShapeSolid
+rm ShapeSolid.gif
+convert -delay $2 -loop 0 *.png ShapeSolid.gif
+cd ..
+

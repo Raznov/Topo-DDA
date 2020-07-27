@@ -1,0 +1,1 @@
+/home/yage/anaconda3/bin/python /home/yage/Documents/dda_boost/plot.py <<< $1 $2
