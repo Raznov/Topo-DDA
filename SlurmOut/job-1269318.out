@@ -1,0 +1,2832 @@
+I Ran on:
+I started on:
+Fri Jul 31 17:11:34 CDT 2020
+The geometry you built is entirely in the space.
+number_origin 76800
+number_real 76800
+Cost 101ms to build and allocate A from host to device
+ 500  2  4 
+###EVO ITERATION 0
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+--------------Calculation finished. Duration: 3.419s.-------------------
+              Error: 9.66452e-06
+              Iteration: 60
+
+objective function at iteration 0 is 3.85624
+-------------------------------Time consumption of one obj with no pre-stored A1418
+###START PARTIAL DERIVATIVE
+Devp: (-0.00291253,-0.00576115)
+------------------------finished in 21 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.111036 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.415s.-------------------
+              Error: 9.43338e-06
+              Iteration: 152
+
+#####################Using Adam Optimizer.###################
+gradients: 0.127052
+epsilon = 1
+1 0
+###EVO ITERATION 1
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00407736 MAX_ERROR=1e-05
+                Iter 200, error=0.000144082 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 13.101s.-------------------
+              Error: 8.81025e-06
+              Iteration: 240
+
+objective function at iteration 1 is 3.65374
+-------------------------------Time consumption of one obj with no pre-stored A1363
+###START PARTIAL DERIVATIVE
+Devp: (-0.000377501,-0.00557525)
+------------------------finished in 21 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=13289.9 MAX_ERROR=1e-05
+                Iter 200, error=1019.17 MAX_ERROR=1e-05
+                Iter 300, error=6.07658 MAX_ERROR=1e-05
+                Iter 400, error=0.449479 MAX_ERROR=1e-05
+                Iter 500, error=0.0158155 MAX_ERROR=1e-05
+                Iter 600, error=0.000907292 MAX_ERROR=1e-05
+                Iter 700, error=2.28813e-05 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 41.976s.-------------------
+              Error: 1.7813e-06
+              Iteration: 751
+
+#####################Using Adam Optimizer.###################
+gradients: -0.0671728
+epsilon = 1
+1 0
+###EVO ITERATION 2
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000756842 MAX_ERROR=1e-05
+                Iter 200, error=1.05172e-05 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 11.154s.-------------------
+              Error: 6.3483e-06
+              Iteration: 200
+
+objective function at iteration 2 is 5.46022
+-------------------------------Time consumption of one obj with no pre-stored A1413
+###START PARTIAL DERIVATIVE
+Devp: (-0.000193316,-0.00982673)
+------------------------finished in 22 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=1156.53 MAX_ERROR=1e-05
+                Iter 200, error=25.4992 MAX_ERROR=1e-05
+                Iter 300, error=0.393298 MAX_ERROR=1e-05
+                Iter 400, error=0.012374 MAX_ERROR=1e-05
+                Iter 500, error=0.00103013 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 32.427s.-------------------
+              Error: 9.79819e-06
+              Iteration: 585
+
+#####################Using Adam Optimizer.###################
+gradients: -0.0796975
+epsilon = 1
+1 0
+###EVO ITERATION 3
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000347862 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.185s.-------------------
+              Error: 8.88158e-06
+              Iteration: 183
+
+objective function at iteration 3 is 9.64493
+-------------------------------Time consumption of one obj with no pre-stored A1400
+###START PARTIAL DERIVATIVE
+Devp: (-0.0011831,-0.0215087)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=208.573 MAX_ERROR=1e-05
+                Iter 200, error=0.483257 MAX_ERROR=1e-05
+                Iter 300, error=0.00695008 MAX_ERROR=1e-05
+                Iter 400, error=3.07995e-05 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 25.974s.-------------------
+              Error: 9.61413e-06
+              Iteration: 469
+
+#####################Using Adam Optimizer.###################
+gradients: -0.0276056
+epsilon = 1
+1 0
+###EVO ITERATION 4
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000707435 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.398s.-------------------
+              Error: 9.53277e-06
+              Iteration: 169
+
+objective function at iteration 4 is 25.6778
+-------------------------------Time consumption of one obj with no pre-stored A1298
+###START PARTIAL DERIVATIVE
+Devp: (-0.0118966,-0.0746812)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=77.0174 MAX_ERROR=1e-05
+                Iter 200, error=0.296461 MAX_ERROR=1e-05
+                Iter 300, error=0.000774494 MAX_ERROR=1e-05
+                Iter 400, error=1.53558e-05 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 23.553s.-------------------
+              Error: 9.42378e-06
+              Iteration: 425
+
+#####################Using Adam Optimizer.###################
+gradients: -0.0726887
+epsilon = 1
+1 0
+###EVO ITERATION 5
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000219344 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.792s.-------------------
+              Error: 9.27854e-06
+              Iteration: 140
+
+objective function at iteration 5 is 223.599
+-------------------------------Time consumption of one obj with no pre-stored A1280
+###START PARTIAL DERIVATIVE
+Devp: (-0.0945794,-0.837373)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=2.12529 MAX_ERROR=1e-05
+                Iter 200, error=0.0026819 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 15.478s.-------------------
+              Error: 6.50839e-06
+              Iteration: 279
+
+#####################Using Adam Optimizer.###################
+gradients: -0.0724301
+epsilon = 1
+1 0
+###EVO ITERATION 6
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000242329 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.213s.-------------------
+              Error: 8.02509e-06
+              Iteration: 147
+
+objective function at iteration 6 is 1170.99
+-------------------------------Time consumption of one obj with no pre-stored A1296
+###START PARTIAL DERIVATIVE
+Devp: (-1.00853,-4.84896)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.295545 MAX_ERROR=1e-05
+                Iter 200, error=0.000257048 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 12.971s.-------------------
+              Error: 8.50366e-06
+              Iteration: 233
+
+#####################Using Adam Optimizer.###################
+gradients: -0.0950476
+epsilon = 1
+1 0
+###EVO ITERATION 7
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000420884 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.532s.-------------------
+              Error: 9.49545e-06
+              Iteration: 153
+
+objective function at iteration 7 is 6394.12
+-------------------------------Time consumption of one obj with no pre-stored A1289
+###START PARTIAL DERIVATIVE
+Devp: (4.50775,-30.2745)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0379812 MAX_ERROR=1e-05
+                Iter 200, error=1.82988e-05 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 11.789s.-------------------
+              Error: 9.36768e-06
+              Iteration: 212
+
+#####################Using Adam Optimizer.###################
+gradients: -0.0426203
+epsilon = 1
+1 0
+###EVO ITERATION 8
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000608121 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.78s.-------------------
+              Error: 6.70192e-06
+              Iteration: 176
+
+objective function at iteration 8 is 6209.2
+-------------------------------Time consumption of one obj with no pre-stored A1288
+###START PARTIAL DERIVATIVE
+Devp: (-9.30795,-28.7901)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.145122 MAX_ERROR=1e-05
+                Iter 200, error=0.000298441 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 13.75s.-------------------
+              Error: 8.2613e-06
+              Iteration: 248
+
+#####################Using Adam Optimizer.###################
+gradients: -0.100909
+epsilon = 1
+1 0
+###EVO ITERATION 9
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00041957 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.731s.-------------------
+              Error: 8.81593e-06
+              Iteration: 157
+
+objective function at iteration 9 is 193481
+-------------------------------Time consumption of one obj with no pre-stored A1276
+###START PARTIAL DERIVATIVE
+Devp: (-48.087,-1095.15)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00132443 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.387s.-------------------
+              Error: 8.63266e-06
+              Iteration: 168
+
+#####################Using Adam Optimizer.###################
+gradients: -0.102696
+epsilon = 1
+1 0
+###EVO ITERATION 10
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000415145 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.779s.-------------------
+              Error: 6.82871e-06
+              Iteration: 176
+
+objective function at iteration 10 is 114799
+-------------------------------Time consumption of one obj with no pre-stored A1285
+###START PARTIAL DERIVATIVE
+Devp: (156.438,-640.076)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00218333 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.218s.-------------------
+              Error: 9.05869e-06
+              Iteration: 184
+
+#####################Using Adam Optimizer.###################
+gradients: -0.0674693
+epsilon = 1
+1 0
+###EVO ITERATION 11
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00165304 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.05s.-------------------
+              Error: 6.82381e-06
+              Iteration: 181
+
+objective function at iteration 11 is 558650
+-------------------------------Time consumption of one obj with no pre-stored A1286
+###START PARTIAL DERIVATIVE
+Devp: (187.543,-3536.72)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000589723 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.131s.-------------------
+              Error: 8.97864e-06
+              Iteration: 164
+
+#####################Using Adam Optimizer.###################
+gradients: -0.081355
+epsilon = 1
+1 0
+###EVO ITERATION 12
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000942313 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.506s.-------------------
+              Error: 8.50512e-06
+              Iteration: 171
+
+objective function at iteration 12 is 705763
+-------------------------------Time consumption of one obj with no pre-stored A1278
+###START PARTIAL DERIVATIVE
+Devp: (364.886,-4550.41)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000817057 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.832s.-------------------
+              Error: 6.29692e-06
+              Iteration: 158
+
+#####################Using Adam Optimizer.###################
+gradients: -0.112203
+epsilon = 1
+1 0
+###EVO ITERATION 13
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00153859 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.593s.-------------------
+              Error: 9.75561e-06
+              Iteration: 172
+
+objective function at iteration 13 is 1.55605e+06
+-------------------------------Time consumption of one obj with no pre-stored A1281
+###START PARTIAL DERIVATIVE
+Devp: (1203.97,-10417.5)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000650121 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.351s.-------------------
+              Error: 7.17224e-06
+              Iteration: 149
+
+#####################Using Adam Optimizer.###################
+gradients: -0.113749
+epsilon = 1
+1 0
+###EVO ITERATION 14
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00126798 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.328s.-------------------
+              Error: 8.82717e-06
+              Iteration: 168
+
+objective function at iteration 14 is 1.94746e+06
+-------------------------------Time consumption of one obj with no pre-stored A1282
+###START PARTIAL DERIVATIVE
+Devp: (1036.55,-13455)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000543443 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.375s.-------------------
+              Error: 7.36064e-06
+              Iteration: 150
+
+#####################Using Adam Optimizer.###################
+gradients: -0.123274
+epsilon = 1
+1 0
+###EVO ITERATION 15
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0115491 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.943s.-------------------
+              Error: 9.02252e-06
+              Iteration: 179
+
+objective function at iteration 15 is 2.28753e+06
+-------------------------------Time consumption of one obj with no pre-stored A1293
+###START PARTIAL DERIVATIVE
+Devp: (2078.25,-15732.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00119876 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.019s.-------------------
+              Error: 9.45227e-06
+              Iteration: 162
+
+#####################Using Adam Optimizer.###################
+gradients: -0.127847
+epsilon = 1
+1 0
+###EVO ITERATION 16
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00194156 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.526s.-------------------
+              Error: 9.88311e-06
+              Iteration: 171
+
+objective function at iteration 16 is 2.68317e+06
+-------------------------------Time consumption of one obj with no pre-stored A1264
+###START PARTIAL DERIVATIVE
+Devp: (881.633,-18792.2)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00104659 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.099s.-------------------
+              Error: 8.96719e-06
+              Iteration: 165
+
+#####################Using Adam Optimizer.###################
+gradients: -0.149604
+epsilon = 1
+1 0
+###EVO ITERATION 17
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00125121 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.056s.-------------------
+              Error: 8.85902e-06
+              Iteration: 164
+
+objective function at iteration 17 is 3.17673e+06
+-------------------------------Time consumption of one obj with no pre-stored A1257
+###START PARTIAL DERIVATIVE
+Devp: (2105.16,-22251.6)
+------------------------finished in 19 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000744268 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.939s.-------------------
+              Error: 9.92257e-06
+              Iteration: 162
+
+#####################Using Adam Optimizer.###################
+gradients: -0.156973
+epsilon = 1
+1 0
+###EVO ITERATION 18
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00407708 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.585s.-------------------
+              Error: 7.00654e-06
+              Iteration: 174
+
+objective function at iteration 18 is 3.30717e+06
+-------------------------------Time consumption of one obj with no pre-stored A1243
+###START PARTIAL DERIVATIVE
+Devp: (2595.01,-23171.9)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000338707 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.785s.-------------------
+              Error: 9.73532e-06
+              Iteration: 141
+
+#####################Using Adam Optimizer.###################
+gradients: -0.158511
+epsilon = 1
+1 0
+###EVO ITERATION 19
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00454604 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.361s.-------------------
+              Error: 9.34554e-06
+              Iteration: 170
+
+objective function at iteration 19 is 3.50037e+06
+-------------------------------Time consumption of one obj with no pre-stored A1253
+###START PARTIAL DERIVATIVE
+Devp: (2256.17,-24680.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000785222 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.945s.-------------------
+              Error: 9.57506e-06
+              Iteration: 144
+
+#####################Using Adam Optimizer.###################
+gradients: -0.163867
+epsilon = 1
+1 0
+###EVO ITERATION 20
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00425279 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.766s.-------------------
+              Error: 9.86001e-06
+              Iteration: 177
+
+objective function at iteration 20 is 3.60824e+06
+-------------------------------Time consumption of one obj with no pre-stored A1258
+###START PARTIAL DERIVATIVE
+Devp: (1934.16,-25540.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00128511 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.013s.-------------------
+              Error: 8.00095e-06
+              Iteration: 165
+
+#####################Using Adam Optimizer.###################
+gradients: -0.171992
+epsilon = 1
+1 0
+###EVO ITERATION 21
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00427652 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.549s.-------------------
+              Error: 5.08629e-06
+              Iteration: 175
+
+objective function at iteration 21 is 3.7186e+06
+-------------------------------Time consumption of one obj with no pre-stored A1261
+###START PARTIAL DERIVATIVE
+Devp: (2098.87,-26327.6)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00517369 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.059s.-------------------
+              Error: 9.49257e-06
+              Iteration: 146
+
+#####################Using Adam Optimizer.###################
+gradients: -0.178269
+epsilon = 1
+1 0
+###EVO ITERATION 22
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00201897 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.524s.-------------------
+              Error: 9.24068e-06
+              Iteration: 173
+
+objective function at iteration 22 is 3.78999e+06
+-------------------------------Time consumption of one obj with no pre-stored A1265
+###START PARTIAL DERIVATIVE
+Devp: (2356.42,-26825.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000297361 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.878s.-------------------
+              Error: 7.06252e-06
+              Iteration: 161
+
+#####################Using Adam Optimizer.###################
+gradients: -0.181588
+epsilon = 1
+1 0
+###EVO ITERATION 23
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00330462 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.909s.-------------------
+              Error: 8.73986e-06
+              Iteration: 180
+
+objective function at iteration 23 is 3.84234e+06
+-------------------------------Time consumption of one obj with no pre-stored A1249
+###START PARTIAL DERIVATIVE
+Devp: (2465.79,-27218.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00119561 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.095s.-------------------
+              Error: 8.31313e-06
+              Iteration: 165
+
+#####################Using Adam Optimizer.###################
+gradients: -0.183267
+epsilon = 1
+1 0
+###EVO ITERATION 24
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00275949 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.807s.-------------------
+              Error: 8.75859e-06
+              Iteration: 178
+
+objective function at iteration 24 is 3.90027e+06
+-------------------------------Time consumption of one obj with no pre-stored A1255
+###START PARTIAL DERIVATIVE
+Devp: (2416.41,-27646.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000390267 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.07s.-------------------
+              Error: 9.13854e-06
+              Iteration: 146
+
+#####################Using Adam Optimizer.###################
+gradients: -0.184753
+epsilon = 1
+1 0
+###EVO ITERATION 25
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00499234 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.547s.-------------------
+              Error: 8.78233e-06
+              Iteration: 173
+
+objective function at iteration 25 is 3.94494e+06
+-------------------------------Time consumption of one obj with no pre-stored A1254
+###START PARTIAL DERIVATIVE
+Devp: (2327.51,-27996.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000647053 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.219s.-------------------
+              Error: 9.76097e-06
+              Iteration: 149
+
+#####################Using Adam Optimizer.###################
+gradients: -0.186565
+epsilon = 1
+1 0
+###EVO ITERATION 26
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00247196 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.862s.-------------------
+              Error: 7.10635e-06
+              Iteration: 179
+
+objective function at iteration 26 is 3.97654e+06
+-------------------------------Time consumption of one obj with no pre-stored A1263
+###START PARTIAL DERIVATIVE
+Devp: (2272.99,-28258.4)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000334061 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.551s.-------------------
+              Error: 6.09805e-06
+              Iteration: 155
+
+#####################Using Adam Optimizer.###################
+gradients: -0.188565
+epsilon = 1
+1 0
+###EVO ITERATION 27
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00402709 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.414s.-------------------
+              Error: 7.44215e-06
+              Iteration: 171
+
+objective function at iteration 27 is 4.00517e+06
+-------------------------------Time consumption of one obj with no pre-stored A1257
+###START PARTIAL DERIVATIVE
+Devp: (2281.92,-28476.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000461585 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.789s.-------------------
+              Error: 9.78894e-06
+              Iteration: 141
+
+#####################Using Adam Optimizer.###################
+gradients: -0.190133
+epsilon = 1
+1 0
+###EVO ITERATION 28
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00324587 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.14s.-------------------
+              Error: 9.62413e-06
+              Iteration: 184
+
+objective function at iteration 28 is 4.03217e+06
+-------------------------------Time consumption of one obj with no pre-stored A1251
+###START PARTIAL DERIVATIVE
+Devp: (2344.35,-28676.3)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000591395 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.752s.-------------------
+              Error: 8.40185e-06
+              Iteration: 158
+
+#####################Using Adam Optimizer.###################
+gradients: -0.190918
+epsilon = 1
+1 0
+###EVO ITERATION 29
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00458294 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.071s.-------------------
+              Error: 9.41942e-06
+              Iteration: 183
+
+objective function at iteration 29 is 4.059e+06
+-------------------------------Time consumption of one obj with no pre-stored A1242
+###START PARTIAL DERIVATIVE
+Devp: (2432.41,-28878.5)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000534862 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.888s.-------------------
+              Error: 9.74986e-06
+              Iteration: 143
+
+#####################Using Adam Optimizer.###################
+gradients: -0.190924
+epsilon = 1
+1 0
+###EVO ITERATION 30
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00137105 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.081s.-------------------
+              Error: 9.21993e-06
+              Iteration: 165
+
+objective function at iteration 30 is 4.08177e+06
+-------------------------------Time consumption of one obj with no pre-stored A1252
+###START PARTIAL DERIVATIVE
+Devp: (2490.85,-29047.5)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000260062 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.498s.-------------------
+              Error: 6.75533e-06
+              Iteration: 153
+
+#####################Using Adam Optimizer.###################
+gradients: -0.190513
+epsilon = 1
+1 0
+###EVO ITERATION 31
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00548202 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.659s.-------------------
+              Error: 8.76695e-06
+              Iteration: 175
+
+objective function at iteration 31 is 4.10252e+06
+-------------------------------Time consumption of one obj with no pre-stored A1256
+###START PARTIAL DERIVATIVE
+Devp: (2488.44,-29188.6)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000453888 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.297s.-------------------
+              Error: 7.16784e-06
+              Iteration: 150
+
+#####################Using Adam Optimizer.###################
+gradients: -0.190169
+epsilon = 1
+1 0
+###EVO ITERATION 32
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0021262 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.593s.-------------------
+              Error: 9.92787e-06
+              Iteration: 174
+
+objective function at iteration 32 is 4.12145e+06
+-------------------------------Time consumption of one obj with no pre-stored A1258
+###START PARTIAL DERIVATIVE
+Devp: (2477.24,-29339.3)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000454557 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.389s.-------------------
+              Error: 9.51069e-06
+              Iteration: 152
+
+#####################Using Adam Optimizer.###################
+gradients: -0.190102
+epsilon = 1
+1 0
+###EVO ITERATION 33
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00189745 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.009s.-------------------
+              Error: 9.80148e-06
+              Iteration: 163
+
+objective function at iteration 33 is 4.13921e+06
+-------------------------------Time consumption of one obj with no pre-stored A1265
+###START PARTIAL DERIVATIVE
+Devp: (2456.62,-29485.9)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00384963 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.927s.-------------------
+              Error: 8.95295e-06
+              Iteration: 162
+
+#####################Using Adam Optimizer.###################
+gradients: -0.190258
+epsilon = 1
+1 0
+###EVO ITERATION 34
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00161596 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.079s.-------------------
+              Error: 8.10904e-06
+              Iteration: 165
+
+objective function at iteration 34 is 4.15553e+06
+-------------------------------Time consumption of one obj with no pre-stored A1246
+###START PARTIAL DERIVATIVE
+Devp: (2422,-29603.4)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000304862 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.458s.-------------------
+              Error: 6.45596e-06
+              Iteration: 153
+
+#####################Using Adam Optimizer.###################
+gradients: -0.190526
+epsilon = 1
+1 0
+###EVO ITERATION 35
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00564591 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.9s.-------------------
+              Error: 9.03793e-06
+              Iteration: 161
+
+objective function at iteration 35 is 4.17117e+06
+-------------------------------Time consumption of one obj with no pre-stored A1258
+###START PARTIAL DERIVATIVE
+Devp: (2424.18,-29739.4)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000878914 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.459s.-------------------
+              Error: 6.16781e-06
+              Iteration: 153
+
+#####################Using Adam Optimizer.###################
+gradients: -0.19073
+epsilon = 1
+1 0
+###EVO ITERATION 36
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00555613 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.802s.-------------------
+              Error: 9.6795e-06
+              Iteration: 178
+
+objective function at iteration 36 is 4.18586e+06
+-------------------------------Time consumption of one obj with no pre-stored A1247
+###START PARTIAL DERIVATIVE
+Devp: (2428.39,-29841.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000228065 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.512s.-------------------
+              Error: 7.31035e-06
+              Iteration: 153
+
+#####################Using Adam Optimizer.###################
+gradients: -0.190649
+epsilon = 1
+1 0
+###EVO ITERATION 37
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0085758 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.272s.-------------------
+              Error: 9.62874e-06
+              Iteration: 168
+
+objective function at iteration 37 is 4.20119e+06
+-------------------------------Time consumption of one obj with no pre-stored A1263
+###START PARTIAL DERIVATIVE
+Devp: (2459.64,-29956.8)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000179637 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.131s.-------------------
+              Error: 9.90584e-06
+              Iteration: 147
+
+#####################Using Adam Optimizer.###################
+gradients: -0.190116
+epsilon = 1
+1 0
+###EVO ITERATION 38
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00536718 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.142s.-------------------
+              Error: 9.53807e-06
+              Iteration: 166
+
+objective function at iteration 38 is 4.21514e+06
+-------------------------------Time consumption of one obj with no pre-stored A1260
+###START PARTIAL DERIVATIVE
+Devp: (2479.59,-30060.2)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000308185 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.896s.-------------------
+              Error: 8.61601e-06
+              Iteration: 143
+
+#####################Using Adam Optimizer.###################
+gradients: -0.189284
+epsilon = 1
+1 0
+###EVO ITERATION 39
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00591461 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.199s.-------------------
+              Error: 9.59369e-06
+              Iteration: 167
+
+objective function at iteration 39 is 4.22637e+06
+-------------------------------Time consumption of one obj with no pre-stored A1265
+###START PARTIAL DERIVATIVE
+Devp: (2497.3,-30147.3)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000329582 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.776s.-------------------
+              Error: 4.24221e-06
+              Iteration: 159
+
+#####################Using Adam Optimizer.###################
+gradients: -0.188207
+epsilon = 1
+1 0
+###EVO ITERATION 40
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00468246 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.177s.-------------------
+              Error: 9.6759e-06
+              Iteration: 185
+
+objective function at iteration 40 is 4.23804e+06
+-------------------------------Time consumption of one obj with no pre-stored A1264
+###START PARTIAL DERIVATIVE
+Devp: (2515.31,-30245.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000392372 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.233s.-------------------
+              Error: 9.75368e-06
+              Iteration: 149
+
+#####################Using Adam Optimizer.###################
+gradients: -0.187013
+epsilon = 1
+1 0
+###EVO ITERATION 41
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00180177 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.75s.-------------------
+              Error: 9.7746e-06
+              Iteration: 176
+
+objective function at iteration 41 is 4.24906e+06
+-------------------------------Time consumption of one obj with no pre-stored A1258
+###START PARTIAL DERIVATIVE
+Devp: (2508.88,-30322.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000171322 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 6.963s.-------------------
+              Error: 9.65832e-06
+              Iteration: 126
+
+#####################Using Adam Optimizer.###################
+gradients: -0.185845
+epsilon = 1
+1 0
+###EVO ITERATION 42
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0033059 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.419s.-------------------
+              Error: 9.81934e-06
+              Iteration: 171
+
+objective function at iteration 42 is 4.26043e+06
+-------------------------------Time consumption of one obj with no pre-stored A1264
+###START PARTIAL DERIVATIVE
+Devp: (2512.19,-30419.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000969142 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.619s.-------------------
+              Error: 4.55623e-06
+              Iteration: 156
+
+#####################Using Adam Optimizer.###################
+gradients: -0.184845
+epsilon = 1
+1 0
+###EVO ITERATION 43
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00226674 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.304s.-------------------
+              Error: 9.58609e-06
+              Iteration: 169
+
+objective function at iteration 43 is 4.27094e+06
+-------------------------------Time consumption of one obj with no pre-stored A1264
+###START PARTIAL DERIVATIVE
+Devp: (2498.53,-30497.4)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000457719 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.266s.-------------------
+              Error: 8.63084e-06
+              Iteration: 149
+
+#####################Using Adam Optimizer.###################
+gradients: -0.184079
+epsilon = 1
+1 0
+###EVO ITERATION 44
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00224715 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.858s.-------------------
+              Error: 8.35653e-06
+              Iteration: 179
+
+objective function at iteration 44 is 4.28093e+06
+-------------------------------Time consumption of one obj with no pre-stored A1245
+###START PARTIAL DERIVATIVE
+Devp: (2497.61,-30578.4)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000571817 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.791s.-------------------
+              Error: 9.79483e-06
+              Iteration: 159
+
+#####################Using Adam Optimizer.###################
+gradients: -0.183461
+epsilon = 1
+1 0
+###EVO ITERATION 45
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00124607 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.686s.-------------------
+              Error: 9.68312e-06
+              Iteration: 157
+
+objective function at iteration 45 is 4.29186e+06
+-------------------------------Time consumption of one obj with no pre-stored A1251
+###START PARTIAL DERIVATIVE
+Devp: (2488.12,-30660)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000229769 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.84s.-------------------
+              Error: 9.43385e-06
+              Iteration: 142
+
+#####################Using Adam Optimizer.###################
+gradients: -0.183048
+epsilon = 1
+1 0
+###EVO ITERATION 46
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00374028 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.581s.-------------------
+              Error: 9.46785e-06
+              Iteration: 174
+
+objective function at iteration 46 is 4.30214e+06
+-------------------------------Time consumption of one obj with no pre-stored A1247
+###START PARTIAL DERIVATIVE
+Devp: (2503.54,-30749.8)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000560461 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.552s.-------------------
+              Error: 5.32806e-06
+              Iteration: 154
+
+#####################Using Adam Optimizer.###################
+gradients: -0.182723
+epsilon = 1
+1 0
+###EVO ITERATION 47
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00313818 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.761s.-------------------
+              Error: 9.54091e-06
+              Iteration: 177
+
+objective function at iteration 47 is 4.3115e+06
+-------------------------------Time consumption of one obj with no pre-stored A1261
+###START PARTIAL DERIVATIVE
+Devp: (2507.26,-30808.8)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000472934 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.997s.-------------------
+              Error: 9.83005e-06
+              Iteration: 145
+
+#####################Using Adam Optimizer.###################
+gradients: -0.182284
+epsilon = 1
+1 0
+###EVO ITERATION 48
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0206885 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.066s.-------------------
+              Error: 9.80455e-06
+              Iteration: 183
+
+objective function at iteration 48 is 4.31985e+06
+-------------------------------Time consumption of one obj with no pre-stored A1260
+###START PARTIAL DERIVATIVE
+Devp: (2526,-30871.9)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000538276 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.893s.-------------------
+              Error: 9.54837e-06
+              Iteration: 142
+
+#####################Using Adam Optimizer.###################
+gradients: -0.181616
+epsilon = 1
+1 0
+###EVO ITERATION 49
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00340032 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.175s.-------------------
+              Error: 8.47709e-06
+              Iteration: 166
+
+objective function at iteration 49 is 4.32755e+06
+-------------------------------Time consumption of one obj with no pre-stored A1255
+###START PARTIAL DERIVATIVE
+Devp: (2520.24,-30918.6)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000241439 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.008s.-------------------
+              Error: 9.32945e-06
+              Iteration: 145
+
+#####################Using Adam Optimizer.###################
+gradients: -0.180907
+epsilon = 1
+1 0
+###EVO ITERATION 50
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00201477 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.752s.-------------------
+              Error: 9.66115e-06
+              Iteration: 159
+
+objective function at iteration 50 is 4.33519e+06
+-------------------------------Time consumption of one obj with no pre-stored A1247
+###START PARTIAL DERIVATIVE
+Devp: (2524.81,-30978.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000264796 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.618s.-------------------
+              Error: 6.49129e-06
+              Iteration: 140
+
+#####################Using Adam Optimizer.###################
+gradients: -0.180228
+epsilon = 1
+1 0
+###EVO ITERATION 51
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00290142 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.548s.-------------------
+              Error: 9.93136e-06
+              Iteration: 174
+
+objective function at iteration 51 is 4.34274e+06
+-------------------------------Time consumption of one obj with no pre-stored A1208
+###START PARTIAL DERIVATIVE
+Devp: (2535.01,-31046.7)
+------------------------finished in 19 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000213128 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.731s.-------------------
+              Error: 5.81859e-06
+              Iteration: 142
+
+#####################Using Adam Optimizer.###################
+gradients: -0.179558
+epsilon = 1
+1 0
+###EVO ITERATION 52
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00869897 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.272s.-------------------
+              Error: 9.97192e-06
+              Iteration: 170
+
+objective function at iteration 52 is 4.35006e+06
+-------------------------------Time consumption of one obj with no pre-stored A1224
+###START PARTIAL DERIVATIVE
+Devp: (2517.6,-31083.9)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000291828 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.391s.-------------------
+              Error: 9.66625e-06
+              Iteration: 151
+
+#####################Using Adam Optimizer.###################
+gradients: -0.178844
+epsilon = 1
+1 0
+###EVO ITERATION 53
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00201967 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.093s.-------------------
+              Error: 9.72054e-06
+              Iteration: 165
+
+objective function at iteration 53 is 4.35646e+06
+-------------------------------Time consumption of one obj with no pre-stored A1246
+###START PARTIAL DERIVATIVE
+Devp: (2544.56,-31156.2)
+------------------------finished in 19 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000566431 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.093s.-------------------
+              Error: 4.02924e-06
+              Iteration: 168
+
+#####################Using Adam Optimizer.###################
+gradients: -0.178092
+epsilon = 1
+1 0
+###EVO ITERATION 54
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00236958 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.171s.-------------------
+              Error: 9.71774e-06
+              Iteration: 169
+
+objective function at iteration 54 is 4.36325e+06
+-------------------------------Time consumption of one obj with no pre-stored A1247
+###START PARTIAL DERIVATIVE
+Devp: (2539.77,-31192.3)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00137236 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.508s.-------------------
+              Error: 8.35325e-06
+              Iteration: 154
+
+#####################Using Adam Optimizer.###################
+gradients: -0.177236
+epsilon = 1
+1 0
+###EVO ITERATION 55
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00245032 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.067s.-------------------
+              Error: 8.38818e-06
+              Iteration: 183
+
+objective function at iteration 55 is 4.36914e+06
+-------------------------------Time consumption of one obj with no pre-stored A1210
+###START PARTIAL DERIVATIVE
+Devp: (2551.17,-31233.2)
+------------------------finished in 19 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000384541 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.695s.-------------------
+              Error: 8.91303e-06
+              Iteration: 139
+
+#####################Using Adam Optimizer.###################
+gradients: -0.176227
+epsilon = 1
+1 0
+###EVO ITERATION 56
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00579399 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.074s.-------------------
+              Error: 9.8502e-06
+              Iteration: 183
+
+objective function at iteration 56 is 4.37633e+06
+-------------------------------Time consumption of one obj with no pre-stored A1245
+###START PARTIAL DERIVATIVE
+Devp: (2577.77,-31303.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000319519 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.268s.-------------------
+              Error: 8.74517e-06
+              Iteration: 150
+
+#####################Using Adam Optimizer.###################
+gradients: -0.175193
+epsilon = 1
+1 0
+###EVO ITERATION 57
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00266373 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.376s.-------------------
+              Error: 9.49192e-06
+              Iteration: 170
+
+objective function at iteration 57 is 4.38351e+06
+-------------------------------Time consumption of one obj with no pre-stored A1243
+###START PARTIAL DERIVATIVE
+Devp: (2575.63,-31353.3)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000710281 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.394s.-------------------
+              Error: 7.9953e-06
+              Iteration: 170
+
+#####################Using Adam Optimizer.###################
+gradients: -0.174262
+epsilon = 1
+1 0
+###EVO ITERATION 58
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00297618 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.548s.-------------------
+              Error: 8.99869e-06
+              Iteration: 173
+
+objective function at iteration 58 is 4.39064e+06
+-------------------------------Time consumption of one obj with no pre-stored A1245
+###START PARTIAL DERIVATIVE
+Devp: (2573.37,-31410.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000314823 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.611s.-------------------
+              Error: 9.63297e-06
+              Iteration: 156
+
+#####################Using Adam Optimizer.###################
+gradients: -0.173526
+epsilon = 1
+1 0
+###EVO ITERATION 59
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00447301 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.257s.-------------------
+              Error: 9.43884e-06
+              Iteration: 168
+
+objective function at iteration 59 is 4.3968e+06
+-------------------------------Time consumption of one obj with no pre-stored A1259
+###START PARTIAL DERIVATIVE
+Devp: (2554.56,-31447.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000244858 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.424s.-------------------
+              Error: 4.6985e-06
+              Iteration: 152
+
+#####################Using Adam Optimizer.###################
+gradients: -0.173006
+epsilon = 1
+1 0
+###EVO ITERATION 60
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00337026 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.138s.-------------------
+              Error: 8.89122e-06
+              Iteration: 184
+
+objective function at iteration 60 is 4.40179e+06
+-------------------------------Time consumption of one obj with no pre-stored A1245
+###START PARTIAL DERIVATIVE
+Devp: (2570.7,-31500.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000663999 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.121s.-------------------
+              Error: 9.91823e-06
+              Iteration: 147
+
+#####################Using Adam Optimizer.###################
+gradients: -0.172572
+epsilon = 1
+1 0
+###EVO ITERATION 61
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00246932 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.174s.-------------------
+              Error: 9.01138e-06
+              Iteration: 166
+
+objective function at iteration 61 is 4.40894e+06
+-------------------------------Time consumption of one obj with no pre-stored A1264
+###START PARTIAL DERIVATIVE
+Devp: (2562.96,-31542.8)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000462065 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.943s.-------------------
+              Error: 9.42703e-06
+              Iteration: 162
+
+#####################Using Adam Optimizer.###################
+gradients: -0.17224
+epsilon = 1
+1 0
+###EVO ITERATION 62
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00145076 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.029s.-------------------
+              Error: 8.33242e-06
+              Iteration: 163
+
+objective function at iteration 62 is 4.41496e+06
+-------------------------------Time consumption of one obj with no pre-stored A1250
+###START PARTIAL DERIVATIVE
+Devp: (2572.66,-31593.5)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000458628 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.453s.-------------------
+              Error: 8.64179e-06
+              Iteration: 153
+
+#####################Using Adam Optimizer.###################
+gradients: -0.171999
+epsilon = 1
+1 0
+###EVO ITERATION 63
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00175084 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.871s.-------------------
+              Error: 9.55566e-06
+              Iteration: 161
+
+objective function at iteration 63 is 4.42029e+06
+-------------------------------Time consumption of one obj with no pre-stored A1262
+###START PARTIAL DERIVATIVE
+Devp: (2561.9,-31621.9)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000720977 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.517s.-------------------
+              Error: 9.93601e-06
+              Iteration: 154
+
+#####################Using Adam Optimizer.###################
+gradients: -0.171864
+epsilon = 1
+1 0
+###EVO ITERATION 64
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00152229 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.765s.-------------------
+              Error: 9.90917e-06
+              Iteration: 159
+
+objective function at iteration 64 is 4.42592e+06
+-------------------------------Time consumption of one obj with no pre-stored A1243
+###START PARTIAL DERIVATIVE
+Devp: (2573.14,-31676.3)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000264596 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.5s.-------------------
+              Error: 6.59938e-06
+              Iteration: 154
+
+#####################Using Adam Optimizer.###################
+gradients: -0.171828
+epsilon = 1
+1 0
+###EVO ITERATION 65
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00342899 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.341s.-------------------
+              Error: 5.70948e-06
+              Iteration: 170
+
+objective function at iteration 65 is 4.43112e+06
+-------------------------------Time consumption of one obj with no pre-stored A1211
+###START PARTIAL DERIVATIVE
+Devp: (2550.77,-31694.8)
+------------------------finished in 19 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00051265 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8s.-------------------
+              Error: 9.76091e-06
+              Iteration: 144
+
+#####################Using Adam Optimizer.###################
+gradients: -0.171874
+epsilon = 1
+1 0
+###EVO ITERATION 66
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00247413 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.111s.-------------------
+              Error: 7.54281e-06
+              Iteration: 165
+
+objective function at iteration 66 is 4.43704e+06
+-------------------------------Time consumption of one obj with no pre-stored A1262
+###START PARTIAL DERIVATIVE
+Devp: (2563.24,-31755.1)
+------------------------finished in 19 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000235897 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.862s.-------------------
+              Error: 4.6375e-06
+              Iteration: 143
+
+#####################Using Adam Optimizer.###################
+gradients: -0.171961
+epsilon = 1
+1 0
+###EVO ITERATION 67
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00215014 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.532s.-------------------
+              Error: 9.43606e-06
+              Iteration: 173
+
+objective function at iteration 67 is 4.44366e+06
+-------------------------------Time consumption of one obj with no pre-stored A1265
+###START PARTIAL DERIVATIVE
+Devp: (2572.77,-31807.4)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00102391 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.657s.-------------------
+              Error: 9.65619e-06
+              Iteration: 157
+
+#####################Using Adam Optimizer.###################
+gradients: -0.171914
+epsilon = 1
+1 0
+###EVO ITERATION 68
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00483719 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.225s.-------------------
+              Error: 9.36401e-06
+              Iteration: 167
+
+objective function at iteration 68 is 4.44959e+06
+-------------------------------Time consumption of one obj with no pre-stored A1261
+###START PARTIAL DERIVATIVE
+Devp: (2584.06,-31851.4)
+------------------------finished in 19 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000274265 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.497s.-------------------
+              Error: 7.33416e-06
+              Iteration: 136
+
+#####################Using Adam Optimizer.###################
+gradients: -0.171642
+epsilon = 1
+1 0
+###EVO ITERATION 69
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00586581 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.045s.-------------------
+              Error: 9.81943e-06
+              Iteration: 183
+
+objective function at iteration 69 is 4.45543e+06
+-------------------------------Time consumption of one obj with no pre-stored A1264
+###START PARTIAL DERIVATIVE
+Devp: (2604.76,-31896.9)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000466291 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.386s.-------------------
+              Error: 5.32963e-06
+              Iteration: 152
+
+#####################Using Adam Optimizer.###################
+gradients: -0.171105
+epsilon = 1
+1 0
+###EVO ITERATION 70
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00298316 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.197s.-------------------
+              Error: 8.05492e-06
+              Iteration: 167
+
+objective function at iteration 70 is 4.46081e+06
+-------------------------------Time consumption of one obj with no pre-stored A1265
+###START PARTIAL DERIVATIVE
+Devp: (2605.66,-31927.5)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0010378 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.604s.-------------------
+              Error: 8.33145e-06
+              Iteration: 156
+
+#####################Using Adam Optimizer.###################
+gradients: -0.170445
+epsilon = 1
+1 0
+###EVO ITERATION 71
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00369602 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.466s.-------------------
+              Error: 9.72664e-06
+              Iteration: 172
+
+objective function at iteration 71 is 4.46563e+06
+-------------------------------Time consumption of one obj with no pre-stored A1254
+###START PARTIAL DERIVATIVE
+Devp: (2620.45,-31977.5)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000313116 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.392s.-------------------
+              Error: 6.79017e-06
+              Iteration: 152
+
+#####################Using Adam Optimizer.###################
+gradients: -0.169801
+epsilon = 1
+1 0
+###EVO ITERATION 72
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00102541 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.863s.-------------------
+              Error: 9.37803e-06
+              Iteration: 160
+
+objective function at iteration 72 is 4.4718e+06
+-------------------------------Time consumption of one obj with no pre-stored A1259
+###START PARTIAL DERIVATIVE
+Devp: (2607.8,-32020)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000562427 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.564s.-------------------
+              Error: 9.99773e-06
+              Iteration: 155
+
+#####################Using Adam Optimizer.###################
+gradients: -0.16931
+epsilon = 1
+1 0
+###EVO ITERATION 73
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00953471 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.529s.-------------------
+              Error: 9.79682e-06
+              Iteration: 173
+
+objective function at iteration 73 is 4.47635e+06
+-------------------------------Time consumption of one obj with no pre-stored A1249
+###START PARTIAL DERIVATIVE
+Devp: (2592.53,-32052.8)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000738921 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.551s.-------------------
+              Error: 7.35294e-06
+              Iteration: 155
+
+#####################Using Adam Optimizer.###################
+gradients: -0.169007
+epsilon = 1
+1 0
+###EVO ITERATION 74
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00584673 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.205s.-------------------
+              Error: 9.76552e-06
+              Iteration: 167
+
+objective function at iteration 74 is 4.48111e+06
+-------------------------------Time consumption of one obj with no pre-stored A1246
+###START PARTIAL DERIVATIVE
+Devp: (2593.15,-32102.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000618638 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.12s.-------------------
+              Error: 9.99406e-06
+              Iteration: 147
+
+#####################Using Adam Optimizer.###################
+gradients: -0.168882
+epsilon = 1
+1 0
+###EVO ITERATION 75
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0129661 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.545s.-------------------
+              Error: 8.48446e-06
+              Iteration: 173
+
+objective function at iteration 75 is 4.48598e+06
+-------------------------------Time consumption of one obj with no pre-stored A1264
+###START PARTIAL DERIVATIVE
+Devp: (2577.25,-32133.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000601074 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.833s.-------------------
+              Error: 9.73326e-06
+              Iteration: 160
+
+#####################Using Adam Optimizer.###################
+gradients: -0.168883
+epsilon = 1
+1 0
+###EVO ITERATION 76
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00146286 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.863s.-------------------
+              Error: 9.85076e-06
+              Iteration: 161
+
+objective function at iteration 76 is 4.49086e+06
+-------------------------------Time consumption of one obj with no pre-stored A1247
+###START PARTIAL DERIVATIVE
+Devp: (2560.8,-32154.9)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00127157 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.734s.-------------------
+              Error: 6.16511e-06
+              Iteration: 158
+
+#####################Using Adam Optimizer.###################
+gradients: -0.168901
+epsilon = 1
+1 0
+###EVO ITERATION 77
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00589325 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.08s.-------------------
+              Error: 9.88545e-06
+              Iteration: 165
+
+objective function at iteration 77 is 4.4954e+06
+-------------------------------Time consumption of one obj with no pre-stored A1263
+###START PARTIAL DERIVATIVE
+Devp: (2566.02,-32196.3)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000704865 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.227s.-------------------
+              Error: 8.51621e-06
+              Iteration: 149
+
+#####################Using Adam Optimizer.###################
+gradients: -0.168871
+epsilon = 1
+1 0
+###EVO ITERATION 78
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0069548 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.224s.-------------------
+              Error: 9.76102e-06
+              Iteration: 167
+
+objective function at iteration 78 is 4.50009e+06
+-------------------------------Time consumption of one obj with no pre-stored A1259
+###START PARTIAL DERIVATIVE
+Devp: (2582.69,-32247.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000272098 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.951s.-------------------
+              Error: 9.62251e-06
+              Iteration: 144
+
+#####################Using Adam Optimizer.###################
+gradients: -0.168768
+epsilon = 1
+1 0
+###EVO ITERATION 79
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00587298 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.185s.-------------------
+              Error: 9.07313e-06
+              Iteration: 185
+
+objective function at iteration 79 is 4.50394e+06
+-------------------------------Time consumption of one obj with no pre-stored A1246
+###START PARTIAL DERIVATIVE
+Devp: (2580.65,-32274.5)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000697472 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.397s.-------------------
+              Error: 6.7029e-06
+              Iteration: 152
+
+#####################Using Adam Optimizer.###################
+gradients: -0.168606
+epsilon = 1
+1 0
+###EVO ITERATION 80
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00482441 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.69s.-------------------
+              Error: 9.45017e-06
+              Iteration: 176
+
+objective function at iteration 80 is 4.50808e+06
+-------------------------------Time consumption of one obj with no pre-stored A1264
+###START PARTIAL DERIVATIVE
+Devp: (2584.55,-32310.9)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00048947 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.206s.-------------------
+              Error: 9.85537e-06
+              Iteration: 149
+
+#####################Using Adam Optimizer.###################
+gradients: -0.168413
+epsilon = 1
+1 0
+###EVO ITERATION 81
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00817172 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.098s.-------------------
+              Error: 9.89502e-06
+              Iteration: 167
+
+objective function at iteration 81 is 4.51216e+06
+-------------------------------Time consumption of one obj with no pre-stored A1382
+###START PARTIAL DERIVATIVE
+Devp: (2582.41,-32340.2)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000956909 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.679s.-------------------
+              Error: 9.22677e-06
+              Iteration: 152
+
+#####################Using Adam Optimizer.###################
+gradients: -0.168206
+epsilon = 1
+1 0
+###EVO ITERATION 82
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00565544 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.92s.-------------------
+              Error: 9.26241e-06
+              Iteration: 159
+
+objective function at iteration 82 is 4.51636e+06
+-------------------------------Time consumption of one obj with no pre-stored A1405
+###START PARTIAL DERIVATIVE
+Devp: (2578.3,-32371.3)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000262682 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.159s.-------------------
+              Error: 4.99707e-06
+              Iteration: 147
+
+#####################Using Adam Optimizer.###################
+gradients: -0.168045
+epsilon = 1
+1 0
+###EVO ITERATION 83
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00144038 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.369s.-------------------
+              Error: 9.56876e-06
+              Iteration: 169
+
+objective function at iteration 83 is 4.51962e+06
+-------------------------------Time consumption of one obj with no pre-stored A1403
+###START PARTIAL DERIVATIVE
+Devp: (2561.15,-32384.9)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000279289 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.112s.-------------------
+              Error: 8.23382e-06
+              Iteration: 146
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167965
+epsilon = 1
+1 0
+###EVO ITERATION 84
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00606048 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.324s.-------------------
+              Error: 8.1055e-06
+              Iteration: 168
+
+objective function at iteration 84 is 4.52273e+06
+-------------------------------Time consumption of one obj with no pre-stored A1415
+###START PARTIAL DERIVATIVE
+Devp: (2571.41,-32422.6)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000667562 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.073s.-------------------
+              Error: 3.45944e-06
+              Iteration: 163
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167928
+epsilon = 1
+1 0
+###EVO ITERATION 85
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0075937 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.179s.-------------------
+              Error: 9.98828e-06
+              Iteration: 165
+
+objective function at iteration 85 is 4.52602e+06
+-------------------------------Time consumption of one obj with no pre-stored A1443
+###START PARTIAL DERIVATIVE
+Devp: (2560,-32437)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00123868 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.139s.-------------------
+              Error: 8.87617e-06
+              Iteration: 169
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167873
+epsilon = 1
+1 0
+###EVO ITERATION 86
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00440533 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.535s.-------------------
+              Error: 9.91984e-06
+              Iteration: 175
+
+objective function at iteration 86 is 4.52892e+06
+-------------------------------Time consumption of one obj with no pre-stored A1331
+###START PARTIAL DERIVATIVE
+Devp: (2560.34,-32460.6)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000572277 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.791s.-------------------
+              Error: 9.75978e-06
+              Iteration: 140
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167786
+epsilon = 1
+1 0
+###EVO ITERATION 87
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00588926 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.21s.-------------------
+              Error: 9.64262e-06
+              Iteration: 166
+
+objective function at iteration 87 is 4.53197e+06
+-------------------------------Time consumption of one obj with no pre-stored A1307
+###START PARTIAL DERIVATIVE
+Devp: (2568.93,-32492.4)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00148194 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.266s.-------------------
+              Error: 9.72896e-06
+              Iteration: 149
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167678
+epsilon = 1
+1 0
+###EVO ITERATION 88
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0127985 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.087s.-------------------
+              Error: 8.93395e-06
+              Iteration: 165
+
+objective function at iteration 88 is 4.53494e+06
+-------------------------------Time consumption of one obj with no pre-stored A1247
+###START PARTIAL DERIVATIVE
+Devp: (2560.23,-32512.3)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000422097 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.94s.-------------------
+              Error: 9.45951e-06
+              Iteration: 144
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167582
+epsilon = 1
+1 0
+###EVO ITERATION 89
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.001926 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.302s.-------------------
+              Error: 8.78251e-06
+              Iteration: 169
+
+objective function at iteration 89 is 4.53735e+06
+-------------------------------Time consumption of one obj with no pre-stored A1241
+###START PARTIAL DERIVATIVE
+Devp: (2558.87,-32536.3)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000746977 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.661s.-------------------
+              Error: 9.38653e-06
+              Iteration: 157
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167504
+epsilon = 1
+1 0
+###EVO ITERATION 90
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00501993 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.362s.-------------------
+              Error: 9.80161e-06
+              Iteration: 170
+
+objective function at iteration 90 is 4.54043e+06
+-------------------------------Time consumption of one obj with no pre-stored A1250
+###START PARTIAL DERIVATIVE
+Devp: (2555.42,-32558.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000193937 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.784s.-------------------
+              Error: 6.1026e-06
+              Iteration: 141
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167431
+epsilon = 1
+1 0
+###EVO ITERATION 91
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.002998 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.979s.-------------------
+              Error: 9.64291e-06
+              Iteration: 163
+
+objective function at iteration 91 is 4.54268e+06
+-------------------------------Time consumption of one obj with no pre-stored A1266
+###START PARTIAL DERIVATIVE
+Devp: (2551.37,-32574.1)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0015376 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.446s.-------------------
+              Error: 5.43596e-06
+              Iteration: 153
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167357
+epsilon = 1
+1 0
+###EVO ITERATION 92
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00450216 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.582s.-------------------
+              Error: 9.97675e-06
+              Iteration: 174
+
+objective function at iteration 92 is 4.54483e+06
+-------------------------------Time consumption of one obj with no pre-stored A1249
+###START PARTIAL DERIVATIVE
+Devp: (2556.98,-32597.8)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00055698 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.943s.-------------------
+              Error: 6.705e-06
+              Iteration: 162
+
+#####################Using Adam Optimizer.###################
+gradients: -0.16728
+epsilon = 1
+1 0
+###EVO ITERATION 93
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0294127 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.033s.-------------------
+              Error: 9.16736e-06
+              Iteration: 164
+
+objective function at iteration 93 is 4.54815e+06
+-------------------------------Time consumption of one obj with no pre-stored A1249
+###START PARTIAL DERIVATIVE
+Devp: (2562.36,-32623.9)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000473342 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.775s.-------------------
+              Error: 3.22205e-06
+              Iteration: 159
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167162
+epsilon = 1
+1 0
+###EVO ITERATION 94
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00568126 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 10.874s.-------------------
+              Error: 9.97387e-06
+              Iteration: 197
+
+objective function at iteration 94 is 4.5507e+06
+-------------------------------Time consumption of one obj with no pre-stored A1257
+###START PARTIAL DERIVATIVE
+Devp: (2556.6,-32633.8)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000330178 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.01s.-------------------
+              Error: 9.12744e-06
+              Iteration: 145
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167042
+epsilon = 1
+1 0
+###EVO ITERATION 95
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00687713 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.197s.-------------------
+              Error: 9.35252e-06
+              Iteration: 167
+
+objective function at iteration 95 is 4.55355e+06
+-------------------------------Time consumption of one obj with no pre-stored A1256
+###START PARTIAL DERIVATIVE
+Devp: (2559.1,-32656.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00128469 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.004s.-------------------
+              Error: 9.42157e-06
+              Iteration: 145
+
+#####################Using Adam Optimizer.###################
+gradients: -0.166964
+epsilon = 1
+1 0
+###EVO ITERATION 96
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00297584 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.355s.-------------------
+              Error: 9.15368e-06
+              Iteration: 169
+
+objective function at iteration 96 is 4.5557e+06
+-------------------------------Time consumption of one obj with no pre-stored A1262
+###START PARTIAL DERIVATIVE
+Devp: (2555.4,-32671.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000278472 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.259s.-------------------
+              Error: 5.84716e-06
+              Iteration: 168
+
+#####################Using Adam Optimizer.###################
+gradients: -0.166954
+epsilon = 1
+1 0
+###EVO ITERATION 97
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00411269 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.917s.-------------------
+              Error: 6.87273e-06
+              Iteration: 161
+
+objective function at iteration 97 is 4.55787e+06
+-------------------------------Time consumption of one obj with no pre-stored A1248
+###START PARTIAL DERIVATIVE
+Devp: (2562.81,-32696.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00065885 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.499s.-------------------
+              Error: 9.76205e-06
+              Iteration: 154
+
+#####################Using Adam Optimizer.###################
+gradients: -0.166994
+epsilon = 1
+1 0
+###EVO ITERATION 98
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0100641 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.2s.-------------------
+              Error: 9.99175e-06
+              Iteration: 167
+
+objective function at iteration 98 is 4.56039e+06
+-------------------------------Time consumption of one obj with no pre-stored A1249
+###START PARTIAL DERIVATIVE
+Devp: (2559.78,-32711.6)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.000422485 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 7.677s.-------------------
+              Error: 9.9364e-06
+              Iteration: 139
+
+#####################Using Adam Optimizer.###################
+gradients: -0.167051
+epsilon = 1
+1 0
+###EVO ITERATION 99
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.0107735 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 9.368s.-------------------
+              Error: 9.58742e-06
+              Iteration: 170
+
+objective function at iteration 99 is 4.56249e+06
+-------------------------------Time consumption of one obj with no pre-stored A1263
+###START PARTIAL DERIVATIVE
+Devp: (2587.23,-32749.7)
+------------------------finished in 20 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00246773 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 8.306s.-------------------
+              Error: 8.36335e-06
+              Iteration: 150
+
+#####################Using Adam Optimizer.###################
+gradients: -0.16706
+epsilon = 1
+1 0
+/var/spool/slurm/job1269318/slurm_script: line 20: 53618 Segmentation fault      ./te
+I finished on:
+Fri Jul 31 18:20:51 CDT 2020

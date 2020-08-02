@@ -194,6 +194,7 @@ ObjectiveExtSurfaceEExp_CPU::ObjectiveExtSurfaceEExp_CPU(list<double> parameters
     Have_Penalty = HavePenalty_;
     ExtSurfaceEExpRz = ExtSurfaceEExpParameters(0);                   //(Focus, form the bottom of str to the obj plane(in xy plane))
     exponent = ExtSurfaceEExpParameters(1);
+    ratio = ExtSurfaceEExpParameters(2);
 
     Have_Devx = false;
     model = model_;
@@ -210,21 +211,18 @@ ObjectiveExtSurfaceEExp_CPU::ObjectiveExtSurfaceEExp_CPU(list<double> parameters
     double lam = model->get_wl();
     double K = 2*M_PI/lam;
     
-    Nobj = 0;
-    for(int i=0; i<=N-1; i++){
-        if((*R)(3*i+2) == 0){
-            Nobj += 1;
-        }
-    }
+    int Nx_obj = int(floor(Nx/ratio));
+    int Ny_obj = int(floor(Ny/ratio)); 
+    Nobj = Nx_obj*Ny_obj;
     Robj = VectorXi::Zero(Nobj*3);
     E_sum = VectorXcd::Zero(Nobj*3);
     E_ext = VectorXcd::Zero(Nobj*3);
 
     int Posobj = 0;
-    for(int i=0; i<=N-1; i++){
-        if((*R)(3*i+2) == 0){
-            Robj(3*Posobj) = (*R)(3*i);
-            Robj(3*Posobj+1) = (*R)(3*i+1);
+    for(int i =0; i<=Nx_obj-1; i++){
+        for(int j=0; j<=Ny_obj-1; j++){
+            Robj(3*Posobj) = i*ratio;
+            Robj(3*Posobj+1) = j*ratio;
             Robj(3*Posobj+2) = int(round(ExtSurfaceEExpRz/d));
             double x = d*Robj(3*Posobj);
             double y = d*Robj(3*Posobj+1);
@@ -232,12 +230,11 @@ ObjectiveExtSurfaceEExp_CPU::ObjectiveExtSurfaceEExp_CPU(list<double> parameters
             E_ext(3*Posobj) = E0*n_E0(0)*(cos(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))+sin(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))*1i);
             E_ext(3*Posobj+1) = E0*n_E0(1)*(cos(K*(n_K(0)*y+n_K(1)*y+n_K(2)*z))+sin(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))*1i);
             E_ext(3*Posobj+2) = E0*n_E0(2)*(cos(K*(n_K(0)*z+n_K(1)*y+n_K(2)*z))+sin(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))*1i); 
-
+            
             Posobj += 1;
         }
     }
     
-
     distance0 = int(round(ExtSurfaceEExpRz/d)) - (Nz-1);
     vector<vector<vector<Matrix3cd>>> tmp(2*Nx-1,vector<vector<Matrix3cd>>(2*Ny-1,vector<Matrix3cd>(Nz,Matrix3cd::Zero())));
     A_dic = tmp;

@@ -1,14 +1,16 @@
 #include "definition.h"
 
-EvoModel::EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_) : Model(space_, d_, lam_,  n_K_,  E0_,  n_E0_,  material_){
+EvoModel::EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_) : Model(space_, d_, lam_,  n_K_,  E0_,  n_E0_,  material_){
     ObjectFunctionNames = ObjectFunctionNames_;
     save_position = save_position_;
     ObjectParameters = ObjectParameters_;
     HavePenalty = HavePenalty_;
     PenaltyFactor = PenaltyFactor_;
     origin = 0;
-    
-    
+    epsilon_fix = epsilon_fix_;
+    epsilon_tmp = epsilon_fix;
+    HavePathRecord = HavePathRecord_;
+    MaxObj = 0.0;
 
     list<string>::iterator it0 = (*ObjectFunctionNames).begin();
     MajorObjectFunctionName = (*it0);
@@ -52,13 +54,17 @@ EvoModel::EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *Obje
     objective = ObjectiveFactory(MajorObjectFunctionName, MajorObjectParameters);
     
 }
-EvoModel::EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi *RResult_) : Model(space_, d_, lam_,  n_K_,  E0_,  n_E0_,  material_, RResult_){
+EvoModel::EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi *RResult_) : Model(space_, d_, lam_,  n_K_,  E0_,  n_E0_,  material_, RResult_){
     ObjectFunctionNames = ObjectFunctionNames_;
     save_position = save_position_;
     ObjectParameters = ObjectParameters_;
     HavePenalty = HavePenalty_;
     PenaltyFactor = PenaltyFactor_;
     origin = 0;
+    epsilon_fix = epsilon_fix_;
+    epsilon_tmp = epsilon_fix;
+    HavePathRecord = HavePathRecord_;
+    MaxObj = 0.0;
 
     list<string>::iterator it0 = (*ObjectFunctionNames).begin();
     MajorObjectFunctionName = (*it0);
@@ -328,7 +334,7 @@ VectorXcd EvoModel::devp(double epsilon){
 
 
 
-void EvoModel::EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method){
+void EvoModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method){
     ofstream convergence;
     convergence.open(save_position+"convergence.txt");
     
@@ -363,6 +369,21 @@ void EvoModel::EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERR
         
         double obj = objective->GetVal();
         
+        double epsilon = epsilon_fix;
+        if(HavePathRecord){
+            if(obj<MaxObj){
+                epsilon_tmp = epsilon_tmp/10;
+                diel = diel_max;
+                cout<<"New Obj smaller then Old One, back track with new epsilon = "<<epsilon_tmp<<endl;
+            }
+            else{
+                epsilon_tmp = epsilon_fix;
+                diel_max = diel;
+            }
+            epsilon = epsilon_tmp;
+        }
+        
+        
 
         convergence << obj << " ";
         cout<<"objective function at iteration "<<iteration<<" is "<<obj<<endl;
@@ -383,7 +404,7 @@ void EvoModel::EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERR
         //get partial derivative of current model
         high_resolution_clock::time_point t1 = high_resolution_clock::now();    
 
-        cout<<"-------------------------------Time consumption of one obj with no pre-stored A"<<duration_cast<milliseconds>(t1-t0).count();
+        cout<<"-------------------------------Time consumption of one obj with no pre-stored A"<<duration_cast<milliseconds>(t1-t0).count()<<endl;
 
         cout<<"###START PARTIAL DERIVATIVE"<<endl;
         VectorXd devx;
@@ -549,6 +570,9 @@ Objective* EvoModel::ObjectiveFactory(string ObjectName, list<double> ObjectPara
     }
     if (MajorObjectFunctionName == "ExtSurfaceEExp"){
         return new ObjectiveExtSurfaceEExp(ObjectParameters, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "ExtSurfaceEExp_CPU"){
+        return new ObjectiveExtSurfaceEExp_CPU(ObjectParameters, this, HavePenalty);
     }
     else{
         // NOT FINALIZED. SHOULD RAISE AN EXCEPTION HERE.

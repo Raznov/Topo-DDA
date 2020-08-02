@@ -109,6 +109,7 @@ class Model{
         Vector3d n_E0;
         Vector3d n_K;
         VectorXcd diel;                   //real diel after 0~1 corresponds to real numbers
+        VectorXcd diel_max;                         //corresponds to the previous maximum obj
         VectorXd diel_old;                //The 0~1 version of diel
         VectorXcd P;
         VectorXcd E;
@@ -184,16 +185,21 @@ class EvoModel : public Model{
         double origin;                               //Record the objective function for partial derivative (the value before change)   
         bool HavePenalty;
         double PenaltyFactor;
+        
+        double MaxObj;                                //Record the historical maximum obj func
+        double epsilon_fix;
+        double epsilon_tmp;                         //The epsilon used for calculation (can be different from the fixed input epsilon)
+        bool HavePathRecord;
     public:
-        EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_);
-        EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi *RResult_);
+        EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_);
+        EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi *RResult_);
         
         
         //functions used to calculate partial derivatives                                 
         tuple<VectorXd, VectorXcd> devx_and_Adevxp(double epsilon);                       //partial derivative of obj to parameter and A to x times p
         VectorXcd devp(double epsilon);                       //partial derivative of obj to P. Size of P
         
-        void EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method);
+        void EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method);
 
         //The objective choosing function:
         double MajorObjective();
@@ -292,6 +298,7 @@ class ObjectiveExtSurfaceEExp_CPU : public Objective{
         int Nx;
         int Ny;
         int Nz;                                       //The entire(as big as focus in Nz, which is bigger then the str length)
+        int ratio;                                 //Nx_obj = Nx/ratio; Ny_obj = Ny/ratio;
         vector<vector<vector<Matrix3cd>>> A_dic;
 
         VectorXcd* P;

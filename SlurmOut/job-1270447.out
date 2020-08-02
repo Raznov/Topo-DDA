@@ -1,0 +1,37 @@
+I Ran on:
+I started on:
+Sat Aug  1 02:09:41 CDT 2020
+The geometry you built is entirely in the space.
+number_origin 151032
+number_real 151032
+Cost 255ms to build and allocate A from host to device
+ 1600  2  4 
+###EVO ITERATION 0
+###START ORIGINAL PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=1.63163e-05 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 16.697s.-------------------
+              Error: 9.98691e-06
+              Iteration: 113
+
+objective function at iteration 0 is 9068.01
+-------------------------------Time consumption of one obj with no pre-stored A3454
+###START PARTIAL DERIVATIVE
+Devp: (-57.4648,-31.6097)
+------------------------finished in 43 s
+###START ADJOINT PROBLEM
+--------------Calculation start. Iterative method used: BICGSTAB---------------
+
+Threads6
+                Iter 100, error=0.00197916 MAX_ERROR=1e-05
+--------------Calculation finished. Duration: 24.752s.-------------------
+              Error: 6.15226e-06
+              Iteration: 169
+
+#####################Using Adam Optimizer.###################
+te: eigen/Eigen/src/Core/Redux.h:411: typename Eigen::internal::traits<T>::Scalar Eigen::DenseBase<Derived>::redux(const Func&) const [with BinaryOp = Eigen::internal::scalar_sum_op<double, double>; Derived = Eigen::Matrix<double, -1, 1>; typename Eigen::internal::traits<T>::Scalar = double]: Assertion `this->rows()>0 && this->cols()>0 && "you are using an empty matrix"' failed.
+gradients: /var/spool/slurm/job1270447/slurm_script: line 20: 29202 Aborted                 ./te
+I finished on:
+Sat Aug  1 02:11:13 CDT 2020

@@ -230,6 +230,8 @@ if __name__ == "__main__":
 
     objective_number = 1
     pos="./" + sys.argv[1] + "/"
+    it_start = sys.argv[2]
+
     it = 0
     dec = 5
     
@@ -264,10 +266,13 @@ if __name__ == "__main__":
             geometry_plot=np.real(data[(9*N+13):(9*N+13+N_plot)]).astype(int)
             E_tot=data[(9*N+13+N_plot):(9*N+13+2*N_plot)]
             ##print(6*N,N_plot,data.shape,E_tot.shape)
-            Shape(geometry, diel, d, iteration=it, position=pos+"Shape/", decimal=dec, FullLattice=False)
-            Shape(geometry, diel, d, iteration=it, position=pos+"ShapeSolid/", decimal=dec, FullLattice=True)
+            if(it >= int(it_start)):
+                Shape(geometry, diel, d, iteration=it, position=pos+"Shape/", decimal=dec, FullLattice=False)
+                Shape(geometry, diel, d, iteration=it, position=pos+"ShapeSolid/", decimal=dec, FullLattice=True)
+            """
             if(it==99):
                 EField(geometry_plot, diel, d, wl, k_dir, E_dir, E_tot, iteration=it, position=pos+"E-field/", decimal=dec)
+            """
             it += 1
 
 

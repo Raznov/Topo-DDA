@@ -92,6 +92,8 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
     RResult = R;
     diel=VectorXcd::Zero(3*N);
     diel_old=VectorXd::Zero(3*N);
+
+    diel_max = diel;
     for(int i=0;i<=3*N-1;i++){
         diel(i)=material(0)+diel_tmp(i)*(material(1)-material(0));
         diel_old(i)=diel_tmp(i);
@@ -370,6 +372,7 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
         diel(i)=material(0)+diel_tmp(i)*(material(1)-material(0));
         diel_old(i)=diel_tmp(i);
     }
+    diel_max = diel;
     
     P = VectorXcd::Zero(N*3);
     E = VectorXcd::Zero(N*3);

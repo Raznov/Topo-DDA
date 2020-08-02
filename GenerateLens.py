@@ -102,8 +102,8 @@ n2 = math.sqrt((abs(epsilon1)+epsilon1)/2)        #actual refractive index of th
 n2 = np.real(n2)                                  #now use only the real part for dielectric material
 
 
-focus = 500                                     #distance from the bottom (including thickness)
-thickness = 275
+focus = 1600                                     #distance from the bottom (including thickness)
+#thickness = 275
 d = 25         #discrete interval
 n1 = 1         #actual refractive index of the low index material
          
@@ -111,10 +111,12 @@ ncenter = n2  #actual refractive index in the middle of the lens
 
 
 # For fixed n len and n1 must be 1
-
-Dmax = 2*math.sqrt((2*n2-2)*focus*thickness + (n2**2-3*n2+2)*(thickness**2))
-
+Dmax = 1975
+#Dmax = 2*math.sqrt((2*n2-2)*focus*thickness + (n2**2-3*n2+2)*(thickness**2))
 print("Diameter of the len is: {}".format(Dmax))
+thickness = ((2-2*n2)*focus+math.sqrt(((2*n2-2)**2)*(focus**2)+4*(n2**2-3*n2+2)*(Dmax/2)**2))/(2*(n2**2-3*n2+2))
+print("thickness of the len is {}.".format(thickness))
+print("focus of the len(from the buttom) is {}".format(focus))
 
 D = Dmax
 xscale = int(np.ceil(D/d) + 1)
@@ -145,8 +147,11 @@ print(Geometry_circle.shape)
 print("xmax{}".format(np.max([Geometry_circle[3*i] for i in range(int(round(Geometry_circle.size/3)))])))     
 print("ymax{}".format(np.max([Geometry_circle[3*i+1] for i in range(int(round(Geometry_circle.size/3)))])))     
 print("zmaxforwhole{}".format(np.max([Geometry_circle[3*i+2] for i in range(int(round(Geometry_circle.size/3)))])))    
+print("xmin{}".format(np.min([Geometry_circle[3*i] for i in range(int(round(Geometry_circle.size/3)))])))     
+print("ymin{}".format(np.min([Geometry_circle[3*i+1] for i in range(int(round(Geometry_circle.size/3)))])))     
+print("zminforwhole{}".format(np.min([Geometry_circle[3*i+2] for i in range(int(round(Geometry_circle.size/3)))])))    
 print("zmaxforwhole-ref{}".format(zscale_all))   
-print("zmaxforlens{}".format(zscale))     
+print("zmaxforlens{}".format(zscale-1))     
 
 Diel = np.zeros(Geometry_circle.shape)
 for i in range(int(round(Geometry_circle.size/3))):
@@ -173,6 +178,13 @@ for i in range(int(round(Geometry_circle.size/3))):
         Diel_str.append(Diel[3*i+2])
 Geometry_circle_str = np.array(Geometry_circle_str)
 Diel_str = np.array(Diel_str)
+print("------------for str only---------------:")
+print("xmax{}".format(np.max([Geometry_circle_str[3*i] for i in range(int(round(Geometry_circle_str.size/3)))])))     
+print("ymax{}".format(np.max([Geometry_circle_str[3*i+1] for i in range(int(round(Geometry_circle_str.size/3)))])))     
+print("zmaxforwhole{}".format(np.max([Geometry_circle_str[3*i+2] for i in range(int(round(Geometry_circle_str.size/3)))])))    
+print("xmin{}".format(np.min([Geometry_circle_str[3*i] for i in range(int(round(Geometry_circle_str.size/3)))])))     
+print("ymin{}".format(np.min([Geometry_circle_str[3*i+1] for i in range(int(round(Geometry_circle_str.size/3)))])))     
+print("zminforwhole{}".format(np.min([Geometry_circle_str[3*i+2] for i in range(int(round(Geometry_circle_str.size/3)))])))    
 
 
 np.savetxt('LensDiel.txt', Diel_str, '%f')
