@@ -12,7 +12,7 @@ import matplotlib.animation as ani
 from mpl_toolkits.mplot3d import Axes3D
 import time
 
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 
 def Shape(geometry,diel,d,iteration=-1,position="./",decimal=0,FullLattice=False):
     """Plot the shape of object as dot matrix.
@@ -185,7 +185,6 @@ def EField(geometry,diel,d,wl,k_dir,E_dir,E_tot,iteration=-1,position="./",decim
 
 """
 #Code used for single DDA calculation or if you only wants to see the final results for Evooptimization
-
 data=np.genfromtxt("Model_results.txt",dtype=complex)
 N=int(np.real(data[3]))
 #print(np.real(data[(3*N+4):(6*N+4)]))
@@ -200,15 +199,12 @@ E_dir=np.real(data[(9*N+9):(9*N+12)])
 N_plot=int(np.real(data[(9*N+12)]))
 geometry_plot=np.real(data[(9*N+13):(9*N+13+N_plot)]).astype(int)
 E_tot=(data[(9*N+13+N_plot):(9*N+13+2*N_plot)])
-
-
 Shape(geometry, diel, d)
-
 EField(geometry_plot, diel, d, wl, k_dir, E_dir, E_tot)
 """
 
 
-"""
+
 #Code used for taking a look at the geometry you built
                                    
 data=np.genfromtxt("Space.txt",dtype=complex)
@@ -218,16 +214,12 @@ diel=np.real(data[(3*N+4):(6*N+4)])
 para=0.5*np.real(data[(6*N+4):(9*N+4)])
 d=1
 Shape(geometry,para, d)
+
+
 """
-
-
 #Code used for optimization
-
 #final, pos=input().split()
-
-
 if __name__ == "__main__":
-
     objective_number = 1
     pos="./" + sys.argv[1] + "/"
     it = 0
@@ -246,7 +238,6 @@ if __name__ == "__main__":
             plt.plot(np.arange(len(convergence)),convergence[:,i])
             plt.xlim = (0,len(convergence)-1)
             plt.savefig(pos+"convergence_{}.png".format(i))
-
     for filename in sorted(os.listdir(pos+"Model_output"), key = lambda x: int(x[13:x.index(".txt")])):
         if filename.endswith(".txt"):
             print(filename)
@@ -269,6 +260,7 @@ if __name__ == "__main__":
             if(it==99):
                 EField(geometry_plot, diel, d, wl, k_dir, E_dir, E_tot, iteration=it, position=pos+"E-field/", decimal=dec)
             it += 1
+"""
 
 
 

@@ -1,6 +1,6 @@
 #ifndef PREPROCESSING_H_INCLUDED
 #define PREPROCESSING_H_INCLUDED
-#define quote(x) #x
+#define _USE_MATH_DEFINES
 #include <fstream>
 #include <iostream>
 #include <complex>
@@ -14,11 +14,11 @@
 #include <list>
 #include <tuple>
 
-#include "eigen/Eigen/Dense"
-#include "eigen/Eigen/Core"
-#include "eigen/Eigen/IterativeLinearSolvers"
-#include "eigen/Eigen/Sparse"
-#include "eigen/unsupported/Eigen/CXX11/Tensor"
+#include "./eigen/Eigen/Dense"
+#include "./eigen/Eigen/Core"
+#include "./eigen/Eigen/IterativeLinearSolvers"
+#include "./eigen/Eigen/Sparse"
+#include "./eigen/unsupported/Eigen/CXX11/Tensor"
 
 //#include "cufftw.h"
 #include <cuda_runtime_api.h>
@@ -55,10 +55,11 @@ class Structure{
         Structure(VectorXi *total_space, string initial_diel, double r, Vector3i center, Vector3i direction, int para_); //build a circle, direction is its normalized direction in Cart. coord.
         Structure(VectorXi *total_space, string initial_diel, Vector3d l, Vector3d center, int para_);    //Ractangular(both 2D and 3D). 
         Structure(VectorXi *total_space, Structure *s, Vector3i direction, int times, int para_);                     //Initializa a Structure by duplicating a existing structure along a certain direction for several times. Direction is normalized and can only be alone x, y or z.
+                                                                                                                      //The original structure is not concluded. original structure + new structure = times * original structure
         Structure(VectorXi *total_space, string FileName, int para_);                                                    //Read a structure from txt file
         VectorXi *get_geometry();
         VectorXd *get_diel();
-        void cut(VectorXi *big, VectorXi *small, VectorXd *small_diel);
+        void cut(VectorXi *big, VectorXi *smalll, VectorXd *small_diel);
         int get_geometry_size();
         int get_para();
 };
@@ -98,7 +99,7 @@ class Model{
         double E0;
         double K;
         double lam;
-        double ERROR;
+        double Error;
         VectorXi R;                      //Position of dipoles. Both R and RResult are unitless, so need to time d to get real number.
         bool RResultSwitch;               //0(false) for plot only E field on the structure points (fast), 1(true) for using RResult different from R to plot (slow but adjustable).
         VectorXi RResult;                //The position matrix for the EResult (where you want to plot the E field)
@@ -117,6 +118,11 @@ class Model{
         Vector2cd material;
         VectorXcd al;                       // 1 over alpha instead of alpha.
         bool verbose;
+
+        VectorXcd diel_max;                         //corresponds to the previous maximum obj
+        VectorXd diel_old_max;
+        VectorXcd P_max;
+        VectorXcd al_max;
     public:
         Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_);
         Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi *RResult_);
@@ -184,16 +190,22 @@ class EvoModel : public Model{
         double origin;                               //Record the objective function for partial derivative (the value before change)   
         bool HavePenalty;
         double PenaltyFactor;
+
+        double MaxObj;                                //Record the historical maximum obj func
+        double epsilon_fix;
+        double epsilon_tmp;                         //The epsilon used for calculation (can be different from the fixed input epsilon)
+        bool HavePathRecord;
+        int Stephold;
     public:
-        EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_);
-        EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi *RResult_);
+        EvoModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space* space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_);
+        EvoModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space* space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi* RResult_);
         
         
         //functions used to calculate partial derivatives                                 
         tuple<VectorXd, VectorXcd> devx_and_Adevxp(double epsilon);                       //partial derivative of obj to parameter and A to x times p
         VectorXcd devp(double epsilon);                       //partial derivative of obj to P. Size of P
         
-        void EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method);
+        void EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method);
 
         //The objective choosing function:
         double MajorObjective();
@@ -282,25 +294,26 @@ class ObjectiveSurfaceEExp : public Objective{
 
 class ObjectiveExtSurfaceEExp_CPU : public Objective{
       private: 
-        bool Have_Devx;
-        bool Have_Penalty;
-        double d;
-        int N;
-        int Nobj;
-        double exponent;                              //2, 4 or something else for E^?
-        double ExtSurfaceEExpRz;
-        int Nx;
-        int Ny;
-        int Nz;                                       //The entire(as big as focus in Nz, which is bigger then the str length)
-        vector<vector<vector<Matrix3cd>>> A_dic;
+          bool Have_Devx;
+          bool Have_Penalty;
+          double d;
+          int N;
+          int Nobj;
+          double exponent;                              //2, 4 or something else for E^?
+          double ExtSurfaceEExpRz;
+          int Nx;
+          int Ny;
+          int Nz;                                       //The entire(as big as focus in Nz, which is bigger then the str length)
+          int ratio;                                 //Nx_obj = Nx/ratio; Ny_obj = Ny/ratio;
+          vector<vector<vector<Matrix3cd>>> A_dic;
 
-        VectorXcd* P;
-        VectorXi* R;
-        VectorXi Robj; 
-        EvoModel* model;
-        VectorXcd E_sum;
-        VectorXcd E_ext;
-        int distance0;                                  //shortest distance between the plane and the str(corresponds to nz=0 in the A_dic (longest z corresponds to nz=max(nz)))
+          VectorXcd* P;
+          VectorXi* R;
+          VectorXi Robj;
+          EvoModel* model;
+          VectorXcd E_sum;
+          VectorXcd E_ext;
+          int distance0;                                  //shortest distance between the plane and the str(corresponds to nz=0 in the A_dic (longest z corresponds to nz=max(nz)))
 
     public:
       ObjectiveExtSurfaceEExp_CPU(list<double> parameters, EvoModel* model_, bool HavePenalty_);

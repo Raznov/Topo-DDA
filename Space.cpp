@@ -56,3 +56,4 @@ Space operator+(const Space &s1, Structure &s2){
     return Space(s1.total_space, s1.Nx, s1.Ny, s1.Nz, s1.N+s2.get_geometry_size(), tmp);
 }
 
+

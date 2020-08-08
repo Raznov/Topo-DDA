@@ -21,7 +21,8 @@ int Structure::get_geometry_size(){
     }
 }
 
-MatrixXi find_scope_3_dim(VectorXi *x){
+//Find the Max and Min of the input geometry in each direction
+MatrixXi find_scope_3_dim(VectorXi *x){                          
     int N=round((*x).size()/3);
     MatrixXi result(3,2);
     result(0,0)=(*x)(0);
@@ -54,18 +55,18 @@ MatrixXi find_scope_3_dim(VectorXi *x){
     return result;
 }
 
-void Structure::cut(VectorXi *big, VectorXi *small, VectorXd *small_diel){
+void Structure::cut(VectorXi *big, VectorXi *smalll, VectorXd *small_diel){
     
-    int number_origin=round((*small).size()/3);
+    int number_origin=round((*smalll).size()/3);
     MatrixXi big_scope=find_scope_3_dim(big);
     //cout<<"big_scope "<<big_scope<<endl;
     list<int> positions_in;
     int number_out=0;
     //cout<<"small_scope "<<find_scope_3_dim(small)<<endl;
     for(int i=0;i<=number_origin-1;i++){
-        if(((*small)(3*i)<big_scope(0,0))||((*small)(3*i)>big_scope(0,1))||
-           ((*small)(3*i+1)<big_scope(1,0))||((*small)(3*i+1)>big_scope(1,1))||
-           ((*small)(3*i+2)<big_scope(2,0))||((*small)(3*i+2)>big_scope(2,1))){
+        if(((*smalll)(3*i)<big_scope(0,0))||((*smalll)(3*i)>big_scope(0,1))||
+           ((*smalll)(3*i+1)<big_scope(1,0))||((*smalll)(3*i+1)>big_scope(1,1))||
+           ((*smalll)(3*i+2)<big_scope(2,0))||((*smalll)(3*i+2)>big_scope(2,1))){
                number_out+=1;
            }
         else{
@@ -78,9 +79,9 @@ void Structure::cut(VectorXi *big, VectorXi *small, VectorXd *small_diel){
     for(int i=0;i<=number_in-1;i++){
         int j=positions_in.front();
         positions_in.pop_front();
-        geometry(3*i)=(*small)(3*j);
-        geometry(3*i+1)=(*small)(3*j+1);
-        geometry(3*i+2)=(*small)(3*j+2);
+        geometry(3*i)=(*smalll)(3*j);
+        geometry(3*i+1)=(*smalll)(3*j+1);
+        geometry(3*i+2)=(*smalll)(3*j+2);
         diel(3*i)=(*small_diel)(3*j);
         diel(3*i+1)=(*small_diel)(3*j+1);
         diel(3*i+2)=(*small_diel)(3*j+2);
@@ -252,9 +253,9 @@ Structure::Structure(VectorXi *total_space, Structure *s, Vector3i direction, in
             geometry_tmp(3*(j+i*N)+1)=(*geometry_)(3*j+1)+periody*(i+1)*direction(1);
             geometry_tmp(3*(j+i*N)+2)=(*geometry_)(3*j+2)+periodz*(i+1)*direction(2);
 
-            diel_tmp(3*(j+i*N))=(*diel_)(3*j)+periodx*(i+1)*direction(0);
-            diel_tmp(3*(j+i*N)+1)=(*diel_)(3*j+1)+periody*(i+1)*direction(1);
-            diel_tmp(3*(j+i*N)+2)=(*diel_)(3*j+2)+periodz*(i+1)*direction(2);
+            diel_tmp(3*(j+i*N))=(*diel_)(3*j);
+            diel_tmp(3*(j+i*N)+1)=(*diel_)(3*j+1);
+            diel_tmp(3*(j+i*N)+2)=(*diel_)(3*j+2);
         }
     }
     //cout<<geometry_tmp<<endl;

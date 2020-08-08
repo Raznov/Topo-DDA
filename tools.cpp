@@ -121,7 +121,6 @@ ArrayXcd FFT(int nx,int ny,int nz,ArrayXcd in,int _direction){
     //0 for forward, 1 for backward
     //FFTW_FORWARD and FFTW_BACKWARD are FFTW defined integer
     //normalize is needed because backward needs to be normalized to be the same as original
-
     int direction[2]={FFTW_FORWARD,FFTW_BACKWARD};
     int N=nx*ny*nz;
     int normalize[2]={1,N};
@@ -144,8 +143,6 @@ ArrayXcd FFT(int nx,int ny,int nz,ArrayXcd in,int _direction){
     result=result/normalize[_direction];
     fftw_free(in1);
     fftw_free(out);
-
     return result;
-
 }
 */

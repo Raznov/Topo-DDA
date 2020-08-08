@@ -194,6 +194,7 @@ ObjectiveExtSurfaceEExp_CPU::ObjectiveExtSurfaceEExp_CPU(list<double> parameters
     Have_Penalty = HavePenalty_;
     ExtSurfaceEExpRz = ExtSurfaceEExpParameters(0);                   //(Focus, form the bottom of str to the obj plane(in xy plane))
     exponent = ExtSurfaceEExpParameters(1);
+    ratio = int(round(ExtSurfaceEExpParameters(2)));
 
     Have_Devx = false;
     model = model_;
@@ -210,28 +211,26 @@ ObjectiveExtSurfaceEExp_CPU::ObjectiveExtSurfaceEExp_CPU(list<double> parameters
     double lam = model->get_wl();
     double K = 2*M_PI/lam;
     
-    Nobj = 0;
-    for(int i=0; i<=N-1; i++){
-        if((*R)(3*i+2) == 0){
-            Nobj += 1;
-        }
-    }
-    Robj = VectorXi::Zero(Nobj*3);
-    E_sum = VectorXcd::Zero(Nobj*3);
-    E_ext = VectorXcd::Zero(Nobj*3);
+    int Nx_obj = int(floor(Nx / ratio));
+    int Ny_obj = int(floor(Ny / ratio));
+    Nobj = Nx_obj * Ny_obj;
+    Robj = VectorXi::Zero(Nobj * 3);
+    E_sum = VectorXcd::Zero(Nobj * 3);
+    E_ext = VectorXcd::Zero(Nobj * 3);
 
     int Posobj = 0;
-    for(int i=0; i<=N-1; i++){
-        if((*R)(3*i+2) == 0){
-            Robj(3*Posobj) = (*R)(3*i);
-            Robj(3*Posobj+1) = (*R)(3*i+1);
-            Robj(3*Posobj+2) = int(round(ExtSurfaceEExpRz/d));
-            double x = d*Robj(3*Posobj);
-            double y = d*Robj(3*Posobj+1);
-            double z = d*Robj(3*Posobj+2);
-            E_ext(3*Posobj) = E0*n_E0(0)*(cos(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))+sin(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))*1i);
-            E_ext(3*Posobj+1) = E0*n_E0(1)*(cos(K*(n_K(0)*y+n_K(1)*y+n_K(2)*z))+sin(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))*1i);
-            E_ext(3*Posobj+2) = E0*n_E0(2)*(cos(K*(n_K(0)*z+n_K(1)*y+n_K(2)*z))+sin(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))*1i); 
+
+    for (int i = 0; i <= Nx_obj - 1; i++) {
+        for (int j = 0; j <= Ny_obj - 1; j++) {
+            Robj(3 * Posobj) = i * ratio;
+            Robj(3 * Posobj + 1) = j * ratio;
+            Robj(3 * Posobj + 2) = int(round(ExtSurfaceEExpRz / d));
+            double x = d * Robj(3 * Posobj);
+            double y = d * Robj(3 * Posobj + 1);
+            double z = d * Robj(3 * Posobj + 2);
+            E_ext(3 * Posobj) = E0 * n_E0(0) * (cos(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
+            E_ext(3 * Posobj + 1) = E0 * n_E0(1) * (cos(K * (n_K(0) * y + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
+            E_ext(3 * Posobj + 2) = E0 * n_E0(2) * (cos(K * (n_K(0) * z + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
 
             Posobj += 1;
         }
@@ -255,9 +254,11 @@ ObjectiveExtSurfaceEExp_CPU::ObjectiveExtSurfaceEExp_CPU(list<double> parameters
 
 void ObjectiveExtSurfaceEExp_CPU::SingleResponse(int idx, bool deduction){
     for(int i=0; i<=Nobj-1; i++){
+        
         int rnx=Robj(3*i)-(*R)(3*idx)+(Nx-1);                  //R has no d in it, so needs to time d
         int rny=Robj(3*i+1)-(*R)(3*idx+1)+(Ny-1);
         int rnz=Robj(3*i+2)-(*R)(3*idx+2)-distance0;
+
         //cout<<"distance0"<<distance0<<endl;
         //cout<<"Robjx"<<Robj(3*i)<<endl;
         //cout<<"Robjy"<<Robj(3*i+1)<<endl;
@@ -383,7 +384,7 @@ ObjectiveExtSurfaceEExp::ObjectiveExtSurfaceEExp(list<double> parameters, EvoMod
     NyA = 2*Ny-1;
     NzA = Nz;
     NA = NxA*NyA*NzA;
-    cout<<"fuck"<<endl;
+
     AHos = new double[2*6*NA];
     for(int i=0; i<=NxA-1; i++){
         for(int j=0; j<=NyA-1; j++){
@@ -401,7 +402,7 @@ ObjectiveExtSurfaceEExp::ObjectiveExtSurfaceEExp(list<double> parameters, EvoMod
             }
         }
     }
-    cout<<"fuck"<<endl;
+
     cudaMalloc((void**)&ADev, sizeof(double)*2*6*NA);
     cudaMemcpy(ADev, AHos, sizeof(double)*2*6*NA, cudaMemcpyHostToDevice);
     cudaMalloc((void**)&A00, sizeof(cufftDoubleComplex)*NA);
@@ -427,7 +428,7 @@ ObjectiveExtSurfaceEExp::ObjectiveExtSurfaceEExp(list<double> parameters, EvoMod
     for(int i=0; i<=2*3*Nobj-1; i++){
         ESumHos[i] = 0.0;
     }
-    cout<<"fuck"<<endl;
+
 }
 
 void ObjectiveExtSurfaceEExp::SingleResponse(int idx, bool deduction){
@@ -563,12 +564,3 @@ double Average(VectorXcd* E, int N, double exponent){
     double avg = x.sum()/N;
     return avg;
 }
-
-
-
-
-
-
-
-
-

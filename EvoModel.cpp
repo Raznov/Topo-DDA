@@ -1,13 +1,17 @@
 #include "definition.h"
 
-EvoModel::EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_) : Model(space_, d_, lam_,  n_K_,  E0_,  n_E0_,  material_){
+EvoModel::EvoModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space* space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_) : Model(space_, d_, lam_, n_K_, E0_, n_E0_, material_) {
     ObjectFunctionNames = ObjectFunctionNames_;
     save_position = save_position_;
     ObjectParameters = ObjectParameters_;
     HavePenalty = HavePenalty_;
     PenaltyFactor = PenaltyFactor_;
     origin = 0;
-    
+    epsilon_fix = epsilon_fix_;
+    epsilon_tmp = epsilon_fix;
+    HavePathRecord = HavePathRecord_;
+    MaxObj = 0.0;
+    Stephold = 0;
     
 
     list<string>::iterator it0 = (*ObjectFunctionNames).begin();
@@ -52,13 +56,18 @@ EvoModel::EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *Obje
     objective = ObjectiveFactory(MajorObjectFunctionName, MajorObjectParameters);
     
 }
-EvoModel::EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *ObjectParameters_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi *RResult_) : Model(space_, d_, lam_,  n_K_,  E0_,  n_E0_,  material_, RResult_){
+EvoModel::EvoModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space* space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi* RResult_) : Model(space_, d_, lam_, n_K_, E0_, n_E0_, material_, RResult_) {
     ObjectFunctionNames = ObjectFunctionNames_;
     save_position = save_position_;
     ObjectParameters = ObjectParameters_;
     HavePenalty = HavePenalty_;
     PenaltyFactor = PenaltyFactor_;
     origin = 0;
+    epsilon_fix = epsilon_fix_;
+    epsilon_tmp = epsilon_fix;
+    HavePathRecord = HavePathRecord_;
+    MaxObj = 0.0;
+    Stephold = 0;
 
     list<string>::iterator it0 = (*ObjectFunctionNames).begin();
     MajorObjectFunctionName = (*it0);
@@ -90,7 +99,7 @@ EvoModel::EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *Obje
     list<list<double>>::iterator it3 = MinorObjectParameters.begin();
     
     for(int i = 1; i<= (*ObjectParameters).size()-1; i++){
-        cout<<"FUCK"<<endl;
+        
         list<double>::iterator it4 = (*it3).begin();
         for(int j = 0; j<= (*it3).size()-1; j++){
             cout<<" "<<*it4<<" ";
@@ -109,7 +118,7 @@ EvoModel::EvoModel(list<string> *ObjectFunctionNames_, list<list<double>*> *Obje
 
 
 tuple<VectorXd, VectorXcd> EvoModel::devx_and_Adevxp(double epsilon){
-    double origin=objective->GetVal();
+    
     VectorXcd Adevxp=VectorXcd::Zero(3*N);
 
     int para_size=para_nums.size();
@@ -286,6 +295,8 @@ tuple<VectorXd, VectorXcd> EvoModel::devx_and_Adevxp(double epsilon){
             //cout<<" i: "<<i<<" Adevx: "<<Adevxp(i)<<" P: "<<P(i)<<endl;
             Adevxp(i)=Adevxp(i)*P(i);
         }
+    cout << "devx_sum: " << devx.sum() << endl;
+    cout << "Adevxp_sum: " << Adevxp.sum() << endl;
     return make_tuple(devx, Adevxp);
 }
 
@@ -322,16 +333,16 @@ VectorXcd EvoModel::devp(double epsilon){
         
         objective->SingleResponse(position, false);
     }
-    cout << "Devp: " << result.sum() << endl;
+    cout << "Devp_sum: " << result.sum() << endl;
     return result;
 }
 
 
 
-void EvoModel::EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method){
+void EvoModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method){
     ofstream convergence;
+
     convergence.open(save_position+"convergence.txt");
-    
     
     //Parameters for Adam Optimizer.
     double beta1 = 0.9;
@@ -350,6 +361,7 @@ void EvoModel::EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERR
         this->bicgstab(MAX_ITERATION, MAX_ERROR);  
         //this->solve_E(); 
 
+
         this->update_E_in_structure();
         if(iteration==MAX_ITERATION_EVO-1){                                    //useless fix, not gonna to use RResultswithc = true feature in the future
             this->solve_E(); 
@@ -360,12 +372,53 @@ void EvoModel::EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERR
 
         high_resolution_clock::time_point t0 = high_resolution_clock::now();
         
-        
-        double obj = objective->GetVal();
-        
 
+        double obj = objective->GetVal();
+      
         convergence << obj << " ";
-        cout<<"objective function at iteration "<<iteration<<" is "<<obj<<endl;
+        cout << "objective function at iteration " << iteration << " is " << obj << endl;
+
+        double epsilon = epsilon_fix;
+        if (HavePathRecord) {
+            if (obj < MaxObj) {
+                epsilon_tmp = epsilon_tmp / 10;
+                Stephold = 0;
+                diel_old = diel_old_max;
+                diel = diel_max;
+                P = P_max;
+                al = al_max;
+                obj = MaxObj;
+                cout << "New Obj smaller then Old One, back track to previous structure and search with new step size: " << epsilon_tmp << endl;
+                if (obj != objective->GetVal()) {
+                    cout << "Reset failed, objective is not equal to MaxObj" << endl;
+                }
+            }
+            else {
+                diel_old_max = diel_old;
+                diel_max = diel;
+                P_max = P;
+                al_max = al;
+                MaxObj = obj;
+                Stephold += 1;
+                
+                if (Stephold >= 2) {
+                    epsilon_tmp = epsilon_tmp * 10;
+                    cout << "Two times increase with previous step size, try with larger step size: " << epsilon_tmp << endl;
+                    Stephold = 0;
+                }
+                else {
+                    cout << "Not smaller obj nor three continuous increase. Current step size is: " << epsilon_tmp << endl;
+                }
+
+                
+              
+                
+            }
+            epsilon = epsilon_tmp;
+        }
+
+        origin = obj;                              //Origin equals to the objective function of current structure
+        
               
         if((*ObjectFunctionNames).size()>1){
             list<double> obj_minor =  this->MinorObjective();
@@ -383,16 +436,18 @@ void EvoModel::EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERR
         //get partial derivative of current model
         high_resolution_clock::time_point t1 = high_resolution_clock::now();    
 
-        cout<<"-------------------------------Time consumption of one obj with no pre-stored A"<<duration_cast<milliseconds>(t1-t0).count();
+        cout<<"-------------------------------Time consumption of one obj is "<<(duration_cast<milliseconds>(t1-t0).count()/1000)<<"s"<<endl;
 
         cout<<"###START PARTIAL DERIVATIVE"<<endl;
         VectorXd devx;
         VectorXcd Adevxp;
         VectorXcd devp;
 
+        
+
         tie(devx, Adevxp)=this->devx_and_Adevxp(epsilon_partial);
         
-        origin=obj;                              //Origin equals to the objective function of current structure
+        
         devp=this->devp(epsilon_partial);
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(t2-t1).count();
@@ -406,11 +461,11 @@ void EvoModel::EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERR
         this->reset_E();                                  //reset E to initial value
 
 
-
+        
         //times lambdaT and Adevxp together
         VectorXcd mult_result;
-        list<int> para_nums, para_starts, para_dep_nums, para_dep_starts;
-        tie(para_nums, para_starts, para_dep_nums, para_dep_starts)=this->get_para_info();
+        //list<int> para_nums, para_starts, para_dep_nums, para_dep_starts;
+        //tie(para_nums, para_starts, para_dep_nums, para_dep_starts)=this->get_para_info();
         int para_size=para_nums.size();
         int para_dep_size=para_dep_nums.size();
         int n_para=0;
@@ -431,10 +486,10 @@ void EvoModel::EvoOptimization(double epsilon, int MAX_ITERATION, double MAX_ERR
             list<int>::iterator it4=para_dep_starts.begin();
             int position=0;
             for(int i=0;i<=para_size-1;i++){
-                int times=round((*it3)/(*it1));
-                int para_begin=round((*it2)/3);
-                int para_number=round((*it1)/3);
-                int para_dep_begin=round((*it4)/3);
+                int times=int(round((*it3)/(*it1)));
+                int para_begin=int(round((*it2)/3));
+                int para_number=int(round((*it1)/3));
+                int para_dep_begin=int(round((*it4)/3));
                 for(int j=0;j<=para_number-1;j++){
                     int position1=(j+para_begin);
                     mult_result(position)+=lambdaT(3*position1)*Adevxp(3*position1);
@@ -549,6 +604,9 @@ Objective* EvoModel::ObjectiveFactory(string ObjectName, list<double> ObjectPara
     }
     if (MajorObjectFunctionName == "ExtSurfaceEExp"){
         return new ObjectiveExtSurfaceEExp(ObjectParameters, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "ExtSurfaceEExp_CPU") {
+        return new ObjectiveExtSurfaceEExp_CPU(ObjectParameters, this, HavePenalty);
     }
     else{
         // NOT FINALIZED. SHOULD RAISE AN EXCEPTION HERE.
@@ -700,6 +758,3 @@ double EvoModel::L1Norm(){
     Penalty = Penalty * PenaltyFactor;
     return Penalty;
 }
-
-
-

@@ -30,6 +30,7 @@ __global__ void A2AsKernel(double *A, cufftDoubleComplex *A00, cufftDoubleComple
 }
 
 void A2As(double *A, cufftDoubleComplex *A00, cufftDoubleComplex *A01, cufftDoubleComplex *A02, cufftDoubleComplex *A11, cufftDoubleComplex *A12, cufftDoubleComplex *A22, int NxFFT, int NyFFT, int NzFFT){
+
     int tmpx = 10;
     int tmpy = 10;
     int tmpz = 10;
@@ -37,6 +38,7 @@ void A2As(double *A, cufftDoubleComplex *A00, cufftDoubleComplex *A01, cufftDoub
     dim3 dimGrid(ceil((double)NxFFT/tmpx), ceil((double)NyFFT/tmpy), ceil((double)NzFFT/tmpz));   
 
     A2AsKernel<<<dimGrid, dimBlock>>>(A, A00, A01, A02, A11, A12, A22, NxFFT, NyFFT, NzFFT);
+
 }
 
 __global__ void B2BsKernel(double *bDev, cufftDoubleComplex *bxDev, cufftDoubleComplex *byDev, cufftDoubleComplex *bzDev, int NxFFT, int NyFFT, int NzFFT){

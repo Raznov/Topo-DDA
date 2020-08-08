@@ -51,7 +51,7 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
 
     time=0;
     ITERATION=0;
-    ERROR=0.0;
+    Error=0.0;
     d=d_;
     lam=lam_;
     K=2*M_PI/lam;
@@ -92,12 +92,17 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
     RResult = R;
     diel=VectorXcd::Zero(3*N);
     diel_old=VectorXd::Zero(3*N);
+
+    diel_old_max = diel_old;
+    diel_max = diel;
+
     for(int i=0;i<=3*N-1;i++){
         diel(i)=material(0)+diel_tmp(i)*(material(1)-material(0));
         diel_old(i)=diel_tmp(i);
     }
     
     P = VectorXcd::Zero(N*3);
+    P_max = P;
     E = VectorXcd::Zero(N*3);
     Einternal = VectorXcd::Zero(N*3);
     EResult = VectorXcd::Zero(N*3);
@@ -110,6 +115,7 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
     for (int i=0;i<N*3;i++) {
         al(i)=1.0/Get_Alpha(lam,K,d,diel(i));
     }  
+    al_max = al;
     verbose = true;
 
     
@@ -320,7 +326,7 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
 Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi *RResult_){
     time=0;
     ITERATION=0;
-    ERROR=0.0;
+    Error=0.0;
     d=d_;
     lam=lam_;
     K=2*M_PI/lam;
@@ -371,7 +377,11 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
         diel_old(i)=diel_tmp(i);
     }
     
+    diel_old_max = diel_old;
+    diel_max = diel;
+
     P = VectorXcd::Zero(N*3);
+    P_max = P;
     E = VectorXcd::Zero(N*3);
     Einternal = VectorXcd::Zero(N*3);
     EResult = VectorXcd::Zero(RResult.size());
@@ -384,6 +394,7 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
     for (int i=0;i<N*3;i++) {
         al(i)=1.0/Get_Alpha(lam,K,d,diel(i));
     }  
+    al_max = al;
     verbose = true;
     
 
@@ -735,6 +746,11 @@ void Model::bicgstab(int MAX_ITERATION,double MAX_ERROR){
     std::complex<double> eta;
     std::complex<double> zeta;
     
+    
+
+
+
+
     VectorXcd Ax0 = this->Aproduct(P);
     
     r = E-Ax0;
@@ -746,6 +762,7 @@ void Model::bicgstab(int MAX_ITERATION,double MAX_ERROR){
     alpha = r0.dot(r)/r0.dot(Ap0);
     t = r-alpha*Ap0;
     VectorXcd At0 = this->Aproduct(t);
+
 
     zeta = At0.dot(t)/At0.dot(At0);
     u = zeta*Ap0;
@@ -773,8 +790,9 @@ void Model::bicgstab(int MAX_ITERATION,double MAX_ERROR){
         P = P+alpha*p+z;
         rl = r;
         r = t-zeta*At;
+
         if (r.norm()/E.norm()<=MAX_ERROR) {
-            ERROR = r.norm()/E.norm();
+            Error = r.norm()/E.norm();
             ITERATION = it+1;
             if (verbose) {
                 high_resolution_clock::time_point t_end = high_resolution_clock::now();
@@ -786,7 +804,7 @@ void Model::bicgstab(int MAX_ITERATION,double MAX_ERROR){
                 fout<<N<<" "<<duration/1000.0<<endl;
                 fout.close();
 
-                cout << "              Error: "<<ERROR<<endl;
+                cout << "              Error: "<<Error<<endl;
                 cout << "              Iteration: "<<ITERATION<<endl;
                 cout << endl;
             }
@@ -1023,6 +1041,7 @@ void Model::solve_E(){
 
 void Model::update_E_in_structure(){
     for(int i=0;i<=3*N-1;i++){
+
         Einternal(i)=al(i)*P(i);
     }
 }
@@ -1094,7 +1113,3 @@ void Model::output_to_file(string save_position, int iteration){
     }
     fout.close();
 }
-
-
-
-
