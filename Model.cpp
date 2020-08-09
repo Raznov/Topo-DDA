@@ -601,7 +601,7 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
 Model::~Model(){
         //cout<<"fuck"<<endl;
         delete [] AHos;
-        delete [] ADev; 
+        cudaFree(ADev); 
         //cout<<"fuck"<<endl;
         cudaFree(A00);
         cudaFree(A01);
@@ -610,7 +610,7 @@ Model::~Model(){
         cudaFree(A12);
         cudaFree(A22);
         delete [] bHos;
-        delete [] bDev;
+        cudaFree(bDev);
         cudaFree(bxDev);
         cudaFree(byDev);
         cudaFree(bzDev);
