@@ -63,19 +63,40 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
     tie(Nx, Ny, Nz, N)=(*space_).get_Ns();
     list<Structure> *ln=(*space_).get_ln();
     R=VectorXi::Zero(3*N);
+    RDep = VectorXi::Zero(3 * N);
 
     RResultSwitch = false;
-    
+    RResult = R;
+
     VectorXd diel_tmp=VectorXd::Zero(3*N);
     // Why not directly use diel_old?
-    
+    //-----------------------------------------------------------------Input strs-------------------------------------------------------------
     list<Structure>::iterator it=(*ln).begin();
-    int n1=0;
+
+    int PositionParaN = 0;
+    for (int i = 0; i <= int((*ln).size()) - 1; i++) {
+        int n2 = ((*((*it).get_geometry())).size());
+        if ((*it).get_para() == 1) {
+            PositionParaN += int(round(n2 / 3));
+        }
+        it++;
+    }
+    PositionPara = VectorXi::Zero(PositionParaN);
+
+    //Build R, RDep
+    int n1 = 0;
+    it = (*ln).begin();
+    int PositionParaPos = 0;
+    VectorXi RPara = VectorXi::Zero(3 * N);
     for(int i=0;i<=int((*ln).size())-1;i++){
         int n2=((*((*it).get_geometry())).size());
         if((*it).get_para()==1){
             para_nums.push_back(n2);
             para_starts.push_back(n1);
+            for (int i = int(round(n1 / 3)); i <= int(round(n1 / 3)) + int(round(n2 / 3)) - 1; i++) {
+                PositionPara(PositionParaPos) = i;
+                PositionParaPos += 1;
+            }
         }
         if((*it).get_para()==2){
             para_dep_nums.push_back(n2);
@@ -84,12 +105,48 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
         for(int j=0;j<=n2-1;j++){
             R(n1+j)=(*((*it).get_geometry()))(j);
             diel_tmp(n1+j)=(*((*it).get_diel()))(j);
+            RDep(n1+j)= (*((*it).get_geometry_dep()))(j);
+            RPara(n1 + j) = (*it).get_para();
         }
         it++;
         n1=n1+n2;
     }
+
+
+    for (int i = 0; i <= PositionPara.size() - 1; i++) {
+        list<int> tmpPos;
+        int Parax = R(3 * PositionPara(i));
+        int Paray = R(3 * PositionPara(i) + 1);
+        int Paraz = R(3 * PositionPara(i) + 2);
+        for (int j = 0; j <= N - 1; j++) {
+            int jx = R(3 * j);
+            int jy = R(3 * j + 1);
+            int jz = R(3 * j + 2);
+            int Depx = RDep(3 * j);
+            int Depy = RDep(3 * j + 1);
+            int Depz = RDep(3 * j + 2);
+            if (RPara(3 * j) == 2) {
+                if (Depx == Parax && Depy == Paray && Depz == Paraz) {
+                    tmpPos.push_back(j);
+                }
+            }
+        }
+        PositionDep.push_back(tmpPos);
+    }
+
+    int PositionDepN = 0;
+    list<list<int>>::iterator it1PositionDep = PositionDep.begin();
+    for (int i = 0; i <= int(PositionDep.size()) - 1; i++) {
+        PositionDepN += (*it1PositionDep).size();
+        it1PositionDep++;
+    }
+    if (PositionDepN + PositionParaN != N) {
+        cout << "PositionDepN = " << PositionDepN << endl;
+        cout << "PositionParaN = " << PositionParaN << endl;
+        cout << "In Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_) : PositionDepN + PositionParaN! = N" << endl;
+    }
     
-    RResult = R;
+    //---------------------------------------------------initial diel------------------------------------
     diel=VectorXcd::Zero(3*N);
     diel_old=VectorXd::Zero(3*N);
 
@@ -348,16 +405,35 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
         // This could be changed to throwing an exception.
     }
     
-    VectorXd diel_tmp=VectorXd::Zero(3*N);
+    VectorXd diel_tmp = VectorXd::Zero(3 * N);
     // Why not directly use diel_old?
-    
+    //-----------------------------------------------------------------Input strs-------------------------------------------------------------
     list<Structure>::iterator it=(*ln).begin();
-    int n1=0;
+
+    int PositionParaN = 0;
+    for (int i = 0; i <= int((*ln).size()) - 1; i++) {
+        int n2 = ((*((*it).get_geometry())).size());
+        if ((*it).get_para() == 1) {
+            PositionParaN += int(round(n2 / 3));
+        }
+        it++;
+    }
+    PositionPara = VectorXi::Zero(PositionParaN);
+
+    //Build R, RDep
+    int n1 = 0;
+    it = (*ln).begin();
+    int PositionParaPos = 0;
+    VectorXi RPara = VectorXi::Zero(3 * N);
     for(int i=0;i<=int((*ln).size())-1;i++){
         int n2=((*((*it).get_geometry())).size());
         if((*it).get_para()==1){
             para_nums.push_back(n2);
             para_starts.push_back(n1);
+            for (int i = int(round(n1 / 3)); i <= int(round(n1 / 3)) + int(round(n2 / 3)) - 1; i++) {
+                PositionPara(PositionParaPos) = i;
+                PositionParaPos += 1;
+            }
         }
         if((*it).get_para()==2){
             para_dep_nums.push_back(n2);
@@ -366,10 +442,48 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
         for(int j=0;j<=n2-1;j++){
             R(n1+j)=(*((*it).get_geometry()))(j);
             diel_tmp(n1+j)=(*((*it).get_diel()))(j);
+            RDep(n1+j)= (*((*it).get_geometry_dep()))(j);
+            RPara(n1 + j) = (*it).get_para();
         }
         it++;
         n1=n1+n2;
     }
+
+
+    for (int i = 0; i <= PositionPara.size() - 1; i++) {
+        list<int> tmpPos;
+        int Parax = R(3 * PositionPara(i));
+        int Paray = R(3 * PositionPara(i) + 1);
+        int Paraz = R(3 * PositionPara(i) + 2);
+        for (int j = 0; j <= N - 1; j++) {
+            int jx = R(3 * j);
+            int jy = R(3 * j + 1);
+            int jz = R(3 * j + 2);
+            int Depx = RDep(3 * j);
+            int Depy = RDep(3 * j + 1);
+            int Depz = RDep(3 * j + 2);
+            if (RPara(3 * j) == 2) {
+                if (Depx == Parax && Depy == Paray && Depz == Paraz) {
+                    tmpPos.push_back(j);
+                }
+            }
+        }
+        PositionDep.push_back(tmpPos);
+    }
+
+    int PositionDepN = 0;
+    list<list<int>>::iterator it1PositionDep = PositionDep.begin();
+    for (int i = 0; i <= int(PositionDep.size()) - 1; i++) {
+        PositionDepN += (*it1PositionDep).size();
+        it1PositionDep++;
+    }
+    if (PositionDepN + PositionParaN != N) {
+        cout << "PositionDepN = " << PositionDepN << endl;
+        cout << "PositionParaN = " << PositionParaN << endl;
+        cout << "In Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_) : PositionDepN + PositionParaN! = N" << endl;
+    }
+
+    //---------------------------------------------------initial diel------------------------------------
     diel=VectorXcd::Zero(3*N);
     diel_old=VectorXd::Zero(3*N);
     for(int i=0;i<=3*N-1;i++){
@@ -599,10 +713,8 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
 }
 
 Model::~Model(){
-        //cout<<"fuck"<<endl;
         delete [] AHos;
         cudaFree(ADev); 
-        //cout<<"fuck"<<endl;
         cudaFree(A00);
         cudaFree(A01);
         cudaFree(A02);
@@ -829,6 +941,7 @@ void Model::reset_E(){
     }
 }
 
+/*
 double Model::get_step_length(VectorXd gradients, double epsilon){
     int para_size = para_nums.size();
     int para_dep_size = para_dep_nums.size();
@@ -894,71 +1007,58 @@ double Model::get_step_length(VectorXd gradients, double epsilon){
     }
     return cur_step;
 }
-
+*/
 
 void Model::change_para_diel(VectorXd step){
     
     int para_size=para_nums.size();
     int para_dep_size=para_dep_nums.size();
-    cout << para_size << ' ' << para_dep_size << endl;
+    //cout << para_size << ' ' << para_dep_size << endl;
     if(para_dep_size!=0){
-        if(para_dep_size!=para_size){
-            cout<<"ERROR: para_dep_size not equal para_size"<<endl;
+        if (PositionPara.size() != PositionDep.size()) {
+            cout << "In Model::change_para_diel(VectorXd step) : PositionPara.size() != PositionDep.size()" << endl;
         }
-        list<int>::iterator it1=para_nums.begin();
-        list<int>::iterator it2=para_starts.begin();
-        list<int>::iterator it3=para_dep_nums.begin();
-        list<int>::iterator it4=para_dep_starts.begin();
-        int position=0;
-        for(int i=0;i<=para_size-1;i++){
-            int times=round((*it3)/(*it1));
-            int para_begin=round((*it2)/3);
-            int para_number=round((*it1)/3);
-            int para_dep_begin=round((*it4)/3);
-            for(int j=0;j<=para_number-1;j++){
-                int position1=(j+para_begin);
-                diel_old(3*position1)+=step(position);
-                if(diel_old(3*position1)>=1){
-                    diel_old(3*position1)=1;
-                }
-                if(diel_old(3*position1)<=0){
-                    diel_old(3*position1)=0;
-                }
+        
+        list<list<int>>::iterator it1 = PositionDep.begin();
+        for (int i = 0; i <= PositionPara.size() - 1; i++) {
+            int position1 = PositionPara(i);
+            diel_old(3 * position1) += step(i);
+            if (diel_old(3 * position1) >= 1) {
+                diel_old(3 * position1) = 1;
+            }
+            if (diel_old(3 * position1) <= 0) {
+                diel_old(3 * position1) = 0;
+            }
 
-                diel_old(3*position1+1)=diel_old(3*position1);
-                diel_old(3*position1+2)=diel_old(3*position1);
-                
+            diel_old(3 * position1 + 1) = diel_old(3 * position1);
+            diel_old(3 * position1 + 2) = diel_old(3 * position1);
 
-                diel(3*position1)=material(0)+diel_old(3*position1)*(material(1)-material(0));
-                diel(3*position1+1)=diel(3*position1);
-                diel(3*position1+2)=diel(3*position1);
-                
-                al(3*position1)=1.0/Get_Alpha(lam,K,d,diel(3*position1));
-                al(3*position1+1)=1.0/Get_Alpha(lam,K,d,diel(3*position1+1));
-                al(3*position1+2)=1.0/Get_Alpha(lam,K,d,diel(3*position1+2));
 
-                for(int k=0;k<=times-1;k++){
-                    int position2=j+para_dep_begin+k*para_number;
-                    diel_old(3*position2)=diel_old(3*position1);
-                    diel_old(3*position2+1)=diel_old(3*position1);
-                    diel_old(3*position2+2)=diel_old(3*position1);
+            diel(3 * position1) = material(0) + diel_old(3 * position1) * (material(1) - material(0));
+            diel(3 * position1 + 1) = diel(3 * position1);
+            diel(3 * position1 + 2) = diel(3 * position1);
 
-                    diel(3*position2)=material(0)+diel_old(3*position2)*(material(1)-material(0));
-                    diel(3*position2+1)=diel(3*position2);
-                    diel(3*position2+2)=diel(3*position2);
+            al(3 * position1) = 1.0 / Get_Alpha(lam, K, d, diel(3 * position1));
+            al(3 * position1 + 1) = 1.0 / Get_Alpha(lam, K, d, diel(3 * position1 + 1));
+            al(3 * position1 + 2) = 1.0 / Get_Alpha(lam, K, d, diel(3 * position1 + 2));
 
-                    al(3*position2)=1.0/Get_Alpha(lam,K,d,diel(3*position2));
-                    al(3*position2+1)=1.0/Get_Alpha(lam,K,d,diel(3*position2+1));
-                    al(3*position2+2)=1.0/Get_Alpha(lam,K,d,diel(3*position2+2));
-                    
+            list<int>::iterator it2 = (*it1).begin();
+            for (int j = 0; j <= (*it1).size()-1; j++) {
+                int position2 = (*it2);
+                diel_old(3 * position2) = diel_old(3 * position1);
+                diel_old(3 * position2 + 1) = diel_old(3 * position1);
+                diel_old(3 * position2 + 2) = diel_old(3 * position1);
 
-                }
-                position=position+1;
+                diel(3 * position2) = material(0) + diel_old(3 * position2) * (material(1) - material(0));
+                diel(3 * position2 + 1) = diel(3 * position2);
+                diel(3 * position2 + 2) = diel(3 * position2);
+
+                al(3 * position2) = 1.0 / Get_Alpha(lam, K, d, diel(3 * position2));
+                al(3 * position2 + 1) = 1.0 / Get_Alpha(lam, K, d, diel(3 * position2 + 1));
+                al(3 * position2 + 2) = 1.0 / Get_Alpha(lam, K, d, diel(3 * position2 + 2));
+                it2++;
             }
             it1++;
-            it2++;
-            it3++;
-            it4++;
         }
     }
     else{
@@ -1083,6 +1183,7 @@ void Model::output_to_file(string save_position, int iteration){
     
     string name;
     name=save_position+"Model_results"+to_string(iteration)+".txt";
+    
     ofstream fout(name);
     fout<<Nx<<endl<<Ny<<endl<<Nz<<endl<<N<<endl;
     fout<<R<<endl;

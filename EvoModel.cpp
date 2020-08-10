@@ -124,111 +124,101 @@ tuple<VectorXd, VectorXcd> EvoModel::devx_and_Adevxp(double epsilon){
     int para_size=para_nums.size();
     int para_dep_size=para_dep_nums.size();
     
-    int n_para=0;
-    list<int>::iterator it=para_nums.begin();
-    for(int i=0;i<=para_size-1;i++){
-        n_para=n_para+(*it);
-        it++;
-    }
-    n_para=round(n_para/3);
-    VectorXd devx=VectorXd::Zero(n_para);
+    
+    VectorXd devx=VectorXd::Zero(PositionPara.size());
 
     if(para_dep_size!=0){
-        if(para_dep_size!=para_size){
-            cout<<"ERROR: para_dep_size not equal para_size"<<endl;
+        if (PositionPara.size() != PositionDep.size()) {
+            cout << "In tuple<VectorXd, VectorXcd> EvoModel::devx_and_Adevxp(double epsilon) : PositionPara.size() != PositionDep.size()" << endl;
         }
-        list<int>::iterator it1=para_nums.begin();
-        list<int>::iterator it2=para_starts.begin();
-        list<int>::iterator it3=para_dep_nums.begin();
-        list<int>::iterator it4=para_dep_starts.begin();
-        int position=0;
-        for(int i=0;i<=para_size-1;i++){
-            int times=round((*it3)/(*it1));
-            int para_begin=round((*it2)/3);
-            int para_number=round((*it1)/3);
-            int para_dep_begin=round((*it4)/3);
-            for(int j=0;j<=para_number-1;j++){
-                int sign=0;
-                if(diel_old(j)>=epsilon){
-                    sign=-1;
-                }
-                else{
-                    sign=1;
-                }
-                int position1=(j+para_begin);
-                
-                diel_old(3*position1)+=sign*epsilon;
-                diel_old(3*position1+1)+=sign*epsilon;
-                diel_old(3*position1+2)+=sign*epsilon;
-                
-                
-                if(objective->Have_Devx) objective->SingleResponse(position1, true);
-                
-                diel(3*position1)=material(0)+diel_old(3*position1)*(material(1)-material(0));
-                diel(3*position1+1)=diel(3*position1);
-                diel(3*position1+2)=diel(3*position1);
-                
-                if(objective->Have_Devx) objective->SingleResponse(position1, false);
-                
-                Adevxp(3*position1)=((1.0/Get_Alpha(lam,K,d,diel(3*position1)))-al(3*position1))/(sign*epsilon);
-                Adevxp(3*position1+1)=((1.0/Get_Alpha(lam,K,d,diel(3*position1+1)))-al(3*position1+1))/(sign*epsilon);
-                Adevxp(3*position1+2)=((1.0/Get_Alpha(lam,K,d,diel(3*position1+2)))-al(3*position1+2))/(sign*epsilon);
 
-                for(int k=0;k<=times-1;k++){
-                    int position2=j+para_dep_begin+k*para_number;
-                    
-                    diel_old(3*position2)+=sign*epsilon;
-                    diel_old(3*position2+1)+=sign*epsilon;
-                    diel_old(3*position2+2)+=sign*epsilon;
-                    
-                    if(objective->Have_Devx) objective->SingleResponse(position2, true);
-                    
-                    diel(3*position2)=material(0)+diel_old(3*position2)*(material(1)-material(0));
-                    diel(3*position2+1)=diel(3*position2);
-                    diel(3*position2+2)=diel(3*position2);
-                    
-                    if(objective->Have_Devx) objective->SingleResponse(position2, false);
-                    
-                    Adevxp(3*position2)=((1.0/Get_Alpha(lam,K,d,diel(3*position2)))-al(3*position2))/(sign*epsilon);
-                    Adevxp(3*position2+1)=((1.0/Get_Alpha(lam,K,d,diel(3*position2+1)))-al(3*position2+1))/(sign*epsilon);
-                    Adevxp(3*position2+2)=((1.0/Get_Alpha(lam,K,d,diel(3*position2+2)))-al(3*position2+2))/(sign*epsilon);
-                }
-                devx(position)=(objective->GroupResponse()-origin)/(sign*epsilon);
-                
-                position=position+1;
+        list<list<int>>::iterator it1 = PositionDep.begin();
 
-                diel_old(3*position1)-=sign*epsilon;
-                diel_old(3*position1+1)-=sign*epsilon;
-                diel_old(3*position1+2)-=sign*epsilon;
-                
-                if(objective->Have_Devx) objective->SingleResponse(position1, true);
-                
-                diel(3*position1)=material(0)+diel_old(3*position1)*(material(1)-material(0));
-                diel(3*position1+1)=diel(3*position1);
-                diel(3*position1+2)=diel(3*position1);
-                
-                if(objective->Have_Devx) objective->SingleResponse(position1, false);
-
-                for(int k=0;k<=times-1;k++){
-                    int position2=j+para_dep_begin+k*para_number;
-                    diel_old(3*position2)-=sign*epsilon;
-                    diel_old(3*position2+1)-=sign*epsilon;
-                    diel_old(3*position2+2)-=sign*epsilon;
-                    
-                    if(objective->Have_Devx) objective->SingleResponse(position2, true);
-                    
-                    diel(3*position2)=material(0)+diel_old(3*position2)*(material(1)-material(0));
-                    diel(3*position2+1)=diel(3*position2);
-                    diel(3*position2+2)=diel(3*position2);
-                    
-                    if(objective->Have_Devx) objective->SingleResponse(position2, false);
-                    
-                }
+        for(int i = 0; i <= PositionPara.size() - 1; i++){
+            int position1 = PositionPara(i);
+            int sign = 0;
+            if (diel_old(3*position1) >= epsilon) {
+                sign = -1;
             }
+            else {
+                sign = 1;
+            }
+            diel_old(3 * position1) += sign * epsilon;
+            diel_old(3 * position1 + 1) += sign * epsilon;
+            diel_old(3 * position1 + 2) += sign * epsilon;
+
+
+            if (objective->Have_Devx) objective->SingleResponse(position1, true);
+
+            diel(3 * position1) = material(0) + diel_old(3 * position1) * (material(1) - material(0));
+            diel(3 * position1 + 1) = diel(3 * position1);
+            diel(3 * position1 + 2) = diel(3 * position1);
+
+            if (objective->Have_Devx) objective->SingleResponse(position1, false);
+
+            Adevxp(3 * position1) = ((1.0 / Get_Alpha(lam, K, d, diel(3 * position1))) - al(3 * position1)) / (sign * epsilon);
+            Adevxp(3 * position1 + 1) = ((1.0 / Get_Alpha(lam, K, d, diel(3 * position1 + 1))) - al(3 * position1 + 1)) / (sign * epsilon);
+            Adevxp(3 * position1 + 2) = ((1.0 / Get_Alpha(lam, K, d, diel(3 * position1 + 2))) - al(3 * position1 + 2)) / (sign * epsilon);
+            
+            list<int>::iterator it2 = (*it1).begin();
+
+            for (int j = 0; j <= (*it1).size()-1; j++) {
+                int position2 = (*it2);
+                diel_old(3 * position2) += sign * epsilon;
+                diel_old(3 * position2 + 1) += sign * epsilon;
+                diel_old(3 * position2 + 2) += sign * epsilon;
+
+                if (objective->Have_Devx) objective->SingleResponse(position2, true);
+
+                diel(3 * position2) = material(0) + diel_old(3 * position2) * (material(1) - material(0));
+                diel(3 * position2 + 1) = diel(3 * position2);
+                diel(3 * position2 + 2) = diel(3 * position2);
+
+                if (objective->Have_Devx) objective->SingleResponse(position2, false);
+
+                Adevxp(3 * position2) = ((1.0 / Get_Alpha(lam, K, d, diel(3 * position2))) - al(3 * position2)) / (sign * epsilon);
+                Adevxp(3 * position2 + 1) = ((1.0 / Get_Alpha(lam, K, d, diel(3 * position2 + 1))) - al(3 * position2 + 1)) / (sign * epsilon);
+                Adevxp(3 * position2 + 2) = ((1.0 / Get_Alpha(lam, K, d, diel(3 * position2 + 2))) - al(3 * position2 + 2)) / (sign * epsilon);
+               
+                it2++;
+            }
+               
+            devx(i)=(objective->GroupResponse()-origin)/(sign*epsilon);
+                
+            diel_old(3*position1)-=sign*epsilon;
+            diel_old(3*position1+1)-=sign*epsilon;
+            diel_old(3*position1+2)-=sign*epsilon;
+                
+            if(objective->Have_Devx) objective->SingleResponse(position1, true);
+                
+            diel(3*position1)=material(0)+diel_old(3*position1)*(material(1)-material(0));
+            diel(3*position1+1)=diel(3*position1);
+            diel(3*position1+2)=diel(3*position1);
+                
+            if(objective->Have_Devx) objective->SingleResponse(position1, false);
+
+            it2 = (*it1).begin();
+
+            for (int j = 0; j <= (*it1).size()-1; j++) {
+                int position2 = (*it2);
+                diel_old(3*position2)-=sign*epsilon;
+                diel_old(3*position2+1)-=sign*epsilon;
+                diel_old(3*position2+2)-=sign*epsilon;
+                    
+                if(objective->Have_Devx) objective->SingleResponse(position2, true);
+                    
+                diel(3*position2)=material(0)+diel_old(3*position2)*(material(1)-material(0));
+                diel(3*position2+1)=diel(3*position2);
+                diel(3*position2+2)=diel(3*position2);
+                    
+                if(objective->Have_Devx) objective->SingleResponse(position2, false);
+
+                it2++;
+                    
+            }
+
             it1++;
-            it2++;
-            it3++;
-            it4++;
+            
         }
         for(int i=0;i<=3*N-1;i++){
             Adevxp(i)=Adevxp(i)*P(i);
@@ -245,7 +235,7 @@ tuple<VectorXd, VectorXcd> EvoModel::devx_and_Adevxp(double epsilon){
             int para_number=round((*it1)/3);
             for(int j=0;j<=para_number-1;j++){
                 int sign=0;
-                if(diel_old(j)>=epsilon){
+                if(diel_old(3*j)>=epsilon){
                     sign=-1;
                 }
                 else{
@@ -289,15 +279,13 @@ tuple<VectorXd, VectorXcd> EvoModel::devx_and_Adevxp(double epsilon){
             it1++;
             it2++;
         }
-        
-    }
-    for(int i=0;i<=3*N-1;i++){
+        for (int i = 0; i <= 3 * N - 1; i++) {
             //cout<<" i: "<<i<<" Adevx: "<<Adevxp(i)<<" P: "<<P(i)<<endl;
-            Adevxp(i)=Adevxp(i)*P(i);
+            Adevxp(i) = Adevxp(i) * P(i);
         }
-    cout << "devx_sum: " << devx.sum() << endl;
-    cout << "Adevxp_sum: " << Adevxp.sum() << endl;
-    return make_tuple(devx, Adevxp);
+        return make_tuple(devx, Adevxp);
+    }
+    
 }
 
 VectorXcd EvoModel::devp(double epsilon){
@@ -341,7 +329,7 @@ VectorXcd EvoModel::devp(double epsilon){
 
 void EvoModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method){
     ofstream convergence;
-
+    
     convergence.open(save_position+"convergence.txt");
     
     //Parameters for Adam Optimizer.
@@ -464,49 +452,33 @@ void EvoModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITER
         
         //times lambdaT and Adevxp together
         VectorXcd mult_result;
-        //list<int> para_nums, para_starts, para_dep_nums, para_dep_starts;
-        //tie(para_nums, para_starts, para_dep_nums, para_dep_starts)=this->get_para_info();
+        
         int para_size=para_nums.size();
         int para_dep_size=para_dep_nums.size();
-        int n_para=0;
-        list<int>::iterator it=para_nums.begin();
-        for(int i=0;i<=para_size-1;i++){
-            n_para=n_para+(*it);
-            it++;
-        }
-        n_para=round(n_para/3);                            //Total number of parameters
+        int n_para;
+        n_para = PositionPara.size();                     //Total number of parameters
+                                    
         mult_result=VectorXcd::Zero(n_para);               //multiplication result has the length of parameter
         if(para_dep_size!=0){
-            if(para_dep_size!=para_size){
-                cout<<"ERROR: para_dep_size not equal para_size"<<endl;
+            if (PositionPara.size() != PositionDep.size()) {
+                cout << "In Model::change_para_diel(VectorXd step) : PositionPara.size() != PositionDep.size()" << endl;
             }
-            list<int>::iterator it1=para_nums.begin();
-            list<int>::iterator it2=para_starts.begin();
-            list<int>::iterator it3=para_dep_nums.begin();
-            list<int>::iterator it4=para_dep_starts.begin();
-            int position=0;
-            for(int i=0;i<=para_size-1;i++){
-                int times=int(round((*it3)/(*it1)));
-                int para_begin=int(round((*it2)/3));
-                int para_number=int(round((*it1)/3));
-                int para_dep_begin=int(round((*it4)/3));
-                for(int j=0;j<=para_number-1;j++){
-                    int position1=(j+para_begin);
-                    mult_result(position)+=lambdaT(3*position1)*Adevxp(3*position1);
-                    mult_result(position)+=lambdaT(3*position1+1)*Adevxp(3*position1+1);
-                    mult_result(position)+=lambdaT(3*position1+2)*Adevxp(3*position1+2);
-                    for(int k=0;k<=times-1;k++){
-                        int position2=j+para_dep_begin+k*para_number;
-                        mult_result(position)+=lambdaT(3*position2)*Adevxp(3*position2);
-                        mult_result(position)+=lambdaT(3*position2+1)*Adevxp(3*position2+1);
-                        mult_result(position)+=lambdaT(3*position2+2)*Adevxp(3*position2+2);
-                    }
-                    position=position+1;
+            
+            list<list<int>>::iterator it1 = PositionDep.begin();
+            for (int i = 0; i <= PositionPara.size() - 1; i++) {
+                int position1 = PositionPara(i);
+                mult_result(i) += lambdaT(3 * position1) * Adevxp(3 * position1);
+                mult_result(i) += lambdaT(3 * position1 + 1) * Adevxp(3 * position1 + 1);
+                mult_result(i) += lambdaT(3 * position1 + 2) * Adevxp(3 * position1 + 2);
+                list<int>::iterator it2 = (*it1).begin();
+                for (int j = 0; j <= (*it1).size() - 1; j++) {
+                    int position2 = (*it2);
+                    mult_result(i) += lambdaT(3 * position2) * Adevxp(3 * position2);
+                    mult_result(i) += lambdaT(3 * position2 + 1) * Adevxp(3 * position2 + 1);
+                    mult_result(i) += lambdaT(3 * position2 + 2) * Adevxp(3 * position2 + 2);
+                    it2++;
                 }
                 it1++;
-                it2++;
-                it3++;
-                it4++;
             }
         }
         else{

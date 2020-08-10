@@ -48,16 +48,35 @@ class Structure{
     private:
         VectorXd diel;                  //0~1
         VectorXi geometry;
+        VectorXi geometry_dep;          //Same size with geometry. If para=2, stores the corresponding para position of each point. Has no meaning in para=0&1
         int para;                       //Parameter condition: 0-not parameter, 1-parameter, 2-duplicated from a 2D parameter, controlled by parameter.
     public:
-        Structure(VectorXi *total_space, VectorXd *diel_, VectorXi *geometry_, int para_);
+        //--------------------------------------Dont support dependent para build-------------------------------------------------------
+        Structure(VectorXi *total_space, VectorXd *diel_, VectorXi *geometry_, int para_);            //vanilla initialization
+
+        //Sphere
         Structure(VectorXi *total_space, string initial_diel, double r, Vector3d center, int para_);  //r: actual radius/d. center: actual center/d. In charge of Sphere 
+        
+        //Circle
         Structure(VectorXi *total_space, string initial_diel, double r, Vector3i center, Vector3i direction, int para_); //build a circle, direction is its normalized direction in Cart. coord.
-        Structure(VectorXi *total_space, string initial_diel, Vector3d l, Vector3d center, int para_);    //Ractangular(both 2D and 3D). 
+
+        //From file
+        Structure(VectorXi* total_space, string FileName, int para_);                                                    //Read a structure from txt file
+        
+        //--------------------------------------Support dependent para build-------------------------------------------------------------
+        //Bulk
+        Structure(VectorXi *total_space, string initial_diel, Vector3d l, Vector3d center, int para_);    //Ractangular(both 2D and 3D). Para can only = 0&1 
+        
+        //Duplicate
         Structure(VectorXi *total_space, Structure *s, Vector3i direction, int times, int para_);                     //Initializa a Structure by duplicating a existing structure along a certain direction for several times. Direction is normalized and can only be alone x, y or z.
-                                                                                                                      //The original structure is not concluded. original structure + new structure = times * original structure
-        Structure(VectorXi *total_space, string FileName, int para_);                                                    //Read a structure from txt file
+        //The original structure is not included. original structure + new structure = times * original structure. If set para=2 and original para=1, then depend on origin str as geometry_dep. If para=2 and original para=2, will copy origin geometry_dep.
+        Structure(VectorXi* total_space, Structure* s, int dep_way);     //Special copy for setting up 2-fold and 4-fold symmetry dependence in xy plane. Para auto set to 2.
+        //The original str at left down corner of the xy plane(left down corner is (0,0)). dep_way=1, 2, 3 corresponds to the other blocks in clock-wise. 
+
+
+        //-------------------------------------Other member functions--------------------------------------------------------------------
         VectorXi *get_geometry();
+        VectorXi* get_geometry_dep();
         VectorXd *get_diel();
         void cut(VectorXi *big, VectorXi *smalll, VectorXd *small_diel);
         int get_geometry_size();
@@ -101,6 +120,9 @@ class Model{
         double lam;
         double Error;
         VectorXi R;                      //Position of dipoles. Both R and RResult are unitless, so need to time d to get real number.
+        VectorXi RDep;                   //Position of the dependent para points in space of the points in the same position as R
+        list<list<int>> PositionDep;    //First D has the D of para(para=1). Second D is the positions of other points dependent on the para in the 1stD.
+        VectorXi PositionPara;          //Position i(in R) of the parameters (3*i=x, 3*i+1=y, 3*i+2=z)
         bool RResultSwitch;               //0(false) for plot only E field on the structure points (fast), 1(true) for using RResult different from R to plot (slow but adjustable).
         VectorXi RResult;                //The position matrix for the EResult (where you want to plot the E field)
         list<int> para_nums;
@@ -132,7 +154,7 @@ class Model{
         void bicgstab(int MAX_ITERATION,double MAX_ERROR);
         void change_E(VectorXcd E_);
         void reset_E();             //reset E to E0 
-        double get_step_length(VectorXd gradients, double epsilon);                                        
+        //double get_step_length(VectorXd gradients, double epsilon);                                        
         void change_para_diel(VectorXd step);
         VectorXcd get_diel();
         Vector2cd get_material();
