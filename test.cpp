@@ -73,7 +73,7 @@ int main(){
 
     int MAX_ITERATION_DDA = 10000;
     double MAX_ERROR = 0.00001;
-    int MAX_ITERATION_EVO = 200;
+    int MAX_ITERATION_EVO = 100;
 
     list<string> ObjectFunctionNames{ "ExtSurfaceEExp_CPU" };
 
