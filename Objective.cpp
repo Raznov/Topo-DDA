@@ -219,15 +219,17 @@ ObjectiveExtSurfaceEExp_CPU::ObjectiveExtSurfaceEExp_CPU(list<double> parameters
     E_ext = VectorXcd::Zero(Nobj * 3);
 
     int Posobj = 0;
+    distance0 = ExtSurfaceEExpRz - d * (Nz - 1);
+    cout << distance0 << endl;
 
     for (int i = 0; i <= Nx_obj - 1; i++) {
         for (int j = 0; j <= Ny_obj - 1; j++) {
             Robj(3 * Posobj) = i * ratio;
             Robj(3 * Posobj + 1) = j * ratio;
-            Robj(3 * Posobj + 2) = int(round(ExtSurfaceEExpRz / d));
-            double x = d * Robj(3 * Posobj);
-            double y = d * Robj(3 * Posobj + 1);
-            double z = d * Robj(3 * Posobj + 2);
+            Robj(3 * Posobj + 2) = int(round((ExtSurfaceEExpRz - distance0)/d));
+            double x = d*Robj(3 * Posobj);
+            double y = d*Robj(3 * Posobj + 1);
+            double z = d*Robj(3 * Posobj + 2) + distance0;
             E_ext(3 * Posobj) = E0 * n_E0(0) * (cos(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
             E_ext(3 * Posobj + 1) = E0 * n_E0(1) * (cos(K * (n_K(0) * y + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
             E_ext(3 * Posobj + 2) = E0 * n_E0(2) * (cos(K * (n_K(0) * z + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
@@ -237,13 +239,13 @@ ObjectiveExtSurfaceEExp_CPU::ObjectiveExtSurfaceEExp_CPU(list<double> parameters
     }
     
 
-    distance0 = int(round(ExtSurfaceEExpRz/d)) - (Nz-1);
+    
     vector<vector<vector<Matrix3cd>>> tmp(2*Nx-1,vector<vector<Matrix3cd>>(2*Ny-1,vector<Matrix3cd>(Nz,Matrix3cd::Zero())));
     A_dic = tmp;
     for(int i=0; i<=2*Nx-2; i++){
         for(int j=0; j<=2*Ny-2; j++){
             for(int k=0; k<=Nz-1; k++){
-                double x=d*(i-(Nx-1)); double y=d*(j-(Ny-1)); double z=d*(k + distance0);
+                double x=d*(i-(Nx-1)); double y=d*(j-(Ny-1)); double z=d*k + distance0;
                 A_dic[i][j][k] = model->A_dic_generator(x,y,z);
             }
         }
@@ -255,9 +257,9 @@ ObjectiveExtSurfaceEExp_CPU::ObjectiveExtSurfaceEExp_CPU(list<double> parameters
 void ObjectiveExtSurfaceEExp_CPU::SingleResponse(int idx, bool deduction){
     for(int i=0; i<=Nobj-1; i++){
         
-        int rnx=Robj(3*i)-(*R)(3*idx)+(Nx-1);                  //R has no d in it, so needs to time d
-        int rny=Robj(3*i+1)-(*R)(3*idx+1)+(Ny-1);
-        int rnz=Robj(3*i+2)-(*R)(3*idx+2)-distance0;
+        int rnx= Robj(3*i) -(*R)(3*idx)+(Nx-1);                  //R has no d in it, so needs to time d
+        int rny= Robj(3*i+1)-(*R)(3*idx+1)+(Ny-1);
+        int rnz= Robj(3*i+2) - (*R)(3*idx+2);
 
         //cout<<"distance0"<<distance0<<endl;
         //cout<<"Robjx"<<Robj(3*i)<<endl;
@@ -321,6 +323,146 @@ void ObjectiveExtSurfaceEExp_CPU::Reset(){
         E_sum(3*i) = E_ext(3*i);
         E_sum(3*i+1) = E_ext(3*i+1);
         E_sum(3*i+2) = E_ext(3*i+2);
+    }
+}
+
+ObjectiveExtSurfaceEExp_CPU_Old::ObjectiveExtSurfaceEExp_CPU_Old(list<double> parameters, EvoModel* model_, bool HavePenalty_) {
+    VectorXd ExtSurfaceEExpParameters = VectorXd::Zero((parameters).size());
+    list<double>::iterator it = (parameters).begin();
+    for (int i = 0; i <= int((parameters).size() - 1); i++) {
+        ExtSurfaceEExpParameters(i) = (*it);
+        it++;
+    }
+    Have_Penalty = HavePenalty_;
+    ExtSurfaceEExpRz = ExtSurfaceEExpParameters(0);                   //(Focus, form the bottom of str to the obj plane(in xy plane))
+    exponent = ExtSurfaceEExpParameters(1);
+    ratio = int(round(ExtSurfaceEExpParameters(2)));
+
+    Have_Devx = false;
+    model = model_;
+    d = model->get_d();
+    N = model->get_N();
+    Nx = model->get_Nx();
+    Ny = model->get_Ny();
+    Nz = model->get_Nz();
+    P = model->get_P();
+    R = model->get_R();
+    Vector3d n_E0 = model->get_nE0();
+    Vector3d n_K = model->get_nK();
+    double E0 = model->get_E0();
+    double lam = model->get_wl();
+    double K = 2 * M_PI / lam;
+
+    int Nx_obj = int(floor(Nx / ratio));
+    int Ny_obj = int(floor(Ny / ratio));
+    Nobj = Nx_obj * Ny_obj;
+    Robj = VectorXi::Zero(Nobj * 3);
+    E_sum = VectorXcd::Zero(Nobj * 3);
+    E_ext = VectorXcd::Zero(Nobj * 3);
+
+    int Posobj = 0;
+
+    for (int i = 0; i <= Nx_obj - 1; i++) {
+        for (int j = 0; j <= Ny_obj - 1; j++) {
+            Robj(3 * Posobj) = i * ratio;
+            Robj(3 * Posobj + 1) = j * ratio;
+            Robj(3 * Posobj + 2) = int(round(ExtSurfaceEExpRz/d));
+            double x = d * Robj(3 * Posobj);
+            double y = d * Robj(3 * Posobj + 1);
+            double z = d * Robj(3 * Posobj + 2);
+            E_ext(3 * Posobj) = E0 * n_E0(0) * (cos(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
+            E_ext(3 * Posobj + 1) = E0 * n_E0(1) * (cos(K * (n_K(0) * y + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
+            E_ext(3 * Posobj + 2) = E0 * n_E0(2) * (cos(K * (n_K(0) * z + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
+
+            Posobj += 1;
+        }
+    }
+
+
+    distance0 = int(round(ExtSurfaceEExpRz/d)) - (Nz - 1);
+    cout << distance0 << endl;
+    vector<vector<vector<Matrix3cd>>> tmp(2 * Nx - 1, vector<vector<Matrix3cd>>(2 * Ny - 1, vector<Matrix3cd>(Nz, Matrix3cd::Zero())));
+    A_dic = tmp;
+    for (int i = 0; i <= 2 * Nx - 2; i++) {
+        for (int j = 0; j <= 2 * Ny - 2; j++) {
+            for (int k = 0; k <= Nz - 1; k++) {
+                double x = d * (i - (Nx - 1)); double y = d * (j - (Ny - 1)); double z = d * (k + distance0);
+                A_dic[i][j][k] = model->A_dic_generator(x, y, z);
+            }
+        }
+    }
+
+
+}
+
+void ObjectiveExtSurfaceEExp_CPU_Old::SingleResponse(int idx, bool deduction) {
+    for (int i = 0; i <= Nobj - 1; i++) {
+
+        int rnx = Robj(3 * i) - (*R)(3 * idx) + (Nx - 1);                  //R has no d in it, so needs to time d
+        int rny = Robj(3 * i + 1) - (*R)(3 * idx + 1) + (Ny - 1);
+        int rnz = Robj(3 * i + 2) - distance0 - (*R)(3 * idx + 2);
+
+        //cout<<"distance0"<<distance0<<endl;
+        //cout<<"Robjx"<<Robj(3*i)<<endl;
+        //cout<<"Robjy"<<Robj(3*i+1)<<endl;
+        //cout<<"Robjz"<<Robj(3*i+2)<<endl;
+        //cout<<"Rx"<<(*R)(3*idx)<<endl;
+        //cout<<"Ry"<<(*R)(3*idx+1)<<endl;
+        //cout<<"Rz"<<(*R)(3*idx+2)<<endl;
+        //cout<<"rnx "<<rnx<<endl;
+        //cout<<"rny "<<rny<<endl;
+        //cout<<"rnz "<<rnz<<endl;
+
+        Matrix3cd A = A_dic[rnx][rny][rnz];
+        if (deduction == false) {
+            E_sum(3 * i) -= (A(0, 0) * (*P)(3 * idx) + A(0, 1) * (*P)(3 * idx + 1) + A(0, 2) * (*P)(3 * idx + 2));
+            E_sum(3 * i + 1) -= (A(1, 0) * (*P)(3 * idx) + A(1, 1) * (*P)(3 * idx + 1) + A(1, 2) * (*P)(3 * idx + 2));
+            E_sum(3 * i + 2) -= (A(2, 0) * (*P)(3 * idx) + A(2, 1) * (*P)(3 * idx + 1) + A(2, 2) * (*P)(3 * idx + 2));
+        }
+        else {
+            E_sum(3 * i) += (A(0, 0) * (*P)(3 * idx) + A(0, 1) * (*P)(3 * idx + 1) + A(0, 2) * (*P)(3 * idx + 2));
+            E_sum(3 * i + 1) += (A(1, 0) * (*P)(3 * idx) + A(1, 1) * (*P)(3 * idx + 1) + A(1, 2) * (*P)(3 * idx + 2));
+            E_sum(3 * i + 2) += (A(2, 0) * (*P)(3 * idx) + A(2, 1) * (*P)(3 * idx + 1) + A(2, 2) * (*P)(3 * idx + 2));
+        }
+
+    }
+}
+
+double ObjectiveExtSurfaceEExp_CPU_Old::GroupResponse() {
+    if (Have_Penalty) {
+        return Average(&E_sum, Nobj, exponent) - model->L1Norm();
+    }
+    else {
+        return Average(&E_sum, Nobj, exponent);
+    }
+}
+
+double ObjectiveExtSurfaceEExp_CPU_Old::GetVal() {
+    Reset();
+    for (int idx = 0; idx < N; idx++) {
+        SingleResponse(idx, false);
+    }
+
+    /*
+    //----bugfix
+    VectorXd x = VectorXd::Zero(Nobj);
+    for(int i=0; i<=Nobj-1; i++){
+        Vector3cd tmp = Vector3cd::Zero();
+        tmp(0) = (E_sum)(3*i);
+        tmp(1) = (E_sum)(3*i+1);
+        tmp(2) = (E_sum)(3*i+2);
+        x(i) = pow(tmp.norm(), exponent);
+    }
+    cout<<"Max x"<<x.maxCoeff();
+    */
+    return GroupResponse();
+}
+
+void ObjectiveExtSurfaceEExp_CPU_Old::Reset() {
+    for (int i = 0; i <= Nobj - 1; i++) {
+        E_sum(3 * i) = E_ext(3 * i);
+        E_sum(3 * i + 1) = E_ext(3 * i + 1);
+        E_sum(3 * i + 2) = E_ext(3 * i + 2);
     }
 }
 

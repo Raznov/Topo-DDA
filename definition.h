@@ -335,7 +335,7 @@ class ObjectiveExtSurfaceEExp_CPU : public Objective{
           EvoModel* model;
           VectorXcd E_sum;
           VectorXcd E_ext;
-          int distance0;                                  //shortest distance between the plane and the str(corresponds to nz=0 in the A_dic (longest z corresponds to nz=max(nz)))
+          double distance0;                                  //shortest distance between the plane and the str(corresponds to nz=0 in the A_dic (longest z corresponds to nz=max(nz)))
 
     public:
       ObjectiveExtSurfaceEExp_CPU(list<double> parameters, EvoModel* model_, bool HavePenalty_);
@@ -343,6 +343,37 @@ class ObjectiveExtSurfaceEExp_CPU : public Objective{
       double GroupResponse();
       double GetVal();
       void Reset();
+};
+
+class ObjectiveExtSurfaceEExp_CPU_Old : public Objective {
+private:
+    bool Have_Devx;
+    bool Have_Penalty;
+    double d;
+    int N;
+    int Nobj;
+    double exponent;                              //2, 4 or something else for E^?
+    double ExtSurfaceEExpRz;
+    int Nx;
+    int Ny;
+    int Nz;                                       //The entire(as big as focus in Nz, which is bigger then the str length)
+    int ratio;                                 //Nx_obj = Nx/ratio; Ny_obj = Ny/ratio;
+    vector<vector<vector<Matrix3cd>>> A_dic;
+
+    VectorXcd* P;
+    VectorXi* R;
+    VectorXi Robj;
+    EvoModel* model;
+    VectorXcd E_sum;
+    VectorXcd E_ext;
+    int distance0;                                  //shortest distance between the plane and the str(corresponds to nz=0 in the A_dic (longest z corresponds to nz=max(nz)))
+
+public:
+    ObjectiveExtSurfaceEExp_CPU_Old(list<double> parameters, EvoModel* model_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
 };
 
 
