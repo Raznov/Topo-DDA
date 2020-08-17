@@ -17,10 +17,9 @@ int main(){
 
     
     int Nx, Ny, Nz;
-    Nx = 102; Ny = 102; Nz = 15;
-    //Nx = 103;
-    //Ny = 103;
-    //Nz = 16;
+    //Nx = 103; Ny = 103; Nz = 16;
+    Nx = 83; Ny = 83; Nz = 13;
+    
     int N = 0;
     VectorXi total_space = build_a_bulk(Nx, Ny, Nz);
     list<Structure> ln;
@@ -29,10 +28,10 @@ int main(){
     Vector3i direction;
     Vector3d l;
     Vector3d center;
-    l << 49.0, 49.0, 0.0;
-    center << 24.5, 24.5, 14.0;
-    //l << 39.0, 39.0, 0.0;
-    //center << 19.5, 19.5, 11.0;
+    //l << 50.0, 50.0, 15.0;
+    //center << 25.0, 25.0, 7.5;
+    l << 40.0, 40.0, 12.0;
+    center << 20.0, 20.0, 6.0;
     //l << 79.0, 79.0, 11.0;
     //center << 39.5, 39.5, 5.5;
     direction<<0,0,-1;
@@ -41,10 +40,10 @@ int main(){
     Structure s2(S.get_total_space(), &s1, 1);
     Structure s3(S.get_total_space(), &s1, 2);
     Structure s4(S.get_total_space(), &s1, 3);
-    Structure s5(S.get_total_space(), &s1, direction, times, 2);
-    Structure s6(S.get_total_space(), &s2, direction, times, 2);
-    Structure s7(S.get_total_space(), &s3, direction, times, 2);
-    Structure s8(S.get_total_space(), &s4, direction, times, 2);
+    //Structure s5(S.get_total_space(), &s1, direction, times, 2);
+    //Structure s6(S.get_total_space(), &s2, direction, times, 2);
+    //Structure s7(S.get_total_space(), &s3, direction, times, 2);
+    //Structure s8(S.get_total_space(), &s4, direction, times, 2);
 
 
 
@@ -52,27 +51,27 @@ int main(){
     S = S + s2;
     S = S + s3;
     S = S + s4;
-    S = S + s5;
-    S = S + s6;
-    S = S + s7;
-    S = S + s8;
+    //S = S + s5;
+    //S = S + s6;
+    //S = S + s7;
+    //S = S + s8;
     //S=S+s0;
     //S.show_something_about_Structures();
 
     
-    double d = 20;
+    double d = 25;
 
     double lam = 500;
     Vector3d n_K;
     n_K << 0.0, 0.0, 1.0;
-    double E0 = 1.0;
+    double E0 = 0.5;
     Vector3d n_E0;
     n_E0 << 1.0, 0.0, 0.0;
     Vector2cd material = Get_2_material("Air", "SiO2", lam, "nm");
     //Model test_model(&S, d, lam, n_K, E0, n_E0, material);
     double epsilon = 100;
 
-    double focus = 325;   //nm       
+    double focus = 350;   //nm       
 
     //Vector3d r;
     //r<<center(0)*d, center(1)*d, focus;
@@ -94,7 +93,7 @@ int main(){
     bool HavePenalty = false;
     double PenaltyFactor = 0.0001;
     list<list<double>*> ObjectParameters{ &ObjectParameter1 };
-    string save_position = "./275-290-2D-sym-20/";
+    string save_position = "./300-350-sym-25-0.5/";
 
 
     EvoModel TestModel(&ObjectFunctionNames, &ObjectParameters, epsilon, HavePathRecord, HavePenalty, PenaltyFactor, save_position, &S, d, lam, n_K, E0, n_E0, material);
