@@ -859,7 +859,8 @@ void Model::bicgstab(int MAX_ITERATION,double MAX_ERROR){
     std::complex<double> zeta;
     
     
-
+    //Always starts with P=0 to avoid strange behaviour
+    P = VectorXcd::Zero(N * 3);
 
 
 
