@@ -185,7 +185,7 @@ def EField(geometry,diel,d,wl,k_dir,E_dir,E_tot,iteration=-1,position="./",decim
 
 """
 #Code used for single DDA calculation or if you only wants to see the final results for Evooptimization
-data=np.genfromtxt("Model_results.txt",dtype=complex)
+data=np.genfromtxt("Model_results54.txt",dtype=complex)
 N=int(np.real(data[3]))
 #print(np.real(data[(3*N+4):(6*N+4)]))
 geometry=np.real(data[4:(3*N+4)]).astype(int)
@@ -204,7 +204,7 @@ EField(geometry_plot, diel, d, wl, k_dir, E_dir, E_tot)
 """
 
 
-
+"""
 #Code used for taking a look at the geometry you built
                                    
 data=np.genfromtxt("Space.txt",dtype=complex)
@@ -214,7 +214,7 @@ diel=np.real(data[(3*N+4):(6*N+4)])
 para=0.5*np.real(data[(6*N+4):(9*N+4)])
 d=1
 Shape(geometry,para, d)
-
+"""
 
 """
 #Code used for optimization
@@ -261,6 +261,20 @@ if __name__ == "__main__":
                 EField(geometry_plot, diel, d, wl, k_dir, E_dir, E_tot, iteration=it, position=pos+"E-field/", decimal=dec)
             it += 1
 """
+
+
+##tmp:
+name = '55'
+
+data=np.genfromtxt('Model_results'+name+'.txt',dtype=complex)
+N=int(np.real(data[3]))
+geometry=np.real(data[4:(3*N+4)]).astype(int)
+diel=np.real(data[(6*N+4):(9*N+4)])
+
+polarization=data[(3*N+4):(6*N+4)]
+np.savetxt(name+'Diel.txt', diel, '%f')
+np.savetxt(name+'Geometry.txt', geometry, '%d')
+np.savetxt(name+'polarization.txt', polarization, '%f')
 
 
 

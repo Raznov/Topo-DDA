@@ -60,6 +60,11 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
     n_E0=n_E0_;
     material=material_;
 
+    cout << "d" << d << endl;
+    cout << "lam" << lam << endl;
+    cout << "K" << K << endl;
+    cout << "E0" << E0 << endl;
+
     tie(Nx, Ny, Nz, N)=(*space_).get_Ns();
     list<Structure> *ln=(*space_).get_ln();
     R=VectorXi::Zero(3*N);
@@ -172,6 +177,9 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
     for (int i=0;i<N*3;i++) {
         al(i)=1.0/Get_Alpha(lam,K,d,diel(i));
     }  
+
+    cout << "al" << al(0) << endl;
+
     al_max = al;
     verbose = true;
 
@@ -408,7 +416,7 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
     VectorXd diel_tmp = VectorXd::Zero(3 * N);
     // Why not directly use diel_old?
     //-----------------------------------------------------------------Input strs-------------------------------------------------------------
-    list<Structure>::iterator it=(*ln).begin();
+    list<Structure>::iterator it = (*ln).begin();
 
     int PositionParaN = 0;
     for (int i = 0; i <= int((*ln).size()) - 1; i++) {
@@ -424,10 +432,9 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
     int n1 = 0;
     it = (*ln).begin();
     int PositionParaPos = 0;
-    VectorXi RPara = VectorXi::Zero(3 * N);
-    for(int i=0;i<=int((*ln).size())-1;i++){
-        int n2=((*((*it).get_geometry())).size());
-        if((*it).get_para()==1){
+    for (int i = 0; i <= int((*ln).size()) - 1; i++) {
+        int n2 = ((*((*it).get_geometry())).size());
+        if ((*it).get_para() == 1) {
             para_nums.push_back(n2);
             para_starts.push_back(n1);
             for (int i = int(round(n1 / 3)); i <= int(round(n1 / 3)) + int(round(n2 / 3)) - 1; i++) {
@@ -435,26 +442,25 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
                 PositionParaPos += 1;
             }
         }
-        if((*it).get_para()==2){
+        if ((*it).get_para() == 2) {
             para_dep_nums.push_back(n2);
             para_dep_starts.push_back(n1);
         }
-        for(int j=0;j<=n2-1;j++){
-            R(n1+j)=(*((*it).get_geometry()))(j);
-            diel_tmp(n1+j)=(*((*it).get_diel()))(j);
-            RDep(n1+j)= (*((*it).get_geometry_dep()))(j);
-            RPara(n1 + j) = (*it).get_para();
+        for (int j = 0; j <= n2 - 1; j++) {
+            R(n1 + j) = (*((*it).get_geometry()))(j);
+            diel_tmp(n1 + j) = (*((*it).get_diel()))(j);
+            RDep(n1 + j) = (*((*it).get_geometry_dep()))(j);
         }
         it++;
-        n1=n1+n2;
+        n1 = n1 + n2;
     }
 
 
     for (int i = 0; i <= PositionPara.size() - 1; i++) {
         list<int> tmpPos;
-        int Parax = R(3 * PositionPara(i));
-        int Paray = R(3 * PositionPara(i) + 1);
-        int Paraz = R(3 * PositionPara(i) + 2);
+        int Parax = R(3 * i);
+        int Paray = R(3 * i + 1);
+        int Paraz = R(3 * i + 2);
         for (int j = 0; j <= N - 1; j++) {
             int jx = R(3 * j);
             int jy = R(3 * j + 1);
@@ -462,7 +468,7 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
             int Depx = RDep(3 * j);
             int Depy = RDep(3 * j + 1);
             int Depz = RDep(3 * j + 2);
-            if (RPara(3 * j) == 2) {
+            if (jx != Parax || jy != Paray || jz != Paraz) {
                 if (Depx == Parax && Depy == Paray && Depz == Paraz) {
                     tmpPos.push_back(j);
                 }
@@ -478,8 +484,6 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
         it1PositionDep++;
     }
     if (PositionDepN + PositionParaN != N) {
-        cout << "PositionDepN = " << PositionDepN << endl;
-        cout << "PositionParaN = " << PositionParaN << endl;
         cout << "In Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_) : PositionDepN + PositionParaN! = N" << endl;
     }
 
@@ -714,6 +718,7 @@ Model::Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, V
 
 Model::~Model(){
         delete [] AHos;
+        cudaFree(ADev);
         cudaFree(ADev); 
         cudaFree(A00);
         cudaFree(A01);
@@ -842,7 +847,7 @@ void Model::bicgstab(int MAX_ITERATION,double MAX_ERROR){
 
     //fftw_init_threads();                                                       //////////Initialize the multi-thread
     //fftw_plan_with_nthreads(NUM_THREADS);
-    cout<<"Threads"<<NUM_THREADS<<endl;;
+    //cout<<"Threads"<<NUM_THREADS<<endl;;
     VectorXcd p=VectorXcd::Zero(N*3); 
     VectorXcd t = VectorXcd::Zero(N*3);
     VectorXcd w = VectorXcd::Zero(N*3);
@@ -1184,7 +1189,7 @@ void Model::output_to_file(string save_position, int iteration){
     
     string name;
     name=save_position+"Model_results"+to_string(iteration)+".txt";
-    
+    //name = "Model_results" + to_string(iteration) + ".txt";
     ofstream fout(name);
     fout<<Nx<<endl<<Ny<<endl<<Nz<<endl<<N<<endl;
     fout<<R<<endl;

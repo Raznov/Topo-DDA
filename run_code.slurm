@@ -3,11 +3,11 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=10240MB
-#SBATCH --time=03:00:00
+#SBATCH --time=00:30:00
 #SBATCH --partition=commons
 #SBATCH --mail-user=yz128@rice.com
 #SBATCH --output="SlurmOut/job-%j.out"
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:2
 echo "I Ran on:"
 
 cat $SLURM_NODEFILE

@@ -329,8 +329,8 @@ VectorXcd EvoModel::devp(double epsilon){
 
 void EvoModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method){
     ofstream convergence;
-    
-    convergence.open(save_position+"convergence.txt");
+    //convergence.open(save_position+"convergence.txt");
+    convergence.open("convergence.txt");
     
     //Parameters for Adam Optimizer.
     double beta1 = 0.9;
@@ -534,6 +534,7 @@ void EvoModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITER
         //double step_len = this->get_step_length(gradients,epsilon);
         VectorXd step=epsilon*gradients;               //Find the maximum. If -1 find minimum
         cout << "epsilon = " << epsilon << endl;
+        cout << "step = "<< step.mean() << endl;
         //cout<<"devp1"<<devp<<endl;
         //cout<<"lambdaT1"<<endl<<lambdaT<<endl;
         //cout<<"Adevxp1"<<endl<<Adevxp<<endl;
@@ -549,6 +550,14 @@ void EvoModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITER
     
     convergence.close();
 
+}
+
+double EvoModel::CalTheObjForSingleStr(int MAX_ITERATION, double MAX_ERROR, int Name) {
+    this->bicgstab(MAX_ITERATION, MAX_ERROR);
+    this->update_E_in_structure();
+    this->output_to_file(save_position + "Model_output\\", Name);
+    double obj = objective->GetVal();
+    return obj;
 }
 
 double EvoModel::MajorObjective(){
@@ -580,8 +589,14 @@ Objective* EvoModel::ObjectiveFactory(string ObjectName, list<double> ObjectPara
     if (MajorObjectFunctionName == "ExtSurfaceEExp_CPU") {
         return new ObjectiveExtSurfaceEExp_CPU(ObjectParameters, this, HavePenalty);
     }
+    if (MajorObjectFunctionName == "ExtSurfaceEMax") {
+        return new ObjectiveExtSurfaceEMax(ObjectParameters, this, HavePenalty);
+    }
     if (MajorObjectFunctionName == "ExtSurfaceEExp_CPU_Old") {
         return new ObjectiveExtSurfaceEExp_CPU_Old(ObjectParameters, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "ObjectiveG") {
+        return new ObjectiveG(ObjectParameters, this, HavePenalty);
     }
     else{
         // NOT FINALIZED. SHOULD RAISE AN EXCEPTION HERE.
@@ -733,3 +748,5 @@ double EvoModel::L1Norm(){
     Penalty = Penalty * PenaltyFactor;
     return Penalty;
 }
+
+
