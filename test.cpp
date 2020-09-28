@@ -30,17 +30,17 @@ int main() {
     Vector3d center;
     //l << 50.0, 50.0, 15.0;
     //center << 25.0, 25.0, 7.5;
-    l << 80.0, 80.0, 12.0;
-    center << 40.0, 40.0, 6.0;
+    l << 80.0, 80.0, 1.0;
+    center << 40.0, 40.0, 12.0;
     //l << 79.0, 79.0, 11.0;
     //center << 39.5, 39.5, 5.5;
     direction << 0, 0, -1;
-    int times = 15;
+    int times = 13;
     Structure s1(S.get_total_space(), "ONES", l, center, 1);
     //Structure s2(S.get_total_space(), &s1, 1);
     //Structure s3(S.get_total_space(), &s1, 2);
     //Structure s4(S.get_total_space(), &s1, 3);
-    //Structure s5(S.get_total_space(), &s1, direction, times, 2);
+    Structure s5(S.get_total_space(), &s1, direction, times, 2);
     //Structure s6(S.get_total_space(), &s2, direction, times, 2);
     //Structure s7(S.get_total_space(), &s3, direction, times, 2);
     //Structure s8(S.get_total_space(), &s4, direction, times, 2);
@@ -51,7 +51,7 @@ int main() {
     //S = S + s2;
     //S = S + s3;
     //S = S + s4;
-    //S = S + s5;
+    S = S + s5;
     //S = S + s6;
     //S = S + s7;
     //S = S + s8;
@@ -86,14 +86,14 @@ int main() {
     double exponent = 2;
     double ratio = 4;
 
-    list<double> ObjectParameter1{ focus, exponent, ratio };
-    //list<double> ObjectParameter2{center(0)*d,center(1)*d,focus};
+    //list<double> ObjectParameter1{ focus, exponent, ratio };
+    list<double> ObjectParameter2{center(0)*d,center(1)*d,focus};
 
     bool HavePathRecord = true;
     bool HavePenalty = false;
     double PenaltyFactor = 0.0001;
-    list<list<double>*> ObjectParameters{ &ObjectParameter1 };
-    string save_position = "./test-3D/";
+    list<list<double>*> ObjectParameters{ &ObjectParameter2 };
+    string save_position = "./test-2D/";
 
 
     EvoModel TestModel(&ObjectFunctionNames, &ObjectParameters, epsilon, HavePathRecord, HavePenalty, PenaltyFactor, save_position, &S, d, lam, n_K, E0, n_E0, material);
