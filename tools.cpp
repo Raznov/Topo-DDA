@@ -43,8 +43,9 @@ complex<double> Get_material(string mat, double wl, string unit){
     string mat_real_name=diel_dic[mat]+real;
     string mat_imag_name=diel_dic[mat]+imag; 
     double mat_real,mat_imag,a,b,up,down,up_value,down_value;
+    
     up=1.0;
-    down=-1.0;
+    down=0.0;
 
     ifstream mat_real_file;
     mat_real_file.open(mat_real_name);
@@ -65,9 +66,10 @@ complex<double> Get_material(string mat, double wl, string unit){
     }
     else{
         mat_real=down_value+(wl-down)*(up_value-down_value)/(up-down); 
+        cout << "real:" << mat_real << endl;
     }
     up=1.0;
-    down=-1.0;
+    down=0.0;
 
     ifstream mat_imag_file;
     mat_imag_file.open(mat_imag_name);
@@ -88,6 +90,7 @@ complex<double> Get_material(string mat, double wl, string unit){
     }
     else{
         mat_imag=down_value+(wl-down)*(up_value-down_value)/(up-down); 
+        cout << "imag:" << mat_imag << endl;
     }
     
     complex<double> result=mat_real+1.0i*mat_imag;
@@ -101,7 +104,7 @@ Vector2cd Get_2_material(string sub, string mat, double wl, string unit){
     return result;
 }
 
-complex<double> Get_Alpha(double lam,double K,double d,complex<double> diel){
+complex<double> Get_Alpha(double lam, double K, double d, complex<double> diel, Vector3d n_E0, Vector3d n_K){
     double b1 = -1.891531;
     b1 = -1.891531;
     double b2 = 0.1648469;
@@ -110,7 +113,8 @@ complex<double> Get_Alpha(double lam,double K,double d,complex<double> diel){
     std::complex<double> a1=(3*pow(d,3)/(4*M_PI))*(diel-1.0)/(diel+2.0);
     //cout<<a1<<endl;
     std::complex<double> result=0.0+(2.0/3.0)*pow(K*d,3)*1.0i;
-    result=1.0+(a1/pow(d,3))*((b1+diel*b2+diel*b3)*pow(K*d,2)-result);
+    double S = pow(n_E0(0) * n_K(0), 2) + pow(n_E0(1) * n_K(1), 2) + pow(n_E0(2) * n_K(2), 2);
+    result = 1.0 + (a1 / pow(d, 3)) * ((b1 + diel * b2 + diel * b3 * S) * pow(K * d, 2) - result);
     //cout<<result<<endl;
     result=a1/result;
     return result;

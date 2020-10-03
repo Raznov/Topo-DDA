@@ -185,7 +185,6 @@ def EField(geometry,diel,d,wl,k_dir,E_dir,E_tot,iteration=-1,position="./",decim
 
 """
 #Code used for single DDA calculation or if you only wants to see the final results for Evooptimization
-
 data=np.genfromtxt("Model_results.txt",dtype=complex)
 N=int(np.real(data[3]))
 #print(np.real(data[(3*N+4):(6*N+4)]))
@@ -200,10 +199,7 @@ E_dir=np.real(data[(9*N+9):(9*N+12)])
 N_plot=int(np.real(data[(9*N+12)]))
 geometry_plot=np.real(data[(9*N+13):(9*N+13+N_plot)]).astype(int)
 E_tot=(data[(9*N+13+N_plot):(9*N+13+2*N_plot)])
-
-
 Shape(geometry, diel, d)
-
 EField(geometry_plot, diel, d, wl, k_dir, E_dir, E_tot)
 """
 
@@ -220,7 +216,7 @@ d=1
 Shape(geometry,para, d)
 """
 
-
+"""
 #Code used for optimization
 
 #final, pos=input().split()
@@ -231,6 +227,7 @@ if __name__ == "__main__":
     objective_number = 1
     pos="./" + sys.argv[1] + "/"
     it_start = sys.argv[2]
+    it_end = sys.argv[3]
 
     it = 0
     dec = 5
@@ -266,14 +263,65 @@ if __name__ == "__main__":
             geometry_plot=np.real(data[(9*N+13):(9*N+13+N_plot)]).astype(int)
             E_tot=data[(9*N+13+N_plot):(9*N+13+2*N_plot)]
             ##print(6*N,N_plot,data.shape,E_tot.shape)
-            if(it >= int(it_start)):
+            if(it >= int(it_start) and it <= int(it_end)):
                 Shape(geometry, diel, d, iteration=it, position=pos+"Shape/", decimal=dec, FullLattice=False)
                 Shape(geometry, diel, d, iteration=it, position=pos+"ShapeSolid/", decimal=dec, FullLattice=True)
-            """
+            
             if(it==99):
                 EField(geometry_plot, diel, d, wl, k_dir, E_dir, E_tot, iteration=it, position=pos+"E-field/", decimal=dec)
-            """
+            
             it += 1
+"""
 
+
+#Code used for optimization with AProductCore
+
+#final, pos=input().split()
+
+
+if __name__ == "__main__":
+
+    objective_number = 1
+    pos="./" + sys.argv[1] + "/"
+    it_start = sys.argv[2]
+    it_end = sys.argv[3]
+
+    it = 0
+    dec = 5
+    
+    if objective_number == 1:
+        convergence=np.genfromtxt(pos+"convergence.txt")
+        fig=plt.figure()
+        plt.plot(np.arange(len(convergence)),convergence)
+        plt.xlim = (0,len(convergence)-1)
+        plt.savefig(pos+"convergence.png")
+    else:
+        convergence=np.genfromtxt(pos+"convergence.txt")
+        for i in range(objective_number):
+            fig=plt.figure()
+            plt.plot(np.arange(len(convergence)),convergence[:,i])
+            plt.xlim = (0,len(convergence)-1)
+            plt.savefig(pos+"convergence_{}.png".format(i))
+    
+    #tmp=os.listdir(pos+"Model_output")
+    #tmp1=tmp[1]
+    #print(type(tmp1))
+    #print(tmp1[14:tmp1.index(".txt")])
+
+    for filename in sorted(os.listdir(pos+"Model_output"), key = lambda x: int(x[14:x.index(".txt")])):
+        if filename.endswith(".txt"):
+            print(filename)
+            data=np.genfromtxt(os.path.join(pos+"Model_output",filename),dtype=complex)
+            N=int(np.real(data[3]))
+            #print(np.real(data[(3*N+4):(6*N+4)]))
+            geometry=np.real(data[4:(3*N+4)]).astype(int)
+            diel=data[(3*N+4):(6*N+4)]
+            d=np.real(data[6*N+4])
+            wl=np.real(data[6*N+5])
+            ##print(6*N,N_plot,data.shape,E_tot.shape)
+            if(it >= int(it_start) and it <= int(it_end)):
+                Shape(geometry, diel, d, iteration=it, position=pos+"Shape/", decimal=dec, FullLattice=False)
+                Shape(geometry, diel, d, iteration=it, position=pos+"ShapeSolid/", decimal=dec, FullLattice=True)
+            it += 1
 
 
