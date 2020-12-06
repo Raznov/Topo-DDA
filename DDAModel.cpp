@@ -30,6 +30,7 @@ DDAModel::DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vecto
     RResult = *R;
     
     P = VectorXcd::Zero(N*3);
+    P_store = P;
     P_max = P;
     E = VectorXcd::Zero(N*3);
     Einternal = VectorXcd::Zero(N*3);
@@ -198,6 +199,16 @@ void DDAModel::bicgstab(int MAX_ITERATION,double MAX_ERROR){
     time = duration_cast<milliseconds>(t_end-t_start).count();
     cout<<"                ERROR:does not converge in "<<MAX_ITERATION<<" iterations"<<endl;
     return;
+}
+
+void DDAModel::save_P(){
+    P_store = P;
+    int N = (*Core).get_N();
+    P = VectorXcd::Zero(N * 3);
+}
+
+void DDAModel::set_P(){
+    P = P_store;
 }
 
 void DDAModel::change_E(VectorXcd E_){
