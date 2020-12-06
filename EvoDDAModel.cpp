@@ -631,7 +631,7 @@ double EvoDDAModel::L1Norm(){
     }
     //SpeedCtrl is used to control the contribution of penalty in different iterations.
     //For exmaple, 10 would mean barely any penalty in the first half of the iterations.
-    int SpeetCtrl = 10;
+    int SpeedCtrl = 10;
     Penalty = Penalty * PenaltyFactor * pow((iteration+1)*1.0/MAX_ITERATION_EVO,SpeedCtrl);
     return Penalty;
 }

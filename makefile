@@ -3,12 +3,12 @@ CC = g++
 cuFFT_INCLUDE_PATH = "/opt/apps/software/Compiler/GCC/8.3.0/CUDA/10.1.168/include"
 cuFFT_LIB_DIR = "/opt/apps/software/Compiler/GCC/8.3.0/CUDA/10.1.168/lib64"
 FLAG = -fopenmp -lpthread -O3 -Wall -Wno-maybe-uninitialized -fPIC -m64 -I${cuFFT_INCLUDE_PATH} -L${cuFFT_LIB_DIR} -Wl,--no-as-needed -lcuda -lcudart -lcufft -lm -ldl
-OBJ = test.o Structure.o Space.o Model.o EvoModel.o tools.o AProductCore.o DDAModel.o EvoDDAModel.o Objective.o ObjectiveDDAModel.o kernel.o
+OBJ = test2d_periodic_TiO2.o Structure.o Space.o Model.o EvoModel.o tools.o AProductCore.o DDAModel.o EvoDDAModel.o Objective.o ObjectiveDDAModel.o SiCi.o kernel.o
 
 te : $(OBJ)
 	$(CC) $(FLAG) -o te $(OBJ)
-test.o : test.cpp
-	$(CC) $(FLAG) -c test.cpp
+test2d_periodic_TiO2.o : test2d_periodic_TiO2.cpp
+	$(CC) $(FLAG) -c test2d_periodic_TiO2.cpp
 Structure.o : Structure.cpp
 	$(CC) $(FLAG) -c Structure.cpp
 Space.o : Space.cpp
@@ -29,6 +29,8 @@ EvoDDAModel.o : EvoDDAModel.cpp
 	$(CC) $(FLAG) -c EvoDDAModel.cpp
 ObjectiveDDAModel.o : ObjectiveDDAModel.cpp
 	$(CC) $(FLAG) -c ObjectiveDDAModel.cpp
+SiCi.o : SiCi.cpp
+	$(CC) $(FLAG) -c SiCi.cpp
 kernel.o : kernel.cu
 	nvcc -w -c kernel.cu
 
