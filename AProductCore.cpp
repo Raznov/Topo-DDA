@@ -2,14 +2,18 @@
 #define NUM_THREADS 6
 
 
-
-AProductCore::AProductCore(Space* space_, double d_, double lam_, Vector2cd material_){
+AProductCore::AProductCore(Space* space_, double d_, double lam_, Vector2cd material_, string AMatrixMethod_){
     
     space = space_;
     d=d_;
     lam=lam_;
     K=2*M_PI/lam;
     material = material_;
+    AMatrixMethod = AMatrixMethod_;
+
+    if (AMatrixMethod == "FCD") {
+        SiCiValue = new SiCi();
+    }
 
     cout << "(d=" << d << ") " << "(lam=" << lam << ") " << "(K=" << K << ") " << endl;
 
@@ -311,13 +315,22 @@ AProductCore::AProductCore(Space* space_, double d_, double lam_, Vector2cd mate
     
 }
 
-AProductCore::AProductCore(Space* space_, double d_, double lam_, Vector2cd material_, int MAXm_, int MAXn_, double Lm_, double Ln_) {
+AProductCore::AProductCore(Space* space_, double d_, double lam_, Vector2cd material_, int MAXm_, int MAXn_, double Lm_, double Ln_, string AMatrixMethod_) {
 
     space = space_;
     d = d_;
     lam = lam_;
     K = 2 * M_PI / lam;
     material = material_;
+    MAXm = MAXm_;
+    MAXn = MAXn_;
+    Lm = Lm_;
+    Ln = Ln_;
+    cout << "Calculating periodic sturcture, rep in x direction: " <<MAXm << ", rep in y direction: " << MAXn << ". Lx: " << Lm << ", Ly: " << Ln << endl;
+    AMatrixMethod = AMatrixMethod_;
+    if (AMatrixMethod == "FCD") {
+        SiCiValue = new SiCi();
+    }
 
     cout << "(d=" << d << ") " << "(lam=" << lam << ") " << "(K=" << K << ") " << endl;
 
@@ -439,6 +452,9 @@ AProductCore::AProductCore(Space* space_, double d_, double lam_, Vector2cd mate
                     for (int n = -MAXn; n <= MAXn; n++) {
                         Atmp = Atmp + this->A_dic_generator(x, y, z, m, n);
                     }
+                }
+                if(i==2&&j==2&&k==0){
+                    cout << "A: " << Atmp(0,0) << "," << Atmp(0,1) << "," << Atmp(0,2) << endl;
                 }
 
                 int first[6] = { 0, 0, 0, 1, 1, 2 };
@@ -682,7 +698,34 @@ AProductCore::~AProductCore(){
         
 }
 
-Matrix3cd AProductCore::A_dic_generator(double x,double y,double z){
+Matrix3cd AProductCore::A_dic_generator(double x, double y, double z) {
+    if (AMatrixMethod == "FCD") {
+        return this->FCD_inter(x, y, z);
+    }
+    else if (AMatrixMethod == "LDR") {
+        return this->LDR_inter(x, y, z);
+    }
+    else {
+        string error_string = "\""+AMatrixMethod+"\" is not a valid polarizabiliy calculation method.";
+        throw invalid_argument(error_string);
+    }
+}
+
+Matrix3cd AProductCore::A_dic_generator(double x, double y, double z, int m, int n) {
+    double gamma = 0.01;
+    x = x + m * Lm;
+    y = y + n * Ln;
+    Matrix3cd result = this->A_dic_generator(x, y, z);
+    double phase_factor = exp(-pow(gamma*K*sqrt(x*x+y*y+z*z),4));
+    for(int i=0; i<3; i++){
+        for(int j=0; j<3; j++){
+            result(i,j) *= phase_factor;
+        }
+    }
+    return result;
+}
+
+Matrix3cd AProductCore::LDR_inter(double x,double y,double z){
     Matrix3cd result(3,3);
     double xsquare = x*x; double ysquare = y*y; double zsquare = z*z;
     double rnorm = sqrt(xsquare+ysquare+zsquare);
@@ -719,10 +762,74 @@ Matrix3cd AProductCore::A_dic_generator(double x,double y,double z){
     }
 }
 
-Matrix3cd AProductCore::A_dic_generator(double x, double y, double z, int m, int n) {
-    x = x + m * Lm;
-    y = y + n * Ln;
-    return this->A_dic_generator(x, y, z);
+Matrix3cd AProductCore::FCD_inter(double x, double y, double z) {
+    Matrix3cd result(3, 3);
+    double xsquare = x * x; double ysquare = y * y; double zsquare = z * z;
+    double rnorm = sqrt(xsquare + ysquare + zsquare);
+
+    if (rnorm == 0.0) {
+        result(0, 0) = 0.0;
+        result(1, 1) = 0.0;
+        result(2, 2) = 0.0;
+        return result;
+    }
+    else {
+        
+        double xy = x * y; double yz = y * z; double zx = z * x;
+        double rsquare = rnorm * rnorm;
+        double rcubic = rnorm * rnorm * rnorm;
+        double Kf = M_PI / d;
+        double Cz = (*SiCiValue).get_Ci((Kf + K) * rnorm);
+        // cout << "C+ input: " << (Kf + K) * rnorm << ", output: " << Cz << endl;
+        double Cf = (*SiCiValue).get_Ci((Kf - K) * rnorm);
+        // cout << "C- input: " << (Kf - K) * rnorm << ", output: " << Cf << endl;
+        double Sz = (*SiCiValue).get_Si((Kf + K) * rnorm);
+        double Sf = (*SiCiValue).get_Si((Kf - K) * rnorm);
+        double Cz1 = cos((Kf + K) * rnorm) / rnorm;
+        double Cf1 = cos((Kf - K) * rnorm) / rnorm;
+        double Sz1 = sin((Kf + K) * rnorm) / rnorm;
+        double Sf1 = sin((Kf - K) * rnorm) / rnorm;
+        double Cz2 = (-((Kf + K) * rnorm) * sin((Kf + K) * rnorm) - cos((Kf + K) * rnorm)) / rsquare;
+        double Cf2 = (-((Kf - K) * rnorm) * sin((Kf - K) * rnorm) - cos((Kf - K) * rnorm)) / rsquare;
+        double Sz2 = (((Kf + K) * rnorm) * cos((Kf + K) * rnorm) - sin((Kf + K) * rnorm)) / rsquare;
+        double Sf2 = (((Kf - K) * rnorm) * cos((Kf - K) * rnorm) - sin((Kf - K) * rnorm)) / rsquare;
+        double kr = K * rnorm;
+        double kr2 = pow(kr, 2);
+        double sikr = sin(kr);
+        double cskr = cos(kr);
+        double sikfr = sin(Kf * rnorm);
+        double cskfr = cos(Kf * rnorm);
+        complex<double> CC = M_PI * 1i + Cf - Cz;
+        double C1C1 = Cf1 - Cz1;
+        double C2C2 = Cf2 - Cz2;
+        double SS = Sz + Sf;
+        double S1S1 = Sz1 + Sf1;
+        double S2S2 = Sz2 + Sf2;
+        complex<double> gf = (sikr * CC + cskr * SS) / (M_PI * rnorm);
+        complex<double> const1 = (kr * cskr - sikr) * CC - (kr * sikr + cskr) * SS + rnorm * sikr * C1C1 + rnorm * cskr * S1S1;
+        complex<double> const2 = (-K * kr * sikr) * CC - (K * kr * cskr) * SS + (2 * kr * cskr) * C1C1 - (2 * kr * sikr) * S1S1 + rnorm * sikr * C2C2 + rnorm * cskr * S2S2;
+        complex<double> gf1 = const1 / (M_PI * rsquare);
+        complex<double> gf2 = (rnorm * const2 - 2.0 * const1) / (M_PI * rcubic);
+        double hr = (sikfr - Kf * rnorm * cskfr) / (2.0 * M_PI * M_PI * rcubic);
+        //complex<double> gf1 = 1.0/M_PI/rsquare*(CC*(kr*cskr-sikr)+2.0*sikfr+(cskr+kr*sikr)*(Sf-Sz));
+        //complex<double> gf2 = 1.0/M_PI/rcubic*(2.0*rnorm*(-1.0i*K*M_PI*cskr+Kf*cskfr)-1.0i*M_PI*(-2.0+kr2)*sikr+(Cz-Cf)*(2.0*kr*cskr+(-2.0+kr2)*sikr)-6.0*sikfr+((-2.0+kr2)*cskr-2.0*kr*sikr)*(Sf-Sz));
+        complex<double> term1 = K * K * gf + gf1 / rnorm + (4.0 * M_PI / 3.0) * hr;
+        complex<double> term2 = (gf2 - gf1 / rnorm) / rsquare;
+
+        result(0, 0) = term1 + xsquare * term2;
+        result(0, 1) = xy * term2;
+        result(0, 2) = zx * term2;
+        result(1, 1) = term1 + ysquare * term2;
+        result(1, 2) = yz * term2;
+        result(2, 2) = term1 + zsquare * term2;
+
+        result(1, 0) = result(0, 1);
+        result(2, 0) = result(0, 2);
+        result(2, 1) = result(1, 2);
+
+        return -1.0*result;
+
+    }
 }
 
 VectorXcd AProductCore::Aproduct(VectorXcd &b){
