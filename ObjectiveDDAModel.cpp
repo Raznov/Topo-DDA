@@ -13,7 +13,7 @@ ObjectivePointEDDAModel::ObjectivePointEDDAModel(list<double> parameters, DDAMod
     x=PointEParameters(0);
     y=PointEParameters(1);
     z=PointEParameters(2);
-    Have_Devx = false;
+    Have_Devx = true;
     model = model_;
     evomodel = evomodel_;
     AProductCore* Core = (*model).get_Core();
@@ -552,15 +552,6 @@ void ObjectiveEDipole_TDipoleDDAModel::Reset(){
     EDipole_sum = Vector3cd::Zero();
     TDipole_sum = Vector3cd::Zero();
 }
-
-
-
-
-
-
-
-
-
 
 
 

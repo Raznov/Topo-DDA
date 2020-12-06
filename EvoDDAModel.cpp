@@ -303,14 +303,14 @@ VectorXcd EvoDDAModel::devp(double epsilon, DDAModel* CurrentModel, ObjectiveDDA
 
 
 
-void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method){
+void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO_, string method){
     ofstream convergence;
     ofstream num_iters_main;
     ofstream num_iters_adjoint;
-    convergence.open("convergence.txt");
+    convergence.open(save_position+"convergence.txt");
     num_iters_main.open(save_position+"iteration_main.txt");
     num_iters_adjoint.open(save_position+"iteration_adjoint.txt");
-    
+    MAX_ITERATION_EVO = MAX_ITERATION_EVO_;    
     //Parameters for Adam Optimizer.
     double beta1 = 0.9;
     double beta2 = 0.99;
@@ -319,7 +319,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
     
     
     double epsilon_partial=0.001;
-    for(int iteration=0;iteration<=MAX_ITERATION_EVO-1;iteration++){
+    for(iteration=0;iteration<=MAX_ITERATION_EVO-1;iteration++){
         //solve DDA
         cout << "######################EVO ITERATION " << iteration << "#######################" << endl;
         //get object function value
@@ -552,7 +552,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
         
         VectorXd step=epsilon*gradients;               //Find the maximum. If -1 find minimum
         cout << "epsilon = " << epsilon << endl;
-        cout << "step = "<< step.mean() << endl;
+        cout << "step = "<< step.cwiseAbs().mean() << endl;
 
            
         (*Core).UpdateStr(step); 

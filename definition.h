@@ -37,7 +37,7 @@ void Conv2B(cufftDoubleComplex *Convx, cufftDoubleComplex *Convy, cufftDoubleCom
 void APtoESum(cufftDoubleComplex *A00, cufftDoubleComplex *A01, cufftDoubleComplex *A02, cufftDoubleComplex *A11, cufftDoubleComplex *A12, cufftDoubleComplex *A22, cufftDoubleComplex *PxDev, cufftDoubleComplex *PyDev, cufftDoubleComplex *PzDev, cufftDoubleComplex *ESumxDev, cufftDoubleComplex *ESumyDev, cufftDoubleComplex *ESumzDev, int NxFFT, int NyFFT, int NzFFT, int NxA, int NyA, int NzA, int index1, int index2, int index3, int deduction);
 
 complex<double> Get_Alpha(double lam, double K, double d, complex<double> diel, Vector3d n_E0, Vector3d n_K);
-complex<double> Get_Alpha_FLTRCD(double lam,double K,double d,complex<double> diel);
+complex<double> Get_Alpha_FCD(double lam,double K,double d,complex<double> diel);
 complex<double> Get_material(string mat, double wl, string unit);                  //name of mat to get its diel function at certain wavlength              
 Vector2cd Get_2_material(string sub, string mat, double wl, string unit);          //a wrapper for Get_material
 double Average(VectorXcd* E, int N, double exponent);
@@ -327,8 +327,8 @@ private:
 
 
 public:
-    AProductCore(Space* space_, double d_, double lam_, Vector2cd material_);
-    AProductCore(Space* space_, double d_, double lam_, Vector2cd material_, int MAXm_, int MAXn_, double Lm_, double Ln_);
+    AProductCore(Space* space_, double d_, double lam_, Vector2cd material_, string AMatrixMethod_);
+    AProductCore(Space* space_, double d_, double lam_, Vector2cd material_, int MAXm_, int MAXn_, double Lm_, double Ln_, string AMatrixMethod_);
     ~AProductCore();
     Matrix3cd A_dic_generator(double x, double y, double z);
     Matrix3cd A_dic_generator(double x, double y, double z, int m, int n);
@@ -390,7 +390,7 @@ private:
 public:
     DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vector3d n_E0_);
     DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vector3d n_E0_, VectorXi* RResult_);
-    void bicgstab(int MAX_ITERATION, double MAX_ERROR);
+    int bicgstab(int MAX_ITERATION, double MAX_ERROR);
     void save_P();             //set P_store to P and set P to 0.
     void set_P();              //set P to P_store.
     void change_E(VectorXcd E_);
@@ -451,7 +451,7 @@ public:
     tuple<VectorXd, VectorXcd> devx_and_Adevxp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin);                       //partial derivative of obj to parameter and A to x times p
     VectorXcd devp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin);                       //partial derivative of obj to P. Size of P
 
-    void EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method);
+    void EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO_, string method);
     double CalTheObjForSingleStr(int MAX_ITERATION, double MAX_ERROR, int Name);                    //If you want to calculate the objective for single DDA structure.
 
     //The objective choosing function:
@@ -727,7 +727,6 @@ public:
     double GetVal();
     void Reset();
 };
-
 
 class ObjectiveIntegratedEDDAModel : public ObjectiveDDAModel {
 private:

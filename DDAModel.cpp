@@ -131,7 +131,7 @@ int DDAModel::bicgstab(int MAX_ITERATION,double MAX_ERROR){
     
     
     //Always starts with P=0 to avoid strange behaviour
-    P = VectorXcd::Zero(N * 3);
+    //P = VectorXcd::Zero(N * 3);
 
 
 
@@ -198,7 +198,7 @@ int DDAModel::bicgstab(int MAX_ITERATION,double MAX_ERROR){
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
     time = duration_cast<milliseconds>(t_end-t_start).count();
     cout<<"                ERROR:does not converge in "<<MAX_ITERATION<<" iterations"<<endl;
-    return -1;;
+    return -1;
 }
 
 void DDAModel::save_P(){
