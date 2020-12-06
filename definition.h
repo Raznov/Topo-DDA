@@ -108,6 +108,21 @@ class Objective;
 class ObjectivePointE;
 class ObjectiveSurfaceEExp;
 
+class SiCi {
+public:
+    int numberSi;
+    int numberCi;
+    double disSi;
+    double disCi;
+    VectorXd Si;
+    VectorXd Ci;
+    SiCi();
+    double get_Si(double x);
+    double get_Ci(double y);
+
+};
+
+
 class Model{
     protected:
         int N;                        //Number of dipoles
@@ -307,6 +322,10 @@ private:
     VectorXcd diel_max;                         //corresponds to the previous maximum obj
     VectorXd diel_old_max;
 
+    string AMatrixMethod;
+    SiCi* SiCiValue;
+
+
 public:
     AProductCore(Space* space_, double d_, double lam_, Vector2cd material_);
     AProductCore(Space* space_, double d_, double lam_, Vector2cd material_, int MAXm_, int MAXn_, double Lm_, double Ln_);
@@ -338,6 +357,8 @@ public:
     Vector2cd* get_material();
     VectorXcd* get_diel_max();                        
     VectorXd* get_diel_old_max();
+    Matrix3cd FCD_inter(double x, double y, double z);
+    Matrix3cd LDR_inter(double x,double y,double z);
 };
 
 class DDAModel {
@@ -352,6 +373,7 @@ private:
     Vector3d n_E0;
     Vector3d n_K;
     VectorXcd P;
+    VectorXcd P_store;                //Previous solution for P in the last iteration.
     VectorXcd E;
     VectorXcd Einternal;              //E field on structure points
     VectorXcd EResult;                //E field on designated points
@@ -369,6 +391,8 @@ public:
     DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vector3d n_E0_);
     DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vector3d n_E0_, VectorXi* RResult_);
     void bicgstab(int MAX_ITERATION, double MAX_ERROR);
+    void save_P();             //set P_store to P and set P to 0.
+    void set_P();              //set P to P_store.
     void change_E(VectorXcd E_);
     void reset_E();             //reset E to E0                                
     void UpdateAlpha();                                //update alpha according to updated diel in AProductCore.
@@ -417,6 +441,9 @@ private:
     double epsilon_tmp;                         //The epsilon used for calculation (can be different from the fixed input epsilon)
     bool HavePathRecord;
     int Stephold;
+
+    int iteration;                              //current iteration.
+    int MAX_ITERATION_EVO;                      //maximum number of iteration for optimizaiton.
 public:
     EvoDDAModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, AProductCore* Core_, list<DDAModel*> ModelList_);
     
@@ -435,8 +462,6 @@ public:
 
 
 };
-
-
 
 //Abstract parent class for objective function.
 class Objective {
@@ -704,10 +729,137 @@ public:
 };
 
 
+class ObjectiveIntegratedEDDAModel : public ObjectiveDDAModel {
+private:
+    double d;
+    int N;
+    int Nx;
+    int Ny;
+    int Nz;
+    VectorXcd* P;
+    VectorXcd* al;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    VectorXcd E;
+    double E_int;
+public:
+    ObjectiveIntegratedEDDAModel(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
 
 
+class ObjectiveMDipoleDDAModel : public ObjectiveDDAModel {
+private:
+    double d;
+    int N;
+    double x;
+    double y;
+    double z;      // Here x, y, z are absolute coordinates. (No need to multiply d).
+    VectorXcd* P;
+    VectorXi* R;
+    VectorXcd* al;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    Vector3cd Dipole_sum;
+public:
+    ObjectiveMDipoleDDAModel(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
+
+class ObjectiveTDipoleDDAModel : public ObjectiveDDAModel {
+private:
+    double d;
+    int N;
+    double x;
+    double y;
+    double z;      // Here x, y, z are absolute coordinates. (No need to multiply d).
+    VectorXcd* P;
+    VectorXi* R;
+    VectorXcd* al;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    Vector3cd Dipole_sum;
+public:
+    ObjectiveTDipoleDDAModel(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
 
 
+class ObjectiveEDipoleDDAModel : public ObjectiveDDAModel {
+private:
+    double d;
+    int N;
+    double x;
+    double y;
+    double z;      // Here x, y, z are absolute coordinates. (No need to multiply d).
+    VectorXcd* P;
+    VectorXi* R;
+    VectorXcd* al;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    Vector3cd Dipole_sum;
+public:
+    ObjectiveEDipoleDDAModel(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
+
+class ObjectiveMDipole_TDipoleDDAModel : public ObjectiveDDAModel {
+private:
+    double d;
+    int N;
+    double x;
+    double y;
+    double z;      // Here x, y, z are absolute coordinates. (No need to multiply d).
+    VectorXcd* P;
+    VectorXi* R;
+    VectorXcd* al;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    double K = 0.0;
+    Vector3cd MDipole_sum;
+    Vector3cd TDipole_sum;
+public:
+    ObjectiveMDipole_TDipoleDDAModel(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
+
+class ObjectiveEDipole_TDipoleDDAModel : public ObjectiveDDAModel {
+private:
+    double d;
+    int N;
+    double x;
+    double y;
+    double z;      // Here x, y, z are absolute coordinates. (No need to multiply d).
+    VectorXcd* P;
+    VectorXi* R;
+    VectorXcd* al;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    double K = 0.0;
+    Vector3cd EDipole_sum;
+    Vector3cd TDipole_sum;
+public:
+    ObjectiveEDipole_TDipoleDDAModel(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
 
 
 
