@@ -102,7 +102,7 @@ DDAModel::DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vecto
     
 }
 
-void DDAModel::bicgstab(int MAX_ITERATION,double MAX_ERROR){
+int DDAModel::bicgstab(int MAX_ITERATION,double MAX_ERROR){
     if (verbose) {
         cout << "--------------Calculation start. Iterative method used: BICGSTAB---------------" << endl;
         cout << endl;
@@ -192,13 +192,13 @@ void DDAModel::bicgstab(int MAX_ITERATION,double MAX_ERROR){
                 cout << "              Iteration: "<<ITERATION<<endl;
                 cout << endl;
             }
-            return;
+            return ITERATION;
         }
     }
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
     time = duration_cast<milliseconds>(t_end-t_start).count();
     cout<<"                ERROR:does not converge in "<<MAX_ITERATION<<" iterations"<<endl;
-    return;
+    return -1;;
 }
 
 void DDAModel::save_P(){

@@ -129,7 +129,13 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel
             diel_old_tmp(2) += sign * epsilon;
 
             //because i am changing diel_old_tmp as local variable and this does not influence diel_old, the singleresponse will not respond to this change
-            //if (objective->Have_Devx) objective->SingleResponse(position1, true);
+            if (objective->Have_Devx) objective->SingleResponse(position1, true);
+            if (objective->Have_Devx) {
+                (*diel_old)(3 * position1) += sign * epsilon;
+                (*diel_old)(3 * position1 + 1) += sign * epsilon;
+                (*diel_old)(3 * position1 + 2) += sign * epsilon;
+            }
+            if (objective->Have_Devx) objective->SingleResponse(position1, false);
 
             diel_tmp(0) = (*material)(0) + diel_old_tmp(0) * ((*material)(1) - (*material)(0));
             diel_tmp(1) = diel_tmp(0);
@@ -152,13 +158,18 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel
                 diel_old_tmp(1) += sign * epsilon;
                 diel_old_tmp(2) += sign * epsilon;
 
+                //This could be slow for layered structures. So maybe comment this part out if only the penalty is related to diel_old.
                 if (objective->Have_Devx) objective->SingleResponse(position2, true);
+                if (objective->Have_Devx) {
+                    (*diel_old)(3 * position2) += sign * epsilon;
+                    (*diel_old)(3 * position2 + 1) += sign * epsilon;
+                    (*diel_old)(3 * position2 + 2) += sign * epsilon;
+                }
+                if (objective->Have_Devx) objective->SingleResponse(position2, false);
 
                 diel_tmp(0) = (*material)(0) + diel_old_tmp(0) * ((*material)(1) - (*material)(0));
                 diel_tmp(1) = diel_tmp(0);
                 diel_tmp(2) = diel_tmp(0);
-
-                if (objective->Have_Devx) objective->SingleResponse(position2, false);
 
                 Adevxp(3 * position2) = ((1.0 / Get_Alpha(lam, K, d, diel_tmp(0), n_E0, n_K)) - (*al)(3 * position2)) / (sign * epsilon);
                 Adevxp(3 * position2 + 1) = ((1.0 / Get_Alpha(lam, K, d, diel_tmp(1), n_E0, n_K)) - (*al)(3 * position2 + 1)) / (sign * epsilon);
@@ -168,24 +179,26 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel
             }
                
             devx(i)=(objective->GroupResponse()-origin)/(sign*epsilon);
-             /*
-            if(objective->Have_Devx) objective->SingleResponse(position1, true);
-                
-            if(objective->Have_Devx) objective->SingleResponse(position1, false);
 
             it2 = (*it1).begin();
-
             for (int j = 0; j <= (*it1).size()-1; j++) {
                 int position2 = (*it2);
-                  
-                if(objective->Have_Devx) objective->SingleResponse(position2, true);                  
-                    
-                if(objective->Have_Devx) objective->SingleResponse(position2, false);
-
-                it2++;
-                    
+                if (objective->Have_Devx) objective->SingleResponse(position2, true);
+                if (objective->Have_Devx) {
+                    (*diel_old)(3 * position2) -= sign * epsilon;
+                    (*diel_old)(3 * position2 + 1) -= sign * epsilon;
+                    (*diel_old)(3 * position2 + 2) -= sign * epsilon;
+                }
+                if (objective->Have_Devx) objective->SingleResponse(position2, false);
             }
-            */
+
+            if (objective->Have_Devx) objective->SingleResponse(position1, true);
+            if (objective->Have_Devx) {
+                (*diel_old)(3 * position1) -= sign * epsilon;
+                (*diel_old)(3 * position1 + 1) -= sign * epsilon;
+                (*diel_old)(3 * position1 + 2) -= sign * epsilon;
+            }
+            if (objective->Have_Devx) objective->SingleResponse(position1, false);
             it1++;
             
         }
@@ -292,8 +305,11 @@ VectorXcd EvoDDAModel::devp(double epsilon, DDAModel* CurrentModel, ObjectiveDDA
 
 void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method){
     ofstream convergence;
-    //convergence.open(save_position+"convergence.txt");
+    ofstream num_iters_main;
+    ofstream num_iters_adjoint;
     convergence.open("convergence.txt");
+    num_iters_main.open(save_position+"iteration_main.txt");
+    num_iters_adjoint.open(save_position+"iteration_adjoint.txt");
     
     //Parameters for Adam Optimizer.
     double beta1 = 0.9;
@@ -316,10 +332,12 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
         list<ObjectiveDDAModel*>::iterator it_ObjList = ObjList.begin();
         (*Core).output_to_file(save_position + "Model_output/", iteration);
         for (int i = 0; i <= ModelNum - 1; i++) {
-            (*(*it_ModelList)).bicgstab(MAX_ITERATION, MAX_ERROR);
+            (*(*it_ModelList)).set_P();
+            num_iters_main << (*(*it_ModelList)).bicgstab(MAX_ITERATION, MAX_ERROR) << endl;
             (*(*it_ModelList)).update_E_in_structure();
             if (iteration == MAX_ITERATION_EVO - 1) {                                    //useless fix, not gonna to use RResultswithc = true feature in the future
                 (*(*it_ModelList)).solve_E();
+                (*(*it_ModelList)).output_to_file(save_position + "Model_output/", iteration, i);
             }
             //(*(*it_ModelList)).output_to_file(save_position + "Model_output\\", iteration, i);
             objarray(i) = (*(*it_ObjList)).GetVal();
@@ -327,7 +345,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
             it_ObjList++;
         }
         obj = objarray.sum()/ModelNum;                              //Take average
-        convergence << obj << " ";
+        convergence << obj << endl;
         cout << "objective function at iteration " << iteration << " is " << obj << endl;
 
         high_resolution_clock::time_point t0 = high_resolution_clock::now();
@@ -408,7 +426,6 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
             }
         }
         */
-        convergence << "\n";
 
         
         
@@ -446,7 +463,8 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
             //------------------------------------Solving adjoint problem-----------------------------------------
             cout << "---------------------------START ADJOINT PROBLEM of Model" << i << " ----------------------" << endl;
             (*(*it_ModelList)).change_E(devp);
-            (*(*it_ModelList)).bicgstab(MAX_ITERATION, MAX_ERROR);
+            (*(*it_ModelList)).save_P();
+            num_iters_adjoint << (*(*it_ModelList)).bicgstab(MAX_ITERATION, MAX_ERROR) << endl;
             VectorXcd lambdaT = (*P);
             (*(*it_ModelList)).reset_E();                                  //reset E to initial value
 
@@ -525,10 +543,13 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
                 gradients(i) = V(i)/(sqrt(S(i))+0.00000001);
             } 
         } 
-        cout << "gradients: " << gradients.mean() << endl;
+        if(abs(gradients.cwiseAbs().mean())<0.1){
+            gradients /= abs(gradients.cwiseAbs().mean())/0.1;
+        }
+        cout << "maximum gradient: " << gradients.maxCoeff() << endl;
+        cout << "minimum gradient: " << gradients.minCoeff() << endl;
+        cout << "gradients: " << gradients.cwiseAbs().mean() << endl;
         
-        //cout<<"gradients1-3"<<endl<<gradients(0)<<endl<<gradients(1)<<endl<<gradients(2)<<endl;
-        //double step_len = this->get_step_length(gradients,epsilon);
         VectorXd step=epsilon*gradients;               //Find the maximum. If -1 find minimum
         cout << "epsilon = " << epsilon << endl;
         cout << "step = "<< step.mean() << endl;
@@ -544,7 +565,8 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
     }
     
     convergence.close();
-
+    num_iters_main.close();
+    num_iters_adjoint.close();
 }
 
 
@@ -554,6 +576,24 @@ ObjectiveDDAModel* EvoDDAModel::ObjectiveFactory(string ObjectName, list<double>
     }
     if (MajorObjectFunctionName == "PointE"){
         return new ObjectivePointEDDAModel(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "IntegratedE"){
+        return new ObjectiveIntegratedEDDAModel(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "MDipole"){
+        return new ObjectiveMDipoleDDAModel(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "TDipole"){
+        return new ObjectiveTDipoleDDAModel(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "EDipole"){
+        return new ObjectiveEDipoleDDAModel(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "M_TDipole"){
+        return new ObjectiveMDipole_TDipoleDDAModel(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "E_TDipole"){
+        return new ObjectiveEDipole_TDipoleDDAModel(ObjectParameters, ObjDDAModel, this, HavePenalty);
     }
     /*
     else if (MajorObjectFunctionName == "SurfaceEExp"){
@@ -587,9 +627,12 @@ double EvoDDAModel::L1Norm(){
     int N = (*Core).get_N();
     VectorXd* diel_old = (*Core).get_diel_old();
     for (int i=0;i<N;i++){
-        Penalty += 0.5-abs((*diel_old)(3*i)-0.5);
+        Penalty += 1-pow(2*abs((*diel_old)(3*i)-0.5),2);
     }
-    Penalty = Penalty * PenaltyFactor;
+    //SpeedCtrl is used to control the contribution of penalty in different iterations.
+    //For exmaple, 10 would mean barely any penalty in the first half of the iterations.
+    int SpeetCtrl = 10;
+    Penalty = Penalty * PenaltyFactor * pow((iteration+1)*1.0/MAX_ITERATION_EVO,SpeedCtrl);
     return Penalty;
 }
 
