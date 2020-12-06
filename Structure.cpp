@@ -107,10 +107,14 @@ VectorXd initial_diel_func(string initial_diel, int N){
     if(initial_diel.compare("ZEROS")==0){
         diel=VectorXd::Zero(N);
     }
+    else if(initial_diel.compare("HALF")==0){
+        diel=VectorXd::Ones(N)*0.5;
+    }
     else if(initial_diel.compare("ONES")==0){
         diel=VectorXd::Ones(N);
     }
     else if(initial_diel.compare("RANDOM")==0){
+        srand(time(NULL));
         int n=round(N/3);
         diel=VectorXd::Zero(N);
         for(int i=0;i<=n-1;i++){
@@ -119,7 +123,6 @@ VectorXd initial_diel_func(string initial_diel, int N){
             diel(3*i+1)=r;
             diel(3*i+2)=r;
         }
-        
     }
     else{
         diel=VectorXd::Zero(N);
@@ -465,4 +468,5 @@ Structure::Structure(VectorXi* total_space, Structure* s, int dep_way) {
     
     
 }
+
 
