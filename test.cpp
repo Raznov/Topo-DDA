@@ -10,7 +10,7 @@ int main() {
 
     Vector3d l;
     Vector3d center;
-    l << 80.0, 80.0, 16.0;
+    l << 80.0, 80.0, 20.0;
     center << l(0) / 2, l(1) / 2, l(2) / 2;
 
     int Nx, Ny, Nz;
@@ -47,7 +47,7 @@ int main() {
 
     int MAX_ITERATION_DDA = 100000;
     double MAX_ERROR = 0.00001;
-    int MAX_ITERATION_EVO = 30;
+    int MAX_ITERATION_EVO = 50;
 
     list<string> ObjectFunctionNames{ "PointI" };
 
@@ -62,7 +62,7 @@ int main() {
     bool HaveAdjointHeritage = false;
     double PenaltyFactor = 0.0001;
     list<list<double>*> ObjectParameters{ &ObjectParameter };
-    string save_position = "";
+    string save_position = "./theta30phi20Div10-500-1/";
 
     Vector3d n_K;
     Vector3d n_E0;
@@ -89,7 +89,7 @@ int main() {
     list<AProductCore> CoreList;
     list<AProductCore*> CorePointList;
     Vector2cd material;
-    material = Get_2_material("Air", "2.5", lam(0), "nm");
+    material = Get_2_material("Air", "SiO2", lam(0), "nm");
     AProductCore Core1(&CStr, lam(0), material, "LDR");
     //material = Get_2_material("Air", "SiO2", lam(1), "nm");
     //AProductCore Core2(&CStr, lam(1), material);
