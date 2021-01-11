@@ -1573,7 +1573,8 @@ void Model::output_to_file(){
 void Model::output_to_file(string save_position, int iteration){
     
     string name;
-    name=save_position+"Model_results"+to_string(iteration)+".txt";
+    //name=save_position+"Model_results"+to_string(iteration)+".txt";
+    name = "Model_results" + to_string(iteration) + ".txt";
     ofstream fout(name);
     fout<<Nx<<endl<<Ny<<endl<<Nz<<endl<<N<<endl;
     fout<<R<<endl;

@@ -410,7 +410,7 @@ void EvoModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITER
             this->solve_E(); 
         }
         
-        this->output_to_file(save_position+"Model_output/", iteration);
+        this->output_to_file(save_position+"Model_output\\", iteration);
 
 
         high_resolution_clock::time_point t0 = high_resolution_clock::now();
@@ -610,7 +610,7 @@ void EvoModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITER
 double EvoModel::CalTheObjForSingleStr(int MAX_ITERATION, double MAX_ERROR, int Name) {
     this->bicgstab(MAX_ITERATION, MAX_ERROR);
     this->update_E_in_structure();
-    this->output_to_file(save_position + "Model_output/", Name);
+    this->output_to_file(save_position + "Model_output\\", Name);
     double obj = objective->GetVal();
     return obj;
 }

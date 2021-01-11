@@ -107,6 +107,10 @@ VectorXd initial_diel_func(string initial_diel, int N){
     if(initial_diel.compare("ZEROS")==0){
         diel=VectorXd::Zero(N);
     }
+    else if (initial_diel.compare("0.5") == 0) {
+        diel = VectorXd::Ones(N);
+        diel = 0.5 * diel;
+    }
     else if(initial_diel.compare("ONES")==0){
         diel=VectorXd::Ones(N);
     }
