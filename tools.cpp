@@ -489,7 +489,3 @@ Vector3d nEPerpinXZ(double theta, double phi) {
     return nE;
 }
 
-int makedirect(string name) {
-    const char* tmp = name.c_str();
-    return _mkdir(tmp);
-}
