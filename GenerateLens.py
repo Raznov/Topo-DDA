@@ -111,7 +111,7 @@ ncenter = n2  #actual refractive index in the middle of the lens
 
 
 # For fixed n len and n1 must be 1
-Dmax = 1975
+Dmax = 2000
 #Dmax = 2*math.sqrt((2*n2-2)*focus*thickness + (n2**2-3*n2+2)*(thickness**2))
 print("Diameter of the len is: {}".format(Dmax))
 thickness = ((2-2*n2)*focus+math.sqrt(((2*n2-2)**2)*(focus**2)+4*(n2**2-3*n2+2)*(Dmax/2)**2))/(2*(n2**2-3*n2+2))
@@ -240,22 +240,18 @@ np.savetxt('0Geometry.txt', Geo0, '%i')
 
 '''
 # For varying n len
-
 Dmax = 2*math.sqrt(((ncenter - n1)*wavelength*thickness/(2*math.pi) + focus)**2-focus**2)
 print("Diameter of the len is: {}".format(Dmax))
-
 D = Dmax
 xscale = int(np.ceil(D/d) + 1)
 yscale = xscale
 zscale = int(np.ceil(thickness/d) + 1)
-
 X, Y, Z = np.meshgrid(range(xscale), range(yscale), range(zscale), indexing = 'ij')
 X = np.reshape(X, (X.size, 1), order='C')
 Y = np.reshape(Y, (Y.size, 1), order='C')
 Z = np.reshape(Z, (Z.size, 1), order='C')
 Geometry = np.concatenate((X, Y, Z), axis = 1)
 Geometry =np.reshape(Geometry, (Geometry.size, 1), order='C')
-
 Diel = np.zeros(Geometry.shape)
 for i in range(int(round(Geometry.size/3))):
     r = math.sqrt((Geometry[3*i]*d - D/2)**2 + (Geometry[3*i+1]*d - D/2)**2)
@@ -266,10 +262,7 @@ for i in range(int(round(Geometry.size/3))):
         Diel[3*i] = n1
     Diel[3*i+1] = Diel[3*i]
     Diel[3*i+2] = Diel[3*i]
-
 Diel = (Diel - n1)/(n2-n1)
-
-
 np.savetxt('LensDiel.txt', Diel, '%f')
 np.savetxt('LensGeometry.txt', Geometry, '%i')
 '''

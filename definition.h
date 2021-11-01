@@ -24,6 +24,10 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include "cufft.h"
+#include "direct.h"
+
+
+
 
 using namespace std;
 using namespace Eigen;
@@ -47,44 +51,50 @@ double G(VectorXcd* E, int N, double exponent, double E0);
 VectorXi build_a_bulk(int Nx, int Ny, int Nz);
 bool CheckPerp(Vector3d v1, Vector3d v2);
 Vector3d nEPerpinXZ(double theta, double phi);
+MatrixXi find_scope_3_dim(VectorXi* x);
+VectorXd initial_diel_func(string initial_diel, int N);
+double initial_diel_func(string initial_diel);
+
+
+int makedirect(string name);
 
 class Structure{
     private:
-        VectorXd diel;                  //0~1
+        //VectorXd diel;                  //0~1
         VectorXi geometry;
-        VectorXi geometry_dep;          //Same size with geometry. If para=2, stores the corresponding para position of each point. Has no meaning in para=0&1
-        int para;                       //Parameter condition: 0-not parameter, 1-parameter, 2-duplicated from a 2D parameter, controlled by parameter.
+        //VectorXi geometry_dep;          //Same size with geometry. If para=2, stores the corresponding para position of each point. Has no meaning in para=0&1
+        //int para;                       //Parameter condition: 0-not parameter, 1-parameter, 2-duplicated from a 2D parameter, controlled by parameter.
     public:
         //--------------------------------------Dont support dependent para build-------------------------------------------------------
-        Structure(VectorXi *total_space, VectorXd *diel_, VectorXi *geometry_, int para_);            //vanilla initialization
+        Structure(VectorXi *total_space, VectorXi *geometry_);            //vanilla initialization
 
         //Sphere
-        Structure(VectorXi *total_space, string initial_diel, double r, Vector3d center, int para_);  //r: actual radius/d. center: actual center/d. In charge of Sphere 
+        Structure(VectorXi *total_space, double r, Vector3d center);  //r: actual radius/d. center: actual center/d. In charge of Sphere 
         
         //Circle
-        Structure(VectorXi *total_space, string initial_diel, double r, Vector3i center, Vector3i direction, int para_); //build a circle, direction is its normalized direction in Cart. coord.
+        //Structure(VectorXi *total_space, string initial_diel, double r, Vector3i center, Vector3i direction, int para_); //build a circle, direction is its normalized direction in Cart. coord.
 
         //From file
-        Structure(VectorXi* total_space, string FileName, int para_);                                                    //Read a structure from txt file
+        //Structure(VectorXi* total_space, string FileName, int para_);                                                    //Read a structure from txt file
         
         //--------------------------------------Support dependent para build-------------------------------------------------------------
         //Bulk
-        Structure(VectorXi *total_space, string initial_diel, Vector3d l, Vector3d center, int para_);    //Ractangular(both 2D and 3D). Para can only = 0&1 
+        Structure(VectorXi *total_space, Vector3d l, Vector3d center);    //Ractangular(both 2D and 3D). Para can only = 0&1 
         
         //Duplicate
-        Structure(VectorXi *total_space, Structure *s, Vector3i direction, int times, int para_);                     //Initializa a Structure by duplicating a existing structure along a certain direction for several times. Direction is normalized and can only be alone x, y or z.
+        //Structure(VectorXi *total_space, Structure *s, Vector3i direction, int times, int para_);                     //Initializa a Structure by duplicating a existing structure along a certain direction for several times. Direction is normalized and can only be alone x, y or z.
         //The original structure is not included. original structure + new structure = times * original structure. If set para=2 and original para=1, then depend on origin str as geometry_dep. If para=2 and original para=2, will copy origin geometry_dep.
-        Structure(VectorXi* total_space, Structure* s, int dep_way);     //Special copy for setting up 2-fold and 4-fold symmetry dependence in xy plane. Para auto set to 2.
+        //Structure(VectorXi* total_space, Structure* s, int dep_way);     //Special copy for setting up 2-fold and 4-fold symmetry dependence in xy plane. Para auto set to 2.
         //The original str at left down corner of the xy plane(left down corner is (0,0)). dep_way=1, 2, 3 corresponds to the other blocks in clock-wise. 
 
 
         //-------------------------------------Other member functions--------------------------------------------------------------------
         VectorXi *get_geometry();
-        VectorXi* get_geometry_dep();
-        VectorXd *get_diel();
-        void cut(VectorXi *big, VectorXi *smalll, VectorXd *small_diel);
+        //VectorXi* get_geometry_dep();
+        //VectorXd *get_diel();
+        void cut(VectorXi *big, VectorXi *smalll);
         int get_geometry_size();
-        int get_para();
+        //int get_para();
 };
 
 class Space{
@@ -103,6 +113,43 @@ class Space{
         friend Space operator+(const Space &s1, Structure &s2);
         
 
+};
+
+class SpacePara {
+private:
+    Space* space;
+    VectorXi geometry;                //3N dimension
+    VectorXi geometryPara;            //N dimension. N=number of dipoles. Each position sotres the para index in VectorXi Para : 0->Para[0]...
+    VectorXd Para;                    //P dimension. P=number of parameters.
+    MatrixXi scope;                   //[[xmin, xmax],[ymin, ymax],[zmin, zmax]]
+    Vector3i bind;
+    VectorXi FreeparatoPara;
+public:
+    SpacePara(Space* space_, string initial_diel, VectorXi geometry_, VectorXd diel_);
+    SpacePara(Space* space_, Vector3i bind_, VectorXi* geometryPara_, VectorXd* Para_, VectorXi* FreeparatoPara_);
+    SpacePara(Space* space_, Vector3i bind_, string initial_diel); //l, center similar to bulk build in Structure class. Every 'bind' nearby dipoles correspond 
+                                                                    //to 1 parameter in this bulk. bind=(2,2,2): 2*2*2; bind=(1,1,3):1*1*3
+    SpacePara(Space* space_, Vector3i bind_, string initial_diel, VectorXi* geometryPara_);
+    SpacePara(Space* space_, Vector3i bind_, string initial_diel_center, string initial_diel_ring, double r, string type);   //ONly for 2d cylinder or spheres. r is raidus/d.
+
+    SpacePara(Space* space_, Vector3i bind_, string initial_diel_background, list<string>* initial_diel_list, list<double>* r_list, list<Vector2d>* center_list);
+    //Build 2d cylinders with diel in the list, rest of the diel is the backgroudn diel.
+
+    SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, double limitx2, double limity1, double limity2);  //random rect in a region with extruded 2D geometry
+    SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, double limitx2, double limity1, double limity2, double limitz1, double limitz2);  //random rect with 3D
+    SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, double limitx2, double limity1, double limity2, VectorXi* geometryPara_);
+    SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, double limitx2, double limity1, double limity2, double limitz1, double limitz2, VectorXi* geometryPara_);
+
+
+    void ChangeBind(Vector3i bind_);                                  //Change bind number
+    VectorXi cut(VectorXi* big, VectorXi* smalll);
+
+    Space* get_space();
+    VectorXi get_geometry();
+    VectorXi* get_geometryPara();
+    VectorXd* get_Para();
+    Vector3i* get_bind();
+    VectorXi* get_Free();
 };
 
 //Abstract parent class for objective function.
@@ -124,159 +171,11 @@ public:
 
 };
 
-class Model{
-    protected:
-        int N;                        //Number of dipoles
-        int Nx;                       //scope of space. Nx*Ny*Nz!=N
-        int Ny;
-        int Nz;
-        int time;
-        int ITERATION;
-        double d;
-        double E0;
-        double K;
-        double lam;
-        double Error;
-        VectorXi R;                      //Position of dipoles. Both R and RResult are unitless, so need to time d to get real number.
-        VectorXi RDep;                   //Position of the dependent para points in space of the points in the same position as R
-        list<list<int>> PositionDep;    //First D has the D of para(para=1). Second D is the positions of other points dependent on the para in the 1stD.
-        VectorXi PositionPara;          //Position i(in R) of the parameters (3*i=x, 3*i+1=y, 3*i+2=z)
-        bool RResultSwitch;               //0(false) for plot only E field on the structure points (fast), 1(true) for using RResult different from R to plot (slow but adjustable).
-        VectorXi RResult;                //The position matrix for the EResult (where you want to plot the E field)
-        list<int> para_nums;
-        list<int> para_starts;
-        list<int> para_dep_nums;
-        list<int> para_dep_starts;
-        Vector3d n_E0;
-        Vector3d n_K;
-        VectorXcd diel;                   //real diel after 0~1 corresponds to real numbers
-        VectorXd diel_old;                //The 0~1 version of diel
-        VectorXcd P;
-        VectorXcd E;
-        VectorXcd Einternal;              //E field on structure points
-        VectorXcd EResult;                //E field on designated points
-        Vector2cd material;
-        VectorXcd al;                       // 1 over alpha instead of alpha.
-        bool verbose;
-
-        VectorXcd diel_max;                         //corresponds to the previous maximum obj
-        VectorXd diel_old_max;
-        VectorXcd P_max;
-        VectorXcd al_max;
-
-        int MAXm;                            //-MAXm<=m<=MAXm
-        int MAXn;                             //-MAXn<=n<=MAXn
-        double Lm;                         //desplacement vector for one period, Currently should only be in x and y direction; d included do not need to time d
-        double Ln;
-        
-    public:
-        Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_);
-        Model(Space *space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi *RResult_);
-        Model(Space* space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, int MAXm_, int MAXn_, double Lm_, double Ln_);
-        ~Model();
-        Matrix3cd A_dic_generator(double x,double y,double z);
-        Matrix3cd A_dic_generator(double x, double y, double z, int m, int n);
-        VectorXcd Aproduct(VectorXcd &b);
-        void bicgstab(int MAX_ITERATION,double MAX_ERROR);
-        void change_E(VectorXcd E_);
-        void reset_E();             //reset E to E0 
-        //double get_step_length(VectorXd gradients, double epsilon);                                        
-        void change_para_diel(VectorXd step);
-        VectorXcd get_diel();
-        Vector2cd get_material();
-        VectorXcd get_alpha();
-        tuple<list<int>, list<int>, list<int>, list<int>> get_para_info();
-        int get_N();
-        int get_Nx();
-        int get_Ny();
-        int get_Nz();
-        VectorXcd* get_P();
-        VectorXi* get_R();
-        double get_d();
-        Vector3d get_nE0();
-        Vector3d get_nK();
-        double get_E0();
-        double get_wl();
-        VectorXcd* get_Einternal();
-      
-        //Vector3d* get_nE0();
-        void solve_E();                                                        //update the result E field on each dipole or on a designated space
-        void update_E_in_structure();                                          //update the result E field on each dipole 
-        void output_to_file();
-        void output_to_file(string save_position, int iteration);              //especially used for EvoOptimization
-        
-        //FFT related variables;
-        double *AHos;                              //A_dicDoubl
-        double *ADev;                              // double, but actually double*2 course real and imag are both stored in this double
-        cufftDoubleComplex *A00, *A01, *A02, *A11, *A12, *A22; //The components in A for FFT, only in device
-        double *bHos;                              //b in Aproduct
-        double *bDev;                              // double, but actually double*2 course real and imag are both stored in this double
-        cufftDoubleComplex *bxDev, *byDev, *bzDev; //b components for FFT, only in device
-        int NxFFT, NyFFT, NzFFT;                   //2*(Nx, Ny, Nz) - 1
-        int NFFT;                                  //NxFFT*NyFFT*NzFFT
-        cufftDoubleComplex *Convx, *Convy, *Convz; //convolution of A and b on device
-
-        //FFT plan for all
-        cufftHandle Plan;
-};
-
-class EvoModel : public Model{
-    private:
-
-        string save_position;
-        
-        list<list<double>*> *ObjectParameters;
-        list<double> MajorObjectParameters;
-        list<list<double>> MinorObjectParameters;
-        
-        list<string> *ObjectFunctionNames;
-        string MajorObjectFunctionName;
-        double MajorObjectFunctionResult;
-        list<string> MinorObjectFunctionNames;
-        list<double> MinorObjectFunctionResults;
-        Objective* objective; 
-        double origin;                               //Record the objective function for partial derivative (the value before change)   
-        bool HavePenalty;
-        double PenaltyFactor;
-
-        double MaxObj;                                //Record the historical maximum obj func
-        double epsilon_fix;
-        double epsilon_tmp;                         //The epsilon used for calculation (can be different from the fixed input epsilon)
-        bool HavePathRecord;
-        int Stephold;
-    public:
-        EvoModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space* space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_);
-        EvoModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space* space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, VectorXi* RResult_);
-        EvoModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, double PenaltyFactor_, string save_position_, Space* space_, double d_, double lam_, Vector3d n_K_, double E0_, Vector3d n_E0_, Vector2cd material_, int MAXm_, int MAXn_, double Lm_, double Ln_);
-        
-        //functions used to calculate partial derivatives                                 
-        tuple<VectorXd, VectorXcd> devx_and_Adevxp(double epsilon);                       //partial derivative of obj to parameter and A to x times p
-        VectorXcd devp(double epsilon);                       //partial derivative of obj to P. Size of P
-        
-        void EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method);
-        double CalTheObjForSingleStr(int MAX_ITERATION, double MAX_ERROR, int Name);                    //If you want to calculate the objective for single DDA structure.
-
-        //The objective choosing function:
-        double MajorObjective();
-        list<double> MinorObjective();
-        Objective* ObjectiveFactory(string ObjectName,  list<double> ObjectParameters);
-
-        //functions that can be chosen as objective functions:
-        double PointE(list<double> Parameter);                   //r is the real position in the Model coordinate, d should have been considered when defining r.
-        double PointEWithPenalty(list<double> Parameter);
-        double SurfaceEExp(list<double> Parameter);
-        double SurfaceEExpWithPenalty(list<double> Parameter);
-        double L1Norm();
-        
-        
-
-};
-//void EvoOptimization(Model *model, double epsilon, Vector3d r, int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO);
-
 class CoreStructure {
 private:
     //---------------------------------Geometries, not related to wavelength-------------------------------
     Space* space;
+    SpacePara* spacepara;
     int N;                        //Number of dipoles
     int Nx;                       //scope of space. Nx*Ny*Nz!=N
     int Ny;
@@ -284,35 +183,35 @@ private:
     double d;
     VectorXi R;                      //Position of dipoles. Both R and RResult are unitless, so need to time d to get real number.
 
-    VectorXi RDep;                   //Position of the dependent para points in space of the points in the same position as R
-    list<list<int>> PositionDep;    //First D has the D of para(para=1). Second D is the positions of other points dependent on the para in the 1stD.
-    VectorXi PositionPara;          //Position i(in R) of the parameters (3*i=x, 3*i+1=y, 3*i+2=z)
-    list<int> para_nums;
-    list<int> para_starts;
-    list<int> para_dep_nums;
-    list<int> para_dep_starts;
-    VectorXd diel_old;                //The 0~1 version of diel
+    //VectorXi RDep;                   //Position of the dependent para points in space of the points in the same position as R
+    //list<list<int>> PositionDep;    //First D has the D of para(para=1). Second D is the positions of other points dependent on the para in the 1stD.
+    //VectorXi PositionPara;          //Position i(in R) of the parameters (3*i=x, 3*i+1=y, 3*i+2=z)
+    //list<int> para_nums;
+    //list<int> para_starts;
+    //list<int> para_dep_nums;
+    //list<int> para_dep_starts;
+    VectorXd diel_old;                //The 0~1 version of diel, 3*N
     VectorXd diel_old_max;
 public:
-    CoreStructure(Space* space_, double d_);
+    CoreStructure(SpacePara* spacepara_, double d_);
     void UpdateStr(VectorXd step);
+    void UpdateStr(SpacePara* spacepara_);
     void output_to_file();
-    void output_to_file(string save_position, int iteration);
+    void output_to_file(string save_position, int iteration, string mode = "normal");
 
     int get_N();
     int get_Nx();
     int get_Ny();
     int get_Nz();
-    tuple<list<int>, list<int>, list<int>, list<int>> get_para_info();
     VectorXi* get_R();
     double get_d();
-    Space* get_space();
-    list<list<int>>* get_PositionDep();
-    VectorXi* get_PositionPara();
-    list<int>* get_para_nums();
-    list<int>* get_para_starts();
-    list<int>* get_para_dep_nums();
-    list<int>* get_para_dep_starts();
+    SpacePara* get_spacepara();
+    //list<list<int>>* get_PositionDep();
+    //VectorXi* get_PositionPara();
+    //list<int>* get_para_nums();
+    //list<int>* get_para_starts();
+    //list<int>* get_para_dep_nums();
+    //list<int>* get_para_dep_starts();
     VectorXd* get_diel_old();
     VectorXd* get_diel_old_max();
 
@@ -374,15 +273,8 @@ public:
     tuple<list<int>, list<int>, list<int>, list<int>> get_para_info();
     VectorXi* get_R();
     double get_d();
-    Space* get_space();
     double get_lam();
-    //VectorXcd* get_diel();
-    list<list<int>>* get_PositionDep();
-    VectorXi* get_PositionPara();          
-    list<int>* get_para_nums();
-    list<int>* get_para_starts();
-    list<int>* get_para_dep_nums();
-    list<int>* get_para_dep_starts();                 
+    //VectorXcd* get_diel();        
     VectorXd* get_diel_old();               
     Vector2cd* get_material();
     //VectorXcd* get_diel_max();                        
@@ -407,6 +299,7 @@ private:
     VectorXcd Einternal;              //E field on structure points
     VectorXcd EResult;                //E field on designated points
     VectorXcd al;                       // 1 over alpha instead of alpha.
+    VectorXcd diel;                     //Real dielectric from diel_old. Needed to calculate the Lorentz factor.
     bool verbose;
     VectorXcd P_max;
     VectorXcd al_max;
@@ -421,6 +314,7 @@ public:
     DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vector3d n_E0_);
     DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vector3d n_E0_, VectorXi* RResult_);
     void bicgstab(int MAX_ITERATION, double MAX_ERROR);
+    void bicgstab(int MAX_ITERATION, double MAX_ERROR, int EVOITERATION);  //FOR DEBUG ONLY. OUTPUT SOME VALUE AT CERTAIN EVO ITERATION.
     void change_E(VectorXcd E_);
     void reset_E();             //reset E to E0                                
     void UpdateAlpha();                                //update alpha according to updated diel in AProductCore.
@@ -429,6 +323,8 @@ public:
     VectorXcd Aproductwithalb(VectorXcd& b);                    //add the al*b term on base of AproductCore
     void output_to_file();
     void output_to_file(string save_position, int iteration, int ModelLabel);              //especially used for EvoOptimization
+    void output_to_file(string save_position, int iteration);             //For simplify output
+    void output_to_file(string save_position, double wavelength, int iteration);
     void InitializeP(VectorXcd& Initializer);
     VectorXcd* get_P();
     Vector3d get_nE0();
@@ -447,17 +343,10 @@ public:
     int get_Nx();
     int get_Ny();
     int get_Nz();
-    tuple<list<int>, list<int>, list<int>, list<int>> get_para_info();
     VectorXi* get_R();
     double get_d();
-    Space* get_space();
+    SpacePara* get_spacepara();
     double get_lam();
-    list<list<int>>* get_PositionDep();
-    VectorXi* get_PositionPara();
-    list<int>* get_para_nums();
-    list<int>* get_para_starts();
-    list<int>* get_para_dep_nums();
-    list<int>* get_para_dep_starts();
     VectorXd* get_diel_old();
     Vector2cd* get_material();
     VectorXd* get_diel_old_max();
@@ -467,6 +356,7 @@ class ObjectiveDDAModel;
 
 class EvoDDAModel {
 private:
+    double output_time;
     CoreStructure* CStr;
     list<DDAModel*> ModelList;                    //List of DDA models sharing the same AProductCore : "Core"
     int ModelNum;                                 //number of DDA model
@@ -501,6 +391,8 @@ private:
     bool HaveOriginHeritage;
     bool HaveAdjointHeritage;
     int Stephold;
+
+    VectorXd gradientsquare;                    //cumulative summation of gradients square. Used in Adagrad.
 public:
     EvoDDAModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, bool HaveOriginHeritage_, bool HaveAdjointHeritage_, double PenaltyFactor_, string save_position_, CoreStructure* CStr_, list<DDAModel*> ModelList_);
     
@@ -508,248 +400,20 @@ public:
     tuple<VectorXd, VectorXcd> devx_and_Adevxp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin);                       //partial derivative of obj to parameter and A to x times p
     VectorXcd devp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin);                       //partial derivative of obj to P. Size of P
 
-    void EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method);
+    void EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method, double start_num=0);
+    void EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method, VectorXd* V_, VectorXd* S_);
     double CalTheObjForSingleStr(int MAX_ITERATION, double MAX_ERROR, int Name);                    //If you want to calculate the objective for single DDA structure.
 
     //The objective choosing function:
     ObjectiveDDAModel* ObjectiveFactory(string ObjectName, list<double> ObjectParameters, DDAModel* ObjDDAModel);
 
+    double get_output_time();
     double L1Norm();
 
 
 
 };
 
-
-
-//Abstract parent class for objective function.
-class Objective {
-public:
-    bool Have_Devx;
-    bool Have_Penalty;
-    virtual void SingleResponse(int idx, bool deduction) = 0;
-    virtual double GroupResponse() = 0;
-    virtual void Reset() = 0;
-    virtual double GetVal() = 0;
-};
-
-
-//Child classes for objective function
-
-
-class ObjectivePointE : public Objective {
-private:
-    double x;
-    double y;
-    double z;      // Here x, y, z are absolute coordinates. (No need to multiply d).
-    double d;
-    int N;
-    VectorXcd* P;
-    VectorXi* R;
-    EvoModel* model;
-    Vector3cd E_sum;
-    Vector3cd E_ext;
-public:
-    ObjectivePointE(list<double> parameters, EvoModel* model_, bool HavePenalty_);
-    ObjectivePointE(list<double> parameters, DDAModel* model_, bool HavePenalty_);
-    void SingleResponse(int idx, bool deduction);
-    double GroupResponse();
-    double GetVal();
-    void Reset();
-};
-
-class ObjectiveSurfaceEExp : public Objective {
-private:
-    bool Have_Devx;
-    bool Have_Penalty;
-    int N;
-    int Nobj;
-    double z;
-    double exponent;
-    double d;
-    int nz;
-    VectorXcd* P;
-    VectorXi* R;
-    VectorXi Robj;
-    VectorXcd* Einternal;
-    EvoModel* model;
-    VectorXcd E_sum;
-
-public:
-    ObjectiveSurfaceEExp(list<double> parameters, EvoModel* model_, bool HavePenalty_);
-    void SingleResponse(int idx, bool deduction);
-    double GroupResponse();
-    double GetVal();
-    void Reset();
-};
-
-class ObjectiveExtSurfaceEExp_CPU : public Objective {
-private:
-    bool Have_Devx;
-    bool Have_Penalty;
-    double d;
-    int N;
-    int Nobj;
-    double exponent;                              //2, 4 or something else for E^?
-    double ExtSurfaceEExpRz;
-    int Nx;
-    int Ny;
-    int Nz;                                       //The entire(as big as focus in Nz, which is bigger then the str length)
-    int ratio;                                 //Nx_obj = Nx/ratio; Ny_obj = Ny/ratio;
-    vector<vector<vector<Matrix3cd>>> A_dic;
-
-    VectorXcd* P;
-    VectorXi* R;
-    VectorXi Robj;
-    EvoModel* model;
-    VectorXcd E_sum;
-    VectorXcd E_ext;
-    double distance0;                                  //shortest distance between the plane and the str(corresponds to nz=0 in the A_dic (longest z corresponds to nz=max(nz)))
-
-public:
-    ObjectiveExtSurfaceEExp_CPU(list<double> parameters, EvoModel* model_, bool HavePenalty_);
-    void SingleResponse(int idx, bool deduction);
-    double GroupResponse();
-    double GetVal();
-    void Reset();
-};
-
-class ObjectiveExtSurfaceEMax : public Objective {
-private:
-    bool Have_Devx;
-    bool Have_Penalty;
-    double d;
-    int N;
-    int Nobj;
-    double exponent;                              //2, 4 or something else for E^?
-    double ExtSurfaceEExpRz;
-    int Nx;
-    int Ny;
-    int Nz;                                       //The entire(as big as focus in Nz, which is bigger then the str length)
-    int ratio;                                 //Nx_obj = Nx/ratio; Ny_obj = Ny/ratio;
-    vector<vector<vector<Matrix3cd>>> A_dic;
-
-    VectorXcd* P;
-    VectorXi* R;
-    VectorXi Robj;
-    EvoModel* model;
-    VectorXcd E_sum;
-    VectorXcd E_ext;
-    double distance0;                                  //shortest distance between the plane and the str(corresponds to nz=0 in the A_dic (longest z corresponds to nz=max(nz)))
-
-public:
-    ObjectiveExtSurfaceEMax(list<double> parameters, EvoModel* model_, bool HavePenalty_);
-    void SingleResponse(int idx, bool deduction);
-    double GroupResponse();
-    double GetVal();
-    void Reset();
-};
-
-class ObjectiveExtSurfaceEExp_CPU_Old : public Objective {
-private:
-    bool Have_Devx;
-    bool Have_Penalty;
-    double d;
-    int N;
-    int Nobj;
-    double exponent;                              //2, 4 or something else for E^?
-    double ExtSurfaceEExpRz;
-    int Nx;
-    int Ny;
-    int Nz;                                       //The entire(as big as focus in Nz, which is bigger then the str length)
-    int ratio;                                 //Nx_obj = Nx/ratio; Ny_obj = Ny/ratio;
-    vector<vector<vector<Matrix3cd>>> A_dic;
-
-    VectorXcd* P;
-    VectorXi* R;
-    VectorXi Robj;
-    EvoModel* model;
-    VectorXcd E_sum;
-    VectorXcd E_ext;
-    int distance0;                                  //shortest distance between the plane and the str(corresponds to nz=0 in the A_dic (longest z corresponds to nz=max(nz)))
-
-public:
-    ObjectiveExtSurfaceEExp_CPU_Old(list<double> parameters, EvoModel* model_, bool HavePenalty_);
-    void SingleResponse(int idx, bool deduction);
-    double GroupResponse();
-    double GetVal();
-    void Reset();
-};
-
-class ObjectiveExtSurfaceEExp : public Objective {
-private:
-    bool Have_Devx;
-    bool Have_Penalty;
-    double d;
-    int N;
-    int Nobj;
-    int NxA;
-    int NyA;
-    int NzA;
-    int NA;
-    double exponent;                              //2, 4 or something else for E^?
-    double ExtSurfaceEExpRz;
-    int Nx;
-    int Ny;
-    int Nz;                                       //The entire(as big as focus in Nz, which is bigger then the str length)
-    double* AHos;
-    double* ADev;                              // double, but actually double*2 course real and imag are both stored in this double
-    cufftDoubleComplex* A00, * A01, * A02, * A11, * A12, * A22; //The components in A for FFT, only in device
-    double* PHos;                              //b in Aproduct
-    double* PDev;                              // double, but actually double*2 course real and imag are both stored in this double
-    cufftDoubleComplex* PxDev, * PyDev, * PzDev; //b components for FFT, only in device
-    double* ESumHos;
-    double* ESumDev;
-    cufftDoubleComplex* ESumxDev, * ESumyDev, * ESumzDev;
-
-    VectorXcd* P;
-    VectorXi* R;
-    VectorXi Robj;
-    EvoModel* model;
-    VectorXcd E_sum;
-    VectorXcd E_ext;
-    int distance0;                                  //shortest distance between the plane and the str(corresponds to nz=0 in the A_dic (longest z corresponds to nz=max(nz)))
-
-public:
-    ObjectiveExtSurfaceEExp(list<double> parameters, EvoModel* model_, bool HavePenalty_);
-    ~ObjectiveExtSurfaceEExp();
-    void SingleResponse(int idx, bool deduction);
-    double GroupResponse();
-    double GetVal();
-    void Reset();
-};
-
-class ObjectiveG : public Objective {
-private:
-    bool Have_Devx;
-    bool Have_Penalty;
-    double d;
-    double E0;                                    //input electric field
-    int N;
-    int Nobj;
-    double exponent;                              //2, 4 or something else for E^?
-    double ExtSurfaceEExpRz;
-    int Nx;
-    int Ny;
-    int Nz;                                       //The entire(as big as focus in Nz, which is bigger then the str length)
-    int ratio;                                 //Nx_obj = Nx/ratio; Ny_obj = Ny/ratio;
-    vector<vector<vector<Matrix3cd>>> A_dic;
-
-    VectorXcd* P;
-    VectorXi* R;
-    VectorXi Robj;
-    EvoModel* model;
-    VectorXcd E_sum;
-    VectorXcd E_ext;
-    double distance0;                                  //shortest distance between the plane and the str(corresponds to nz=0 in the A_dic (longest z corresponds to nz=max(nz)))
-
-public:
-    ObjectiveG(list<double> parameters, EvoModel* model_, bool HavePenalty_);
-    void SingleResponse(int idx, bool deduction);
-    double GroupResponse();
-    double GetVal();
-    void Reset();
-};
 
 
 class ObjectiveDDAModel {
@@ -787,6 +451,28 @@ public:
     void Reset();
 };
 
+class ObjectivePointListEDDAModel : public ObjectiveDDAModel {
+private:
+    VectorXd x;
+    VectorXd y;
+    VectorXd z;      // Here x, y, z are absolute coordinates. (No need to multiply d).
+    int PNum;
+    double d;
+    int N;
+    VectorXcd* P;
+    VectorXi* R;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    MatrixXcd E_sum;
+    MatrixXcd E_ext;
+public:
+    ObjectivePointListEDDAModel(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
+
 class ObjectivePointIDDAModel : public ObjectiveDDAModel {
 private:
     double x;
@@ -808,6 +494,52 @@ public:
     void Reset();
 };
 
+class ObjectiveIntegratedEDDAModel : public ObjectiveDDAModel {
+private:
+    double d;
+    int N;
+    int Nx;
+    int Ny;
+    int Nz;
+    VectorXcd* P;
+    VectorXcd* al;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    VectorXcd E;
+    double E_int;
+    VectorXi* R;
+public:
+    ObjectiveIntegratedEDDAModel(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
+
+class ObjectiveMidAvgEDDAModel : public ObjectiveDDAModel {
+private:
+    double d;
+    int N;
+    int Nx;
+    int Ny;
+    int Nz;
+    VectorXcd* P;
+    VectorXcd* al;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    VectorXcd E;
+    double E_avg;
+    double r;                 //radius of the middle regions (for 2D)
+    VectorXi* R;
+    double centerx;
+    double centery;
+public:
+    ObjectiveMidAvgEDDAModel(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
 
 
 
@@ -820,9 +552,10 @@ public:
 
 
 
-
-
-
+void Evo_Focus(SpacePara* spacepara_tmp, CoreStructure* CStr, DDAModel* TestModel, string save_position, int start_num, int max_evo,
+    int min_num, int max_num, Vector3d lower_bound, Vector3d upper_bound, bool sym  //Parameters for focus generation
+);
+void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATION_EVO);
 
 
 

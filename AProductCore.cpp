@@ -23,7 +23,7 @@ AProductCore::AProductCore(CoreStructure* CStr_, double lam_, Vector2cd material
     int Nz = (*CStr).get_Nz();
     VectorXd* diel_old = (*CStr).get_diel_old();
     double d = (*CStr).get_d();
-    
+    //cout << *diel_old << endl;
     //--------------------------------------------------Allocation and part of initialization for FFT-----------------------------------------
     //NFFT:
     NxFFT = 2*Nx-1;
@@ -46,6 +46,12 @@ AProductCore::AProductCore(CoreStructure* CStr_, double lam_, Vector2cd material
                 Matrix3cd Atmp = this->A_dic_generator(x,y,z);
                 int first[6] = {0, 0, 0, 1, 1, 2};
                 int second[6] = {0, 1, 2, 1, 2, 2};
+
+                if (i == 5 && j == 3 && k == 1) {
+                    cout << Atmp << endl;
+                }
+
+
                 for(int l=0; l<=5; l++){
                     int index_real = 0+2*l+12*(k+NzFFT*j+NzFFT*NyFFT*i);
                     int index_imag = 1+2*l+12*(k+NzFFT*j+NzFFT*NyFFT*i);
@@ -169,13 +175,14 @@ AProductCore::AProductCore(CoreStructure* CStr_, double lam_, Vector2cd material
                     int index_real = 0+2*l+12*(k+NzFFT*j+NzFFT*NyFFT*i);
                     int index_imag = 1+2*l+12*(k+NzFFT*j+NzFFT*NyFFT*i);
                     AHos[index_real] = Atmp(first[l], second[l]).real();
-                    AHos[index_imag] = Atmp(first[l], second[l]).imag();
-                    
+                    AHos[index_imag] = Atmp(first[l], second[l]).imag();  
                 }
             }
         }
     }
     
+    
+
     cudaMalloc((void**)&ADev, sizeof(double)*2*6*NFFT);
     cudaMemcpy(ADev, AHos, sizeof(double)*2*6*NFFT, cudaMemcpyHostToDevice);
     cudaMalloc((void**)&A00, sizeof(cufftDoubleComplex)*NFFT);
@@ -283,6 +290,10 @@ AProductCore::AProductCore(CoreStructure* CStr_, double lam_, Vector2cd material
                     for (int n = -MAXn; n <= MAXn; n++) {
                         Atmp = Atmp + this->A_dic_generator(x, y, z, m, n);
                     }
+                }
+
+                if (i == 2 && j == 2 && k == 0) {
+                    cout << "A: " << Atmp(0, 0) << "," << Atmp(0, 1) << "," << Atmp(0, 2) << endl;
                 }
 
                 int first[6] = { 0, 0, 0, 1, 1, 2 };
@@ -828,38 +839,14 @@ int AProductCore::get_Ny() {
 int AProductCore::get_Nz() {
     return (*CStr).get_Nz();
 }
-tuple<list<int>, list<int>, list<int>, list<int>> AProductCore::get_para_info() {
-    return (*CStr).get_para_info();
-}
 VectorXi* AProductCore::get_R() {
     return (*CStr).get_R();
 }
 double AProductCore::get_d() {
     return (*CStr).get_d();
 }
-Space* AProductCore::get_space() {
-    return (*CStr).get_space();
-}
 double AProductCore::get_lam() {
     return lam;
-}
-list<list<int>>* AProductCore::get_PositionDep() {
-    return (*CStr).get_PositionDep();
-}
-VectorXi* AProductCore::get_PositionPara() {
-    return (*CStr).get_PositionPara();
-}
-list<int>* AProductCore::get_para_nums() {
-    return (*CStr).get_para_nums();
-}
-list<int>* AProductCore::get_para_starts() {
-    return (*CStr).get_para_starts();
-}
-list<int>* AProductCore::get_para_dep_nums() {
-    return (*CStr).get_para_dep_nums();
-}
-list<int>* AProductCore::get_para_dep_starts() {
-    return (*CStr).get_para_dep_starts();
 }
 VectorXd* AProductCore::get_diel_old() {
     return (*CStr).get_diel_old();
@@ -870,3 +857,4 @@ Vector2cd* AProductCore::get_material() {
 VectorXd* AProductCore::get_diel_old_max() {
     return (*CStr).get_diel_old_max();
 }
+

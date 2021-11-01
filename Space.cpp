@@ -28,6 +28,7 @@ void Space::show_something_about_Structures() const{
         it++;
     }
 
+    /*
     it=(*ln).begin();
     for(int i=0;i<=int((*ln).size())-1;i++){
         fout<<*((*it).get_diel())<<endl;
@@ -42,7 +43,7 @@ void Space::show_something_about_Structures() const{
         }
         it++;
     }
-
+    */
 
 
 

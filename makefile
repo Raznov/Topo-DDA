@@ -3,7 +3,7 @@ CC = g++
 cuFFT_INCLUDE_PATH = "/opt/apps/software/Compiler/GCC/8.3.0/CUDA/10.1.168/include"
 cuFFT_LIB_DIR = "/opt/apps/software/Compiler/GCC/8.3.0/CUDA/10.1.168/lib64"
 FLAG = -fopenmp -lpthread -O3 -Wall -Wno-maybe-uninitialized -fPIC -m64 -I${cuFFT_INCLUDE_PATH} -L${cuFFT_LIB_DIR} -Wl,--no-as-needed -lcuda -lcudart -lcufft -lm -ldl
-OBJ = test.o Structure.o Space.o CoreStructure.o Model.o EvoModel.o tools.o AProductCore.o DDAModel.o EvoDDAModel.o Objective.o ObjectiveDDAModel.o SiCi.o kernel.o 
+OBJ = test.o Structure.o Space.o CoreStructure.o tools.o AProductCore.o DDAModel.o EvoDDAModel.o ObjectiveDDAModel.o SiCi.o kernel.o 
 
 te : $(OBJ)
 	$(CC) $(FLAG) -o te $(OBJ)
@@ -15,14 +15,8 @@ Space.o : Space.cpp
 	$(CC) $(FLAG) -c Space.cpp
 CoreStructure.o : CoreStructure.cpp
 	$(CC) $(FLAG) -c CoreStructure.cpp		
-Model.o : Model.cpp
-	$(CC) $(FLAG) -c Model.cpp
-EvoModel.o : EvoModel.cpp
-	$(CC) $(FLAG) -c EvoModel.cpp
 tools.o : tools.cpp
 	$(CC) $(FLAG) -c tools.cpp
-Objective.o : Objective.cpp
-	$(CC) $(FLAG) -c Objective.cpp
 AProductCore.o : AProductCore.cpp
 	$(CC) $(FLAG) -c AProductCore.cpp
 DDAModel.o : DDAModel.cpp
