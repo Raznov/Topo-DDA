@@ -1,7 +1,10 @@
 
 CC = g++
-cuFFT_INCLUDE_PATH = "/opt/apps/software/Compiler/GCC/8.3.0/CUDA/10.1.168/include"
-cuFFT_LIB_DIR = "/opt/apps/software/Compiler/GCC/8.3.0/CUDA/10.1.168/lib64"
+##cuFFT_INCLUDE_PATH = "/opt/apps/software/Compiler/GCC/8.3.0/CUDA/10.1.168/include"
+cuFFT_INCLUDE_PATH = "/usr/local/cuda/include"
+##cuFFT_LIB_DIR = "/opt/apps/software/Compiler/GCC/8.3.0/CUDA/10.1.168/lib64"
+cuFFT_LIB_DIR = "/usr/local/cuda/lib64"
+
 FLAG = -fopenmp -lpthread -O3 -Wall -Wno-maybe-uninitialized -fPIC -m64 -I${cuFFT_INCLUDE_PATH} -L${cuFFT_LIB_DIR} -Wl,--no-as-needed -lcuda -lcudart -lcufft -lm -ldl
 OBJ = test.o Structure.o Space.o CoreStructure.o tools.o AProductCore.o DDAModel.o EvoDDAModel.o ObjectiveDDAModel.o SiCi.o kernel.o 
 
