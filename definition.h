@@ -24,7 +24,7 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include "cufft.h"
-#include "direct.h"
+//#include "direct.h"
 
 
 
