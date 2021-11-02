@@ -31,7 +31,7 @@ ObjectiveDDAModel.o : ObjectiveDDAModel.cpp
 SiCi.o : SiCi.cpp
 	$(CC) $(FLAG) -c SiCi.cpp
 kernel.o : kernel.cu
-	nvcc -w -c kernel.cu
+	/usr/local/cuda/bin/nvcc -w -c kernel.cu
 
 
 .PHONY : clean
