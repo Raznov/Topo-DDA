@@ -1,5 +1,6 @@
 mkdir $1
 cd $1
+mkdir CoreStructure
 mkdir E-field
 mkdir Model_output
 mkdir Shape
