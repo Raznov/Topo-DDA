@@ -6,7 +6,7 @@ cuFFT_INCLUDE_PATH = "/usr/local/cuda/include"
 cuFFT_LIB_DIR = "/usr/local/cuda/lib64"
 
 FLAG = -fopenmp -lpthread -O3 -Wall -Wno-maybe-uninitialized -fPIC -m64 -I${cuFFT_INCLUDE_PATH} -L${cuFFT_LIB_DIR} -Wl,--no-as-needed -lcuda -lcudart -lcufft -lm -ldl
-OBJ = test.o Structure.o Space.o CoreStructure.o tools.o AProductCore.o DDAModel.o EvoDDAModel.o ObjectiveDDAModel.o SiCi.o kernel.o 
+OBJ = test.o Structure.o Space.o SpacePara.o CoreStructure.o tools.o AProductCore.o DDAModel.o EvoDDAModel.o ObjectiveDDAModel.o SiCi.o kernel.o 
 
 te : $(OBJ)
 	$(CC) $(FLAG) -o te $(OBJ)
@@ -16,6 +16,8 @@ Structure.o : Structure.cpp
 	$(CC) $(FLAG) -c Structure.cpp
 Space.o : Space.cpp
 	$(CC) $(FLAG) -c Space.cpp
+SpacePara.o : SpacePara.cpp
+	$(CC) $(FLAG) -c SpacePara.cpp
 CoreStructure.o : CoreStructure.cpp
 	$(CC) $(FLAG) -c CoreStructure.cpp		
 tools.o : tools.cpp
