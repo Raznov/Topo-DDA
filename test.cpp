@@ -9,7 +9,7 @@ int main() {
     string save_position;
     Vector3i bind; 
     Vector3d l;
-    int MAX_ITERATION_EVO = 1;
+    int MAX_ITERATION_EVO = 200;
 
     //-------------------------------------------bind4------------------------------------------
     //thick100
