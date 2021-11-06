@@ -9,7 +9,7 @@ int main() {
     string save_position;
     Vector3i bind; 
     Vector3d l;
-    int MAX_ITERATION_EVO = 200;
+    int MAX_ITERATION_EVO = 400;
 
     //-------------------------------------------bind4------------------------------------------
     /*
@@ -68,7 +68,7 @@ int main() {
     bind << 4, 4, 4;
     l << 80.0, 80.0, 12.0;
     Evo_single(save_position, bind, l, MAX_ITERATION_EVO);
-    */
+    
     save_position = "./thick300-diel2d5-phi0theta0-lam500-size2500-focus50-bind4/";
     bind << 4, 4, 4;
     l << 100.0, 100.0, 12.0;
@@ -88,7 +88,12 @@ int main() {
     bind << 4, 4, 4;
     l << 100.0, 100.0, 16.0;
     Evo_single(save_position, bind, l, MAX_ITERATION_EVO);
+    */
 
+    save_position = "./thick400-diel2d5-phi0theta0-lam500-size2500-focus50-bind2/";
+    bind << 2, 2, 2;
+    l << 100.0, 100.0, 16.0;
+    Evo_single(save_position, bind, l, MAX_ITERATION_EVO);
 
 
     return 0;
