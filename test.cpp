@@ -21,6 +21,12 @@ int main() {
     l << 100.0, 100.0, 16.0;
     Evo_single(save_position, bind, l, MAX_ITERATION_EVO, move_focus);
 
+    move_focus << 1.5, 1.5, 0.0;
+    save_position = "./thick400-diel2d5-phi0theta0-lam500-size2000-focus50-bind4-trymid/";
+    bind << 4, 4, 4;
+    l << 80.0, 80.0, 16.0;
+    Evo_single(save_position, bind, l, MAX_ITERATION_EVO, move_focus);
+
 
     return 0;
 
