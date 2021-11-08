@@ -90,7 +90,7 @@ void Evo_Focus(SpacePara* spacepara_tmp, CoreStructure* CStr, DDAModel* TestMode
     
 }
 
-void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATION_EVO) {
+void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATION_EVO, Vector3d move_focus) {
     ofstream TotalTime;
     TotalTime.open(save_position + "TotalTime.txt");
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
@@ -120,7 +120,8 @@ void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATI
     list<string> ObjectFunctionNames{ "PointE" };
     double exponent = 2;
     double ratio = 4;
-    list<double> ObjectParameter{ center(0) * d,center(1) * d,focus };
+    //list<double> ObjectParameter{ center(0) * d,center(1) * d,focus };
+    list<double> ObjectParameter{ center(0) * d + move_focus(0) * d,center(1) * d + move_focus(1) * d,focus + move_focus(2) * d };
     bool HavePathRecord = false;
     bool HavePenalty = false;
     bool HaveOriginHeritage = true;

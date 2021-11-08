@@ -555,7 +555,7 @@ public:
 void Evo_Focus(SpacePara* spacepara_tmp, CoreStructure* CStr, DDAModel* TestModel, string save_position, int start_num, int max_evo,
     int min_num, int max_num, Vector3d lower_bound, Vector3d upper_bound, bool sym  //Parameters for focus generation
 );
-void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATION_EVO);
+void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATION_EVO, Vector3d move_focus);
 
 
 
