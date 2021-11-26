@@ -66,7 +66,7 @@ int main() {
     double exponent = 2;
     double ratio = 4;
 
-    list<double> ObjectParameter{ 70.0 };
+    //list<double> ObjectParameter{ 70.0 };
 
     bool HavePathRecord = false;
     bool HavePenalty = false;
