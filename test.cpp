@@ -74,7 +74,7 @@ int main() {
     bool HaveAdjointHeritage = false;
     double PenaltyFactor = 1;
     list<list<double>*> ObjectParameters{ &ObjectParameter };
-    string save_position = ".\\p330-lam542-beta7-TiO2-PointE\\";
+    string save_position = "./p330-lam542-beta7-TiO2-PointE/";
 
     Vector3d n_K;
     Vector3d n_E0;
