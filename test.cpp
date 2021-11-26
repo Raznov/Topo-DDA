@@ -41,7 +41,7 @@ int main() {
     double r = 150 / d;
 
     Vector3i bind(1, 1, 10);
-    SpacePara spacepara(&S, bind, "ONES", "ZEROS", r);
+    SpacePara spacepara(&S, bind, "ONES", "ZEROS", r, "CYLINDER");
 
     //SpacePara spacepara(&S, bind, "RANDOM");
 
