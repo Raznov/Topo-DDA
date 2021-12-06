@@ -558,6 +558,425 @@ int main() {
     return 0;
 
 }
+//SiO2 sphere far field scattering
+int main() {
+
+    int Nx, Ny, Nz;
+    Nx = 65; Ny = 65; Nz = 65;
+
+    int N = 0;
+    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);
+    list<Structure> ln;
+    Space S(&total_space, Nx, Ny, Nz, N, &ln);
+
+    double d;
+    double r;
+    Vector3d center;
+
+    d = 2;
+    r = 60 / d;
+    center << Nx / 2, Ny / 2, Nz / 2;
+
+    Structure s1(S.get_total_space(), r, center);
+    Vector3d l;
+    l << 120 / d, 120 / d, 120 / d;
+    //Structure s1(S.get_total_space(), r, center);
+
+
+    S = S + s1;
+
+
+
+    double lam = 500;
+    Vector3d n_K;
+    n_K << 0.0, 0.0, 1.0;
+    double E0 = 1.0;
+    Vector3d n_E0;
+    n_E0 << 1.0, 0.0, 0.0;
+    Vector2cd material = Get_2_material("Air", "SiO2", lam, "nm");
+    int MAX_ITERATION_DDA = 10000;
+    double MAX_ERROR = 0.00001;
+    Vector3i bind(1, 1, 1);
+    SpacePara spacepara(&S, bind, "ONES");
+    CoreStructure CStr(&spacepara, d);
+    AProductCore Core(&CStr, lam, material, "LDR");
+    DDAModel TestModel(&Core, n_K, E0, n_E0);
+
+    TestModel.bicgstab(MAX_ITERATION_DDA, MAX_ERROR);
+    TestModel.update_E_in_structure();
+    TestModel.solve_E();
+
+
+
+    string save_position = ".\\SiO2-sphere-scatter-r60-d2-lam500\\";
+    CStr.output_to_file(save_position + "CoreStructure\\", 0, "simple");
+    TestModel.output_to_file(save_position + "Model_output\\", 0);
+
+
+    ofstream Common;
+    Common.open(save_position + "Commondata.txt");
+    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
+    Common << (spacepara.get_geometry()) << endl;
+    Common << d << endl;
+    Common << n_E0 << endl;
+    Common << n_K << endl;
+
+    string name = save_position + "theta90phi0to360.txt";
+    list<double> theta{ M_PI / 2 };
+    double start = 0;
+    double end = 2 * M_PI;
+    int number = 200;
+    list<double> phi = makelist(start, end, number);
+    eval_FOM(name, &TestModel, theta, phi);
+
+    name = save_position + "theta-9090phi0.txt";
+    list<double> phi1{ 0.0 };
+    number = 100;
+    start = 0.0;
+    end = M_PI;
+    list<double> theta1 = makelist(start, end, number);
+    eval_FOM(name, &TestModel, theta1, phi1);
+
+    name = save_position + "theta-9090phi180.txt";
+    list<double> phi2{ M_PI };
+    start = M_PI;
+    end = 0.0;
+    list<double> theta2 = makelist(start, end, number);
+    eval_FOM(name, &TestModel, theta2, phi2);
+
+
+
+
+
+
+
+
+
+
+
+    return 0;
+
+}
+//dimer
+int main() {
+
+    int Nx, Ny, Nz;
+    Nx = 125; Ny = 65; Nz = 65;
+
+    int N = 0;
+    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);
+    list<Structure> ln;
+    Space S(&total_space, Nx, Ny, Nz, N, &ln);
+
+    double d;
+    double r1, r2;
+    double gap;
+    Vector3d center1, center2;
+    d = 2;
+    gap = 40 / d;
+    r2 = 30 / d;
+    r1 = 60 / d;
+    center1 << (20 + r2 + gap + r1), Ny / 2, Nz / 2;
+
+    Structure s1(S.get_total_space(), r1, center1);
+    //Vector3d l;
+    //l << 120 / d, 120 / d, 120 / d;
+
+    center2 << 20, Ny / 2, Nz / 2;
+
+    Structure s2(S.get_total_space(), r2, center2);
+
+
+    S = S + s1;
+    S = S + s2;
+
+
+
+    double lam = 500;
+    Vector3d n_K;
+    n_K << 0.0, 0.0, 1.0;
+    double E0 = 1.0;
+    Vector3d n_E0;
+    n_E0 << 1.0, 0.0, 0.0;
+    Vector2cd material = Get_2_material("Air", "SiO2", lam, "nm");
+    int MAX_ITERATION_DDA = 10000;
+    double MAX_ERROR = 0.00001;
+    Vector3i bind(1, 1, 1);
+    SpacePara spacepara(&S, bind, "ONES");
+    CoreStructure CStr(&spacepara, d);
+    AProductCore Core(&CStr, lam, material, "LDR");
+    DDAModel TestModel(&Core, n_K, E0, n_E0);
+
+    TestModel.bicgstab(MAX_ITERATION_DDA, MAX_ERROR);
+    TestModel.update_E_in_structure();
+    TestModel.solve_E();
+
+
+
+    string save_position = ".\\SiO2-dimer-scatter-r3060-d2-lam500\\";
+    CStr.output_to_file(save_position + "CoreStructure\\", 0, "simple");
+    TestModel.output_to_file(save_position + "Model_output\\", 0);
+
+
+    ofstream Common;
+    Common.open(save_position + "Commondata.txt");
+    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
+    Common << (spacepara.get_geometry()) << endl;
+    Common << d << endl;
+    Common << n_E0 << endl;
+    Common << n_K << endl;
+
+    string name = save_position + "theta90phi0to360.txt";
+    list<double> theta{ M_PI / 2 };
+    double start = 0;
+    double end = 2 * M_PI;
+    int number = 200;
+    list<double> phi = makelist(start, end, number);
+    eval_FOM(name, &TestModel, theta, phi);
+
+    name = save_position + "theta-9090phi0.txt";
+    list<double> phi1{ 0.0 };
+    number = 100;
+    start = 0.0;
+    end = M_PI;
+    list<double> theta1 = makelist(start, end, number);
+    eval_FOM(name, &TestModel, theta1, phi1);
+
+    name = save_position + "theta-9090phi180.txt";
+    list<double> phi2{ M_PI };
+    start = M_PI;
+    end = 0.0;
+    list<double> theta2 = makelist(start, end, number);
+    eval_FOM(name, &TestModel, theta2, phi2);
+
+
+
+
+
+
+
+
+
+
+
+    return 0;
+
+}
+//gold sphere far field scattering spectrum
+int main() {
+
+    int Nx, Ny, Nz;
+    Nx = 65; Ny = 65; Nz = 65;
+
+    int N = 0;
+    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);
+    list<Structure> ln;
+    Space S(&total_space, Nx, Ny, Nz, N, &ln);
+
+    double d;
+    double r;
+    Vector3d center;
+
+    d = 2;
+    r = 60 / d;
+    center << Nx / 2, Ny / 2, Nz / 2;
+
+    Structure s1(S.get_total_space(), r, center);
+    Vector3d l;
+    l << 120 / d, 120 / d, 120 / d;
+    //Structure s1(S.get_total_space(), r, center);
+
+
+    S = S + s1;
+
+
+    Vector3d n_K;
+    n_K << 0.0, 0.0, 1.0;
+    double E0 = 1.0;
+    Vector3d n_E0;
+    n_E0 << 1.0, 0.0, 0.0;
+
+    int MAX_ITERATION_DDA = 100000;
+    double MAX_ERROR = 0.00001;
+    Vector3i bind(1, 1, 1);
+    SpacePara spacepara(&S, bind, "ONES");
+    CoreStructure CStr(&spacepara, d);
+
+    string save_position = ".\\Au-sphere-scatter-r60-d2-lamscan\\";
+    list<double> wave_result;
+    ofstream fout_wave;
+    list<double> theta_wave{ M_PI / 2 };
+    list<double> phi_wave{ M_PI / 2 };
+    for (double lam = 200; lam <= 650; lam += 50) {
+        Vector2cd material = Get_2_material("Air", "Au", lam, "nm");
+        int iteration = round((lam - 200) / 50);
+        AProductCore Core(&CStr, lam, material, "FCD");
+        DDAModel TestModel(&Core, n_K, E0, n_E0);
+
+        TestModel.bicgstab(MAX_ITERATION_DDA, MAX_ERROR);
+        TestModel.update_E_in_structure();
+        TestModel.solve_E();
+
+        CStr.output_to_file(save_position + "CoreStructure\\", iteration, "simple");
+        TestModel.output_to_file(save_position + "Model_output\\", iteration);
+
+        ofstream Common;
+        Common.open(save_position + "Commondata.txt");
+        Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
+        Common << (spacepara.get_geometry()) << endl;
+        Common << d << endl;
+        Common << n_E0 << endl;
+        Common << n_K << endl;
+
+        string name = save_position + to_string(iteration) + "theta90phi.txt";
+        list<double> theta{ M_PI / 2 };
+        double start = 0;
+        double end = 2 * M_PI;
+        int number = 200;
+        list<double> phi = makelist(start, end, number);
+        eval_FOM(name, &TestModel, theta, phi);
+
+        name = save_position + to_string(iteration) + "theta-9090phi0.txt";
+        list<double> phi1{ 0.0 };
+        number = 100;
+        start = 0.0;
+        end = M_PI;
+        list<double> theta1 = makelist(start, end, number);
+        eval_FOM(name, &TestModel, theta1, phi1);
+
+        name = save_position + to_string(iteration) + "theta-9090phi180.txt";
+        list<double> phi2{ M_PI };
+        start = M_PI;
+        end = 0.0;
+        list<double> theta2 = makelist(start, end, number);
+        eval_FOM(name, &TestModel, theta2, phi2);
+
+
+
+        list<double> ObjectParameter{ -0.5,0.8660254038,0 };
+
+        FOMscattering0D FOMcal(ObjectParameter, &TestModel);
+        list<double> FOMresults = FOMcal.GetVal();
+        list<double>::iterator it_wave = FOMresults.begin();
+        wave_result.push_back(*it_wave);
+
+    }
+    string name = save_position + "wavescan.txt";
+    fout_wave.open(name);
+    list<double>::iterator it_wave = wave_result.begin();
+    for (double lam = 200; lam <= 650; lam += 50) {
+        fout_wave << lam << " " << (*it_wave) << endl;
+        it_wave++;
+    }
+
+    return 0;
+
+}
+//2D periodic scattering
+int main() {
+
+    int Nx, Ny, Nz;
+    Nx = 65; Ny = 65; Nz = 65;
+
+    int N = 0;
+    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);
+    list<Structure> ln;
+    Space S(&total_space, Nx, Ny, Nz, N, &ln);
+
+    double d;
+    double r;
+    Vector3d center;
+
+    d = 2;
+    r = 60 / d;
+    center << Nx / 2, Ny / 2, Nz / 2;
+
+    Structure s1(S.get_total_space(), r, center);
+    Vector3d l;
+    l << 120 / d, 120 / d, 120 / d;
+    //Structure s1(S.get_total_space(), r, center);
+    double period = 800;
+    int m, n;
+    double Lm, Ln;
+    m = 50;
+    n = 50;
+    Lm = period;
+    Ln = period;
+
+    S = S + s1;
+
+
+
+    double lam = 400;
+    Vector3d n_K;
+    n_K << 0.0, 0.0, 1.0;
+    double E0 = 1.0;
+    Vector3d n_E0;
+    n_E0 << 1.0, 0.0, 0.0;
+    Vector2cd material = Get_2_material("Air", "SiO2", lam, "nm");
+    int MAX_ITERATION_DDA = 10000;
+    double MAX_ERROR = 0.00001;
+    Vector3i bind(1, 1, 1);
+    SpacePara spacepara(&S, bind, "ONES");
+    CoreStructure CStr(&spacepara, d);
+    AProductCore Core(&CStr, lam, material, m, n, Lm, Ln, "LDR");
+    DDAModel TestModel(&Core, n_K, E0, n_E0);
+
+    TestModel.bicgstab(MAX_ITERATION_DDA, MAX_ERROR);
+    TestModel.update_E_in_structure();
+    TestModel.solve_E();
+
+
+
+    string save_position = ".\\SiO2-sphere-scatter-r60-d2-lam400-m800n800\\";
+    CStr.output_to_file(save_position + "CoreStructure\\", 0, "simple");
+    TestModel.output_to_file(save_position + "Model_output\\", 0);
+
+
+    ofstream Common;
+    Common.open(save_position + "Commondata.txt");
+    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
+    Common << (spacepara.get_geometry()) << endl;
+    Common << d << endl;
+    Common << n_E0 << endl;
+    Common << n_K << endl;
+
+    string name = save_position + "theta90phi0to360.txt";
+    list<double> theta{ M_PI / 2 };
+    double start = 0;
+    double end = 2 * M_PI;
+    int number = 200;
+    list<double> phi = makelist(start, end, number);
+    eval_FOM_2Dperiod(name, &TestModel, theta, phi);
+
+    name = save_position + "theta0to180phi0.txt";
+    list<double> phi1{ 0.0 };
+    number = 200;
+    start = 0.0;
+    end = M_PI;
+    list<double> theta1 = makelist(start, end, number);
+    eval_FOM_2Dperiod(name, &TestModel, theta1, phi1);
+
+    name = save_position + "theta180to0phi180.txt";
+    list<double> phi2{ M_PI };
+    start = M_PI;
+    end = 0.0;
+    list<double> theta2 = makelist(start, end, number);
+    eval_FOM_2Dperiod(name, &TestModel, theta2, phi2);
+
+
+
+
+
+
+
+
+
+
+
+    return 0;
+
+}
 //##########################################################INVERSE DESIGN TEMPLATES###################################################
 //Optimization of focal metasurfaces: size 2um 2um 400nm at 500nm for diel2d5, nonperiodic
 int main() {

@@ -1018,6 +1018,9 @@ ObjectiveDDAModel* EvoDDAModel::ObjectiveFactory(string ObjectName, list<double>
     if (MajorObjectFunctionName == "MidAvgE") {
         return new ObjectiveMidAvgEDDAModel(ObjectParameters, ObjDDAModel, this, HavePenalty);
     }
+    if (MajorObjectFunctionName == "scattering0D") {
+        return new Objectivescattering0D(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
     /*
     else if (MajorObjectFunctionName == "SurfaceEExp"){
         return new ObjectiveSurfaceEExp(ObjectParameters, this, HavePenalty);

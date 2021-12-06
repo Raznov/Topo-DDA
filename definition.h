@@ -54,6 +54,9 @@ Vector3d nEPerpinXZ(double theta, double phi);
 MatrixXi find_scope_3_dim(VectorXi* x);
 VectorXd initial_diel_func(string initial_diel, int N);
 double initial_diel_func(string initial_diel);
+list<double> makelist(double start, double end, double interval);
+list<double> makelist(double start, double end, int number);
+
 
 
 int makedirect(string name);
@@ -119,7 +122,7 @@ class SpacePara {
 private:
     Space* space;
     VectorXi geometry;                //3N dimension
-    VectorXi geometryPara;            //N dimension. N=number of dipoles. Each position sotres the para index in VectorXi Para : 0->Para[0]...
+    VectorXi geometryPara;            //N dimension. N=number of dipoles. Each position stores the para index in VectorXi Para : 0->Para[0]...
     VectorXd Para;                    //P dimension. P=number of parameters.
     MatrixXi scope;                   //[[xmin, xmax],[ymin, ymax],[zmin, zmax]]
     Vector3i bind;
@@ -270,6 +273,8 @@ public:
     int get_Nx();
     int get_Ny();
     int get_Nz();
+    double get_Lm();
+    double get_Ln();
     tuple<list<int>, list<int>, list<int>, list<int>> get_para_info();
     VectorXi* get_R();
     double get_d();
@@ -353,6 +358,7 @@ public:
 };
 
 class ObjectiveDDAModel;
+
 
 class EvoDDAModel {
 private:
@@ -541,6 +547,102 @@ public:
     void Reset();
 };
 
+class Objectivescattering2D : public ObjectiveDDAModel {
+private:
+    double x;
+    double y;
+    double z;      // Here x, y, z are absolute coordinates. (No need to multiply d).
+    double d;
+    int N;
+    VectorXcd* P;
+    VectorXi* R;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    Vector3cd E_sum;
+    Vector3cd E_ext;
+
+    Vector3d n_K_s;
+    Matrix3d FconstM;
+
+public:
+    Objectivescattering2D(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+    double FTUCnsquare();
+};
+
+class Objectivescattering0D : public ObjectiveDDAModel {
+private:
+
+    double d;
+    int N;
+    VectorXcd* P;
+    VectorXi* R;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    double K;
+    double E0;
+    int Paralength;
+    list<Vector3d> n_K_s_l;
+    list<Vector3cd> PSum_l;
+    list<Matrix3d> FconstM_l;
+    //double ATUC;
+    //Matrix3d FconstM;
+
+
+public:
+    Objectivescattering0D(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+    double FTUCnsquare();
+};
+
+class FOMscattering2D{
+private:
+    
+    double d;
+    int N;
+    VectorXcd* P;
+    VectorXi* R;
+    DDAModel* model;
+    double K;
+    int Paralength;
+    list<Vector3d> n_K_s_l;
+    double ATUC;
+    //Matrix3d FconstM;
+    
+
+public:
+    FOMscattering2D(list<double> parameters, DDAModel* model_);
+    list<double> GetVal();                                                        //Return list of far field abs(Es) at specified directions
+    double FTUCnsquare(Vector3d n_K_s);
+};
+
+class FOMscattering0D {
+private:
+
+    double d;
+    int N;
+    VectorXcd* P;
+    VectorXi* R;
+    DDAModel* model;
+    double K;
+    double E0;
+    int Paralength;
+    list<Vector3d> n_K_s_l;
+    //double ATUC;
+    //Matrix3d FconstM;
+
+
+public:
+    FOMscattering0D(list<double> parameters, DDAModel* model_);
+    list<double> GetVal();                                                      //Return list of dCsca/dOmega at specified directions
+    double FTUCnsquare(Vector3d n_K_s);
+};
 
 
 
@@ -560,6 +662,7 @@ void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATI
 
 
 
-
+void eval_FOM(string name, DDAModel* TestModel, list<double> theta, list<double> phi);
+void eval_FOM_2Dperiod(string name, DDAModel* TestModel, list<double> theta, list<double> phi);
 
 #endif // PREPROCESSING_H_INCLUDED
