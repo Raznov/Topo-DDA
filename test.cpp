@@ -73,7 +73,7 @@ int main() {
     bool HaveAdjointHeritage = false;
     double PenaltyFactor = 1;
     list<list<double>*> ObjectParameters{ &ObjectParameter };
-    string save_position = ".\\p1d25um-lam500-diel4d0-PointE-ONES\\";
+    string save_position = "./p1d25um-lam500-diel4d0-PointE-ONES/";
 
     Vector3d n_K;
     Vector3d n_E0;
@@ -133,7 +133,7 @@ int main() {
     Common << d << endl;
     Common << n_E0 << endl;
     Common << n_K << endl;
-    
+
     list<AProductCore*>::iterator it = CorePointList.begin();
     for (int k = 0; k <= lam_num - 1; k++) {
         AProductCore* Core = (*it);
