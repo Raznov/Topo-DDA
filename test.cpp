@@ -6,7 +6,7 @@
 
 int main() {
 
-    string save_position = "./1um1um1um-SiO2-phi0theta0-lam500-theta90-2Dextrusion/";       //output file
+    string save_position = "./1um1um1um-SiO2-phi0theta0-lam500-theta90/";       //output file
     Vector3d l;
     Vector3d center;
     l << 40.0, 40.0, 40.0;    //Size of the initialization block. 81*81*17 pixels in total.
@@ -17,7 +17,7 @@ int main() {
                                                                         //However, if geometry has pixels outside this space, they will be cut off.
     cout << center << endl;
     int N = 0;                                                          //N counts the number of pixels in the geometries simulated. Initail is one.
-    Vector3i bind(1, 1, 41);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
+    Vector3i bind(1, 1, 1);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
                                                                         //This can be used to control the finest feature size of the designed structure.
     double d = 25;                                                      //Size of pixel. Here 25nm.   
     double E0 = 1.0;                                                    //Input field amplitude. 1V/m.
