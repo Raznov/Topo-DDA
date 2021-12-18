@@ -126,7 +126,8 @@ private:
     VectorXd Para;                    //P dimension. P=number of parameters.
     MatrixXi scope;                   //[[xmin, xmax],[ymin, ymax],[zmin, zmax]]
     Vector3i bind;
-    VectorXi FreeparatoPara;
+    VectorXi FreeparatoPara;          //Position of free parameters inside Para. dimension<=P. FreeparatoPara[i] is the index of a free parameter inside Para.
+    vector<list<int>> Paratogeometry;  //P dimension. Each position stores a list of corresponding dipole index for parameter for this specific position.
 public:
     SpacePara(Space* space_, string initial_diel, VectorXi geometry_, VectorXd diel_);
     SpacePara(Space* space_, Vector3i bind_, VectorXi* geometryPara_, VectorXd* Para_, VectorXi* FreeparatoPara_);
@@ -153,6 +154,7 @@ public:
     VectorXd* get_Para();
     Vector3i* get_bind();
     VectorXi* get_Free();
+    vector<list<int>>* get_Paratogeometry();
 };
 
 //Abstract parent class for objective function.
@@ -199,6 +201,7 @@ public:
     CoreStructure(SpacePara* spacepara_, double d_);
     void UpdateStr(VectorXd step);
     void UpdateStr(SpacePara* spacepara_);
+    void UpdateStrSingle(int idx, double value);
     void output_to_file();
     void output_to_file(string save_position, int iteration, string mode = "normal");
 
@@ -323,6 +326,7 @@ public:
     void change_E(VectorXcd E_);
     void reset_E();             //reset E to E0                                
     void UpdateAlpha();                                //update alpha according to updated diel in AProductCore.
+    void UpdateAlphaSingle(int idx);
     void solve_E();                                                        //update the result E field on each dipole or on a designated space
     void update_E_in_structure();                                          //update the result E field on each dipole 
     VectorXcd Aproductwithalb(VectorXcd& b);                    //add the al*b term on base of AproductCore
@@ -404,6 +408,7 @@ public:
     
     //functions used to calculate partial derivatives                                 
     tuple<VectorXd, VectorXcd> devx_and_Adevxp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin);                       //partial derivative of obj to parameter and A to x times p
+    tuple<VectorXd, VectorXcd> devx_and_Adevxp_tmp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin);
     VectorXcd devp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin);                       //partial derivative of obj to P. Size of P
 
     void EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_ITERATION_EVO, string method, double start_num=0);
@@ -603,7 +608,7 @@ public:
 
 class FOMscattering2D{
 private:
-    
+    VectorXd FOMParameters;
     double d;
     int N;
     VectorXcd* P;
@@ -613,13 +618,15 @@ private:
     int Paralength;
     list<Vector3d> n_K_s_l;
     double ATUC;
+    double E0;
+    Vector3d n_E0;
     //Matrix3d FconstM;
     
 
 public:
     FOMscattering2D(list<double> parameters, DDAModel* model_);
     list<double> GetVal();                                                        //Return list of far field abs(Es) at specified directions
-    double FTUCnsquare(Vector3d n_K_s);
+    Vector3cd FTUC(Vector3d n_K_s);
 };
 
 class FOMscattering0D {

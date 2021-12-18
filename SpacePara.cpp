@@ -122,6 +122,11 @@ SpacePara::SpacePara(Space* space_, string initial_diel, VectorXi geometry_, Vec
         int pos = paraz + Nparaz * (paray + Nparay * parax);
         geometryPara(i) = pos;
     }
+
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
+    }
 }
 
 SpacePara::SpacePara(Space* space_, Vector3i bind_, VectorXi* geometryPara_, VectorXd* Para_, VectorXi* FreeparatoPara_) {
@@ -149,7 +154,10 @@ SpacePara::SpacePara(Space* space_, Vector3i bind_, VectorXi* geometryPara_, Vec
     Para = *Para_;
     
     FreeparatoPara = *FreeparatoPara_;
-
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
+    }
 }
 
 SpacePara::SpacePara(Space* space_, Vector3i bind_, string initial_diel) {
@@ -197,6 +205,10 @@ SpacePara::SpacePara(Space* space_, Vector3i bind_, string initial_diel) {
         int pos= paraz + Nparaz * (paray + Nparay * parax);
         geometryPara(i) = pos;
     }
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
+    }
 
 }
 
@@ -235,7 +247,10 @@ SpacePara::SpacePara(Space* space_, Vector3i bind_, string initial_diel, VectorX
     for (int i = 0; i <= Npara - 1; i++) {
         FreeparatoPara(i) = i;
     }
-
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
+    }
 }
 
 SpacePara::SpacePara(Space* space_, Vector3i bind_, string initial_diel_center, string initial_diel_ring, double r, string type) {
@@ -334,7 +349,10 @@ SpacePara::SpacePara(Space* space_, Vector3i bind_, string initial_diel_center, 
         int pos = paraz + Nparaz * (paray + Nparay * parax);
         geometryPara(i) = pos;
     }
-
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
+    }
 }
 
 SpacePara::SpacePara(Space* space_, Vector3i bind_, string initial_diel_background, list<string>* initial_diel_list, list<double>* r_list, list<Vector2d>* center_list){
@@ -429,7 +447,10 @@ SpacePara::SpacePara(Space* space_, Vector3i bind_, string initial_diel_backgrou
         int pos = paraz + Nparaz * (paray + Nparay * parax);
         geometryPara(i) = pos;
     }
-
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
+    }
 }
 
 SpacePara::SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, double limitx2, double limity1, double limity2) {
@@ -510,7 +531,10 @@ SpacePara::SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, 
         int pos = paraz + Nparaz * (paray + Nparay * parax);
         geometryPara(i) = pos;
     }
-
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
+    }
   
 }
 
@@ -596,7 +620,10 @@ SpacePara::SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, 
         int pos = paraz + Nparaz * (paray + Nparay * parax);
         geometryPara(i) = pos;
     }
-
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
+    }
 
 }
 
@@ -660,6 +687,11 @@ SpacePara::SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, 
                 }
             }
         }
+    }
+
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
     }
 }
 
@@ -735,6 +767,11 @@ SpacePara::SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, 
         }
     }
 
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
+    }
+
 
 }
 
@@ -772,6 +809,11 @@ void SpacePara::ChangeBind(Vector3i bind_) {
         FreeparatoPara(i) = i;
     }
 
+    Paratogeometry.resize(Para.size());
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[geometryPara(i)]).push_back(i);
+    }
+
     
 
 
@@ -799,4 +841,8 @@ Vector3i* SpacePara::get_bind() {
 
 VectorXi* SpacePara::get_Free() {
     return &FreeparatoPara;
+}
+
+vector<list<int>>* SpacePara::get_Paratogeometry() {
+    return &Paratogeometry;
 }

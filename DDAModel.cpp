@@ -462,6 +462,42 @@ void DDAModel::UpdateAlpha() {
     }
 }
 
+void DDAModel::UpdateAlphaSingle(int idx) {
+
+    VectorXd* diel_old = (*((*Core).get_CStr())).get_diel_old();
+    Vector2cd* material = (*Core).get_material();
+    double lam = (*Core).get_lam();
+    double K = 2 * M_PI / lam;
+    double d = (*Core).get_d();
+
+    /*
+    CoreStructure* CStr = (*Core).get_CStr();
+    SpacePara* spacepara = ((*CStr).get_spacepara());
+    vector<list<int>>* Paratogeometry = (*spacepara).get_Paratogeometry();
+
+    list<int>::iterator it = (*Paratogeometry)[idx].begin();
+    for (int j = 0; j <= (*Paratogeometry)[idx].size() - 1; j++) {
+        int position = *it;
+        std::complex<double> diel_tmp = (*material)(0) + (*diel_old)(3 * position) * ((*material)(1) - (*material)(0));
+        diel(3*position) = diel_tmp;
+        diel(3 * position + 1) = diel_tmp;
+        diel(3 * position + 2) = diel_tmp;
+        al(3*position) = 1.0 / Get_Alpha(lam, K, d, diel_tmp, n_E0, n_K);
+        al(3 * position + 1) = al(3 * position);
+        al(3 * position + 2) = al(3 * position);
+        it++;
+    }
+    */
+    std::complex<double> diel_tmp = (*material)(0) + (*diel_old)(3 * idx) * ((*material)(1) - (*material)(0));
+    diel(3 * idx) = diel_tmp;
+    diel(3 * idx + 1) = diel_tmp;
+    diel(3 * idx + 2) = diel_tmp;
+    al(3 * idx) = 1.0 / Get_Alpha(lam, K, d, diel_tmp, n_E0, n_K);
+    al(3 * idx + 1) = al(3 * idx);
+    al(3 * idx + 2) = al(3 * idx);
+
+}
+
 void DDAModel::solve_E(){
     if(RResultSwitch == true){
         int N = (*Core).get_N();

@@ -78,6 +78,28 @@ void CoreStructure::UpdateStr(SpacePara* spacepara_){
     }
 }
 
+void CoreStructure::UpdateStrSingle(int idx, double value) {
+
+    VectorXd* Para = (*spacepara).get_Para();
+    //vector<list<int>>* Paratogeometry = (*spacepara).get_Paratogeometry();
+    (*Para)(idx) = value;
+
+    /*
+    list<int>::iterator it = (*Paratogeometry)[idx].begin();
+    for (int j = 0; j <= (*Paratogeometry)[idx].size() - 1; j++) {
+        int position = *it;
+        diel_old(3 * position) = value;
+        diel_old(3 * position + 1) = value;
+        diel_old(3 * position + 2) = value;
+        it++;
+    }
+    */
+    diel_old(3 * idx) = value;
+    diel_old(3 * idx + 1) = value;
+    diel_old(3 * idx + 2) = value;
+
+}
+
 void CoreStructure::output_to_file() {
 
     ofstream fout("CoreStructure.txt");
