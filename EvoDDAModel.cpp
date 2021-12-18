@@ -101,7 +101,7 @@ EvoDDAModel::EvoDDAModel(list<string>* ObjectFunctionNames_, list<list<double>*>
 
 }
 
-tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin){
+tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp_tmp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin){
     int N = (*CurrentModel).get_N();
     SpacePara* spacepara = (*CurrentModel).get_spacepara();
     VectorXi* geometryPara = (*spacepara).get_geometryPara();
@@ -198,7 +198,7 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel
     return make_tuple(devx, Adevxp);  
 }
 
-tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp_tmp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin) {
+tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin) {
     int N = (*CurrentModel).get_N();
     SpacePara* spacepara = (*CurrentModel).get_spacepara();
     VectorXi* geometryPara = (*spacepara).get_geometryPara();
