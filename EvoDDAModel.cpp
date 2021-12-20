@@ -2,6 +2,10 @@
 
 
 
+#include "definition.h"
+
+
+
 EvoDDAModel::EvoDDAModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, bool HaveOriginHeritage_, bool HaveAdjointHeritage_, double PenaltyFactor_, string save_position_, CoreStructure* CStr_, list<DDAModel*> ModelList_){
     output_time = 0.0;
     ObjectFunctionNames = ObjectFunctionNames_;
@@ -101,7 +105,7 @@ EvoDDAModel::EvoDDAModel(list<string>* ObjectFunctionNames_, list<list<double>*>
 
 }
 
-tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin){
+tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp_tmp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin){
     int N = (*CurrentModel).get_N();
     SpacePara* spacepara = (*CurrentModel).get_spacepara();
     VectorXi* geometryPara = (*spacepara).get_geometryPara();
@@ -198,15 +202,23 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel
     return make_tuple(devx, Adevxp);  
 }
 
-tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp_tmp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin) {
+tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel* CurrentModel, ObjectiveDDAModel* objective, double origin) {
     int N = (*CurrentModel).get_N();
     SpacePara* spacepara = (*CurrentModel).get_spacepara();
     VectorXi* geometryPara = (*spacepara).get_geometryPara();
     VectorXd* Para = (*spacepara).get_Para();
     VectorXi* Free = (*spacepara).get_Free();
-    vector<list<int>>* Paratogeometry = (*spacepara).get_Paratogeometry();
-
-
+    //vector<list<int>>* Paratogeometry = (*spacepara).get_Paratogeometry();
+    
+    /*
+    list<int> tmplist = (*Paratogeometry)[3000];
+    list<int>::iterator tmpit = (*Paratogeometry)[2021].begin();
+    for (int i = 0; i <= (*Paratogeometry)[3000].size() - 1; i++) {
+        cout << (*tmpit) << endl;
+        tmpit++;
+    }
+    */
+    
     VectorXd* diel_old = (*CurrentModel).get_diel_old();
     Vector2cd* material = (*CurrentModel).get_material();
     double lam = (*CurrentModel).get_lam();
@@ -230,8 +242,10 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp_tmp(double epsilon, DDAM
 
 
 
-    //Vector3d diel_old_tmp = Vector3d::Zero();
-    //Vector3cd diel_tmp = Vector3cd::Zero();
+    vector<list<int>> Paratogeometry(n_para_all);
+    for (int i = 0; i <= N - 1; i++) {
+        (Paratogeometry[(*geometryPara)(i)]).push_back(i);
+    }
 
     for (int i = 0; i <= n_para - 1; i++) {
         int FreeParaPos = (*Free)(i);
@@ -259,8 +273,9 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp_tmp(double epsilon, DDAM
 
         
 
-        list<int>::iterator it = (*Paratogeometry)[FreeParaPos].begin();
-        for (int j = 0; j <= (*Paratogeometry)[FreeParaPos].size() - 1; j++) {
+        list<int>::iterator it = Paratogeometry[FreeParaPos].begin();
+        for (int j = 0; j <= Paratogeometry[FreeParaPos].size() - 1; j++) {
+            //cout << (*it) << endl;
             int position = *it;
             complex<double> alphaorigin = (*al)(3 * position);
             if (objective->Have_Devx) objective->SingleResponse(position, true);
@@ -275,10 +290,11 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp_tmp(double epsilon, DDAM
             it++;
         }
 
-        devx(i) = (objective->GroupResponse() - origin) / (sign * epsilon);
+        //devx(i) = (objective->GroupResponse() - origin) / (sign * epsilon);  //If some obj has x dependency but you denote the havepenalty as false, it will still actually be calculated in an efficient way.
+        devx(i) = (origin - origin) / (sign * epsilon);
 
-        it = (*Paratogeometry)[FreeParaPos].begin();
-        for (int j = 0; j <= (*Paratogeometry)[FreeParaPos].size() - 1; j++) {
+        it = Paratogeometry[FreeParaPos].begin();
+        for (int j = 0; j <= Paratogeometry[FreeParaPos].size() - 1; j++) {
             int position = *it;
             if (objective->Have_Devx) objective->SingleResponse(position, true);
             (*CStr).UpdateStrSingle(position, diel_old_origin);
@@ -391,7 +407,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
         list<ObjectiveDDAModel*>::iterator it_ObjList = ObjList.begin();
 
         high_resolution_clock::time_point out_start = high_resolution_clock::now();
-        (*CStr).output_to_file(save_position + "CoreStructure/", iteration + start_num, "simple");
+        (*CStr).output_to_file(save_position + "CoreStructure\\", iteration + start_num, "simple");
         high_resolution_clock::time_point out_end = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(out_end - out_start).count();
         output_time += duration;
@@ -412,7 +428,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
 
             (*(*it_ModelList)).solve_E();
             out_start = high_resolution_clock::now();
-            (*(*it_ModelList)).output_to_file(save_position + "Model_output/", iteration + start_num);
+            (*(*it_ModelList)).output_to_file(save_position + "Model_output\\", iteration + start_num);
             out_end = high_resolution_clock::now();
             duration = duration_cast<milliseconds>(out_end - out_start).count();
             output_time += duration;
@@ -1139,6 +1155,10 @@ ObjectiveDDAModel* EvoDDAModel::ObjectiveFactory(string ObjectName, list<double>
     if (MajorObjectFunctionName == "scattering0D") {
         return new Objectivescattering0D(ObjectParameters, ObjDDAModel, this, HavePenalty);
     }
+    if (MajorObjectFunctionName == "Abs") {
+        return new ObjectiveAbs(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+
     /*
     else if (MajorObjectFunctionName == "SurfaceEExp"){
         return new ObjectiveSurfaceEExp(ObjectParameters, this, HavePenalty);
@@ -1180,4 +1200,3 @@ double EvoDDAModel::L1Norm(){
 double EvoDDAModel::get_output_time() {
     return output_time / 1000;      //seconds
 }
-
