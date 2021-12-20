@@ -386,7 +386,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
     //double beta1 = 0.9;
     //double beta2 = 0.99;
     //---------------new beta for THG test----------------
-    double beta1 = 0.7;
+    double beta1 = 0.9;
     double beta2 = 1 - (1 - beta1) * (1 - beta1);
     VectorXd V;
     VectorXd S;
