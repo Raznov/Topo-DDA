@@ -4,7 +4,8 @@
 
 
 int main() {
-
+    
+    string save_position = "./p330-lam542-beta7-TiO2-InE-2layer-circle/";
     ofstream TotalTime;
     TotalTime.open(save_position + "TotalTime.txt");
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
@@ -72,7 +73,7 @@ int main() {
     bool HaveAdjointHeritage = false;
     double PenaltyFactor = 1;
     list<list<double>*> ObjectParameters{ &ObjectParameter };
-    string save_position = "./p330-lam542-beta7-TiO2-InE-2layer-circle/";
+    
 
     Vector3d n_K;
     Vector3d n_E0;
