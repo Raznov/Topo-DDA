@@ -590,7 +590,7 @@ void DDAModel::output_to_file(string save_position, int iteration, int ModelLabe
     
     string name;
 
-    name = save_position + "Model_output/" + "Model_results" + to_string(ModelLabel) + "it" + to_string(iteration) + ".txt";
+    name = save_position + "Model_output\\" + "Model_results" + to_string(ModelLabel) + "it" + to_string(iteration) + ".txt";
     ofstream fout(name);
     for(int i=0;i<=P.size()-1;i++){
         if(P(i).imag()<0){
@@ -643,6 +643,17 @@ void DDAModel::output_to_file(string save_position, int iteration) {
         }
 
     }
+    
+    for (int i = 0; i <= P.size() - 1; i++) {
+        if (P(i).imag() < 0) {
+            fout << P(i).real() << P(i).imag() << "j" << endl;
+        }
+        else {
+            fout << P(i).real() << "+" << P(i).imag() << "j" << endl;
+        }
+
+    }
+    
     fout.close();
 }
 
@@ -650,7 +661,7 @@ void DDAModel::output_to_file(string save_position, double wavelength, int itera
 
     string name;
 
-    name = save_position + "Model_output" + to_string(int(wavelength)) + "/Model_results" + "it" + to_string(iteration) + ".txt";
+    name = save_position + "Model_output" + to_string(int(wavelength)) + "\\Model_results" + "it" + to_string(iteration) + ".txt";
     ofstream fout(name);
     /*
     for (int i = 0; i <= P.size() - 1; i++) {
