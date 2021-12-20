@@ -407,7 +407,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
         list<ObjectiveDDAModel*>::iterator it_ObjList = ObjList.begin();
 
         high_resolution_clock::time_point out_start = high_resolution_clock::now();
-        (*CStr).output_to_file(save_position + "CoreStructure\\", iteration + start_num, "simple");
+        (*CStr).output_to_file(save_position + "CoreStructure/", iteration + start_num, "simple");
         high_resolution_clock::time_point out_end = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(out_end - out_start).count();
         output_time += duration;
@@ -428,7 +428,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
 
             (*(*it_ModelList)).solve_E();
             out_start = high_resolution_clock::now();
-            (*(*it_ModelList)).output_to_file(save_position + "Model_output\\", iteration + start_num);
+            (*(*it_ModelList)).output_to_file(save_position + "Model_output/", iteration + start_num);
             out_end = high_resolution_clock::now();
             duration = duration_cast<milliseconds>(out_end - out_start).count();
             output_time += duration;

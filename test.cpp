@@ -57,7 +57,7 @@ int main() {
 
     int MAX_ITERATION_DDA = 100000;
     double MAX_ERROR = 0.00001;
-    int MAX_ITERATION_EVO = 10;
+    int MAX_ITERATION_EVO = 100;
 
     list<string> ObjectFunctionNames{ "IntegratedE" };
 
