@@ -79,10 +79,7 @@ void CoreStructure::UpdateStr(SpacePara* spacepara_){
 }
 
 void CoreStructure::UpdateStrSingle(int idx, double value) {
-
-    VectorXd* Para = (*spacepara).get_Para();
     //vector<list<int>>* Paratogeometry = (*spacepara).get_Paratogeometry();
-    (*Para)(idx) = value;
 
     /*
     list<int>::iterator it = (*Paratogeometry)[idx].begin();
