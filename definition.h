@@ -127,12 +127,14 @@ private:
     MatrixXi scope;                   //[[xmin, xmax],[ymin, ymax],[zmin, zmax]]
     Vector3i bind;
     VectorXi FreeparatoPara;          //Position of free parameters inside Para. dimension<=P. FreeparatoPara[i] is the index of a free parameter inside Para.
-    vector<list<int>> Paratogeometry;  //P dimension. Each position stores a list of corresponding dipole index for parameter for this specific position.
+    //vector<list<int>> Paratogeometry;  //P dimension. Each position stores a list of corresponding dipole index for parameter for this specific position.
 public:
     SpacePara(Space* space_, string initial_diel, VectorXi geometry_, VectorXd diel_);
     SpacePara(Space* space_, Vector3i bind_, VectorXi* geometryPara_, VectorXd* Para_, VectorXi* FreeparatoPara_);
     SpacePara(Space* space_, Vector3i bind_, string initial_diel); //l, center similar to bulk build in Structure class. Every 'bind' nearby dipoles correspond 
                                                                     //to 1 parameter in this bulk. bind=(2,2,2): 2*2*2; bind=(1,1,3):1*1*3
+    SpacePara(Space* space_, Vector3i bind_, string initial_diel1, string initial_diel2); //One constant layer at bottom. One design region on top. divide_pos is the divide in geometry array of the two parts.
+    
     SpacePara(Space* space_, Vector3i bind_, string initial_diel, VectorXi* geometryPara_);
     SpacePara(Space* space_, Vector3i bind_, string initial_diel_center, string initial_diel_ring, double r, string type);   //ONly for 2d cylinder or spheres. r is raidus/d.
 
@@ -154,7 +156,7 @@ public:
     VectorXd* get_Para();
     Vector3i* get_bind();
     VectorXi* get_Free();
-    vector<list<int>>* get_Paratogeometry();
+    //vector<list<int>>* get_Paratogeometry();
 };
 
 //Abstract parent class for objective function.
@@ -606,6 +608,8 @@ public:
     double FTUCnsquare();
 };
 
+
+
 class FOMscattering2D{
 private:
     VectorXd FOMParameters;
@@ -651,7 +655,30 @@ public:
     double FTUCnsquare(Vector3d n_K_s);
 };
 
-
+class ObjectiveAbs : public ObjectiveDDAModel {
+private:
+    double d;
+    int N;
+    int Nx;
+    int Ny;
+    int Nz;
+    double K;
+    double K3;
+    double E0;
+    VectorXcd* P;
+    VectorXcd* al;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    VectorXcd E;
+    double Cabs;
+    VectorXi* R;
+public:
+    ObjectiveAbs(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
 
 
 
