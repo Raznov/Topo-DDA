@@ -290,8 +290,8 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel
             it++;
         }
 
-        //devx(i) = (objective->GroupResponse() - origin) / (sign * epsilon);  //If some obj has x dependency but you denote the havepenalty as false, it will still actually be calculated in an efficient way.
-        devx(i) = (origin - origin) / (sign * epsilon);
+        devx(i) = (objective->GroupResponse() - origin) / (sign * epsilon);  //If some obj has x dependency but you denote the havepenalty as false, it will still actually be calculated in an efficient way.
+        //devx(i) = (origin - origin) / (sign * epsilon);
 
         it = Paratogeometry[FreeParaPos].begin();
         for (int j = 0; j <= Paratogeometry[FreeParaPos].size() - 1; j++) {
