@@ -5,7 +5,7 @@
 
 int main() {
     
-    string save_position = "./p330-lam542-beta7-TiO2-InE-2layer-circle/";
+    string save_position = "./p330-lam542-beta9-TiO2-InE-2layer-circle-RANDOM/";
     ofstream TotalTime;
     TotalTime.open(save_position + "TotalTime.txt");
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
