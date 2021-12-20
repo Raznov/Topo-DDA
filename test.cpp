@@ -6,7 +6,7 @@
 int main() {
 
     ofstream TotalTime;
-    TotalTime.open("TotalTime.txt");
+    TotalTime.open(save_position + "TotalTime.txt");
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
 
@@ -125,7 +125,13 @@ int main() {
         CoreList.push_back(Core_tmp);
     }
     */
-
+    ofstream Common;
+    Common.open(save_position + "Commondata.txt");
+    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
+    Common << (spacepara.get_geometry()) << endl;
+    Common << d << endl;
+    Common << n_E0 << endl;
+    Common << n_K << endl;
     list<AProductCore*>::iterator it = CorePointList.begin();
     for (int k = 0; k <= lam_num - 1; k++) {
         AProductCore* Core = (*it);

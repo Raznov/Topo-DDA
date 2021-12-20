@@ -1121,7 +1121,7 @@ int main() {
 int main() {
 
     ofstream TotalTime;
-    TotalTime.open("TotalTime.txt");
+    TotalTime.open(save_position + "TotalTime.txt");
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
 
@@ -1155,7 +1155,7 @@ int main() {
     double r = 150 / d;
 
     Vector3i bind(1, 1, 10);
-    SpacePara spacepara(&S, bind, "ONES", "ZEROS", r);
+    SpacePara spacepara(&S, bind, "ONES", "ZEROS", r, "CYLINDER");
 
     //SpacePara spacepara(&S, bind, "RANDOM");
 
@@ -1172,7 +1172,7 @@ int main() {
 
     int MAX_ITERATION_DDA = 100000;
     double MAX_ERROR = 0.00001;
-    int MAX_ITERATION_EVO = 88;
+    int MAX_ITERATION_EVO = 100;
 
     list<string> ObjectFunctionNames{ "IntegratedE" };
 
@@ -1187,7 +1187,7 @@ int main() {
     bool HaveAdjointHeritage = false;
     double PenaltyFactor = 1;
     list<list<double>*> ObjectParameters{ &ObjectParameter };
-    string save_position = ".\\p330-lam542-beta7-TiO2-InE-2layer-circle\\";
+    string save_position = "./p330-lam542-beta7-TiO2-InE-2layer-circle/";
 
     Vector3d n_K;
     Vector3d n_E0;
@@ -1240,7 +1240,13 @@ int main() {
         CoreList.push_back(Core_tmp);
     }
     */
-
+    ofstream Common;
+    Common.open(save_position + "Commondata.txt");
+    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
+    Common << (spacepara.get_geometry()) << endl;
+    Common << d << endl;
+    Common << n_E0 << endl;
+    Common << n_K << endl;
     list<AProductCore*>::iterator it = CorePointList.begin();
     for (int k = 0; k <= lam_num - 1; k++) {
         AProductCore* Core = (*it);
