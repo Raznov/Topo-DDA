@@ -19,7 +19,7 @@
 #include "./eigen-3.3.7/Eigen/Core"
 #include "./eigen-3.3.7/Eigen/IterativeLinearSolvers"
 #include "./eigen-3.3.7/Eigen/Sparse"
-#include "./eigen-3.3.7/unsupported/Eigen/CXX11/Tensor"
+//#include "./eigen-3.3.7/unsupported/Eigen/CXX11/Tensor"
 
 //#include "cufftw.h"
 #include <cuda_runtime_api.h>
