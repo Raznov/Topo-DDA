@@ -1,0 +1,110 @@
+The system is: Windows - 10.0.18362 - AMD64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.26.28801/bin/HostX64/x64/cl.exe 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.26.28806 版
+版权所有(C) Microsoft Corporation。保留所有权利。
+
+CMakeCCompilerId.c
+Microsoft (R) Incremental Linker Version 14.26.28806.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/out:CMakeCCompilerId.exe 
+CMakeCCompilerId.obj 
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.exe"
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.obj"
+
+The C compiler identification is MSVC, found in "E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/3.17.20032601-MSVC_2/CompilerIdC/CMakeCCompilerId.exe"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.26.28801/bin/HostX64/x64/cl.exe 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.26.28806 版
+版权所有(C) Microsoft Corporation。保留所有权利。
+
+CMakeCXXCompilerId.cpp
+Microsoft (R) Incremental Linker Version 14.26.28806.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/out:CMakeCXXCompilerId.exe 
+CMakeCXXCompilerId.obj 
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.exe"
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.obj"
+
+The CXX compiler identification is MSVC, found in "E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/3.17.20032601-MSVC_2/CompilerIdCXX/CMakeCXXCompilerId.exe"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_89042 && [1/2] Building C object CMakeFiles\cmTC_89042.dir\testCCompiler.c.obj
+[2/2] Linking C executable cmTC_89042.exe
+
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_bded6 && [1/2] Building C object CMakeFiles\cmTC_bded6.dir\CMakeCCompilerABI.c.obj
+[2/2] Linking C executable cmTC_bded6.exe
+
+
+
+Determining if the CXX compiler works passed with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_43d09 && [1/2] Building CXX object CMakeFiles\cmTC_43d09.dir\testCXXCompiler.cxx.obj
+[2/2] Linking CXX executable cmTC_43d09.exe
+
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_2a9cf && [1/2] Building CXX object CMakeFiles\cmTC_2a9cf.dir\CMakeCXXCompilerABI.cpp.obj
+[2/2] Linking CXX executable cmTC_2a9cf.exe
+
+
+
+Performing C++ SOURCE FILE Test standard_math_library_linked_to_automatically succeeded with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_47a6e && [1/2] Building CXX object CMakeFiles\cmTC_47a6e.dir\src.cxx.obj
+src.cxx(2): warning C4834: 放弃具有 "nodiscard" 属性的函数的返回值
+[2/2] Linking CXX executable cmTC_47a6e.exe
+
+
+Source file was:
+#include<cmath>
+int main() { std::sin(0.0); std::log(0.0f); }
+Performing C++ SOURCE FILE Test COMPILER_SUPPORT_OPENMP succeeded with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_ce4ed && [1/2] Building CXX object CMakeFiles\cmTC_ce4ed.dir\src.cxx.obj
+[2/2] Linking CXX executable cmTC_ce4ed.exe
+
+
+Source file was:
+int main() { return 0; }
+Performing C++ SOURCE FILE Test COMPILER_SUPPORT_FPFAST succeeded with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_11bad && [1/2] Building CXX object CMakeFiles\cmTC_11bad.dir\src.cxx.obj
+[2/2] Linking CXX executable cmTC_11bad.exe
+
+
+Source file was:
+int main() { return 0; }

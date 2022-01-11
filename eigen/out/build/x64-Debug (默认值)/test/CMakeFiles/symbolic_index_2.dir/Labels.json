@@ -1,0 +1,16 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/test/symbolic_index.cpp"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"BuildOfficial"
+		],
+		"name" : "symbolic_index_2"
+	}
+}

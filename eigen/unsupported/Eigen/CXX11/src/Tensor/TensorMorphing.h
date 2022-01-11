@@ -113,15 +113,34 @@ struct TensorEvaluator<const TensorReshapingOp<NewDimensions, ArgType>, Device>
   static const int NumOutputDims = internal::array_size<Dimensions>::value;
   static const int NumInputDims  = internal::array_size<typename TensorEvaluator<ArgType, Device>::Dimensions>::value;
 
+  enum ReshapingKind {
+    // We do not use layout information to determine reshaping kind.
+    // Depending on the layout `N` can be inner or outer dimension.
+    OneByN = 0,  // expr.reshape(1, N)
+    NByOne = 1,  // expr.reshape(N, 1)
+    Runtime = 2  // Reshape dimensions are dynamic (specified at runtime).
+  };
+
+  // clang-format off
+  static const ReshapingKind kind =
+#if defined(EIGEN_HAS_INDEX_LIST)
+        (NumOutputDims == 2 && internal::index_statically_eq<NewDimensions>(/*index=*/0, /*value=*/1)) ? OneByN
+      : (NumOutputDims == 2 && internal::index_statically_eq<NewDimensions>(/*index=*/1, /*value=*/1)) ? NByOne
+      : Runtime;
+#else
+        Runtime;
+#endif
+  // clang-format on
+
   enum {
     IsAligned         = TensorEvaluator<ArgType, Device>::IsAligned,
     PacketAccess      = TensorEvaluator<ArgType, Device>::PacketAccess,
-    // TODO(andydavis, wuke) Enable BlockAccess for the general case when the
-    // performance issue with block-based reshape is resolved.
-    BlockAccess       = TensorEvaluator<ArgType, Device>::BlockAccess &&
-                        TensorEvaluator<ArgType, Device>::RawAccess &&
+    // For trivial reshapes with raw access to underlying data we will provide
+    // zero overhead block access.
+    // TODO(ezhulenev): Consider adding block access without raw access?
+    BlockAccessV2     = TensorEvaluator<ArgType, Device>::RawAccess &&
                         NumInputDims > 0 && NumOutputDims > 0,
-    PreferBlockAccess = true,
+    PreferBlockAccess = false,
     Layout            = TensorEvaluator<ArgType, Device>::Layout,
     CoordAccess       = false,  // to be implemented
     RawAccess         = TensorEvaluator<ArgType, Device>::RawAccess
@@ -129,13 +148,15 @@ struct TensorEvaluator<const TensorReshapingOp<NewDimensions, ArgType>, Device>
 
   typedef typename internal::remove_const<Scalar>::type ScalarNoConst;
 
-  typedef internal::TensorBlock<ScalarNoConst, Index, NumInputDims, Layout>
-      InputTensorBlock;
-  typedef internal::TensorBlock<ScalarNoConst, Index, NumOutputDims, Layout>
-      OutputTensorBlock;
-  typedef internal::TensorBlockReader<ScalarNoConst, Index, NumOutputDims,
-                                      Layout>
-      OutputTensorBlockReader;
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockDescriptor<NumOutputDims, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+
+  typedef
+      typename internal::TensorMaterializedBlock<ScalarNoConst, NumOutputDims,
+                                                 Layout, Index>
+          TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const XprType& op, const Device& device)
       : m_impl(op.expression(), device), m_dimensions(op.dimensions())
@@ -143,33 +164,17 @@ struct TensorEvaluator<const TensorReshapingOp<NewDimensions, ArgType>, Device>
     // The total size of the reshaped tensor must be equal to the total size
     // of the input tensor.
     eigen_assert(internal::array_prod(m_impl.dimensions()) == internal::array_prod(op.dimensions()));
-
-    if (BlockAccess) {
-      const typename TensorEvaluator<ArgType, Device>::Dimensions& input_dims =
-          m_impl.dimensions();
-      if (static_cast<int>(Layout) == static_cast<int>(ColMajor)) {
-        m_outputStrides[0] = 1;
-        for (int i = 1; i < NumOutputDims; ++i) {
-          m_outputStrides[i] = m_outputStrides[i - 1] * m_dimensions[i - 1];
-        }
-        m_inputStrides[0] = 1;
-        for (int i = 1; i < NumInputDims; ++i) {
-          m_inputStrides[i] = m_inputStrides[i - 1] * input_dims[i - 1];
-        }
-      } else {
-        m_outputStrides[NumOutputDims - 1] = 1;
-        for (int i = NumOutputDims - 2; i >= 0; --i) {
-          m_outputStrides[i] = m_outputStrides[i + 1] * m_dimensions[i + 1];
-        }
-        m_inputStrides[NumInputDims - 1] = 1;
-        for (int i = NumInputDims - 2; i >= 0; --i) {
-          m_inputStrides[i] = m_inputStrides[i + 1] * input_dims[i + 1];
-        }
-      }
-    }
   }
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Dimensions& dimensions() const { return m_dimensions; }
+
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalSubExprsCallback>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(
+      EvaluatorPointerType data, EvalSubExprsCallback done) {
+    m_impl.evalSubExprsIfNeededAsync(data, std::move(done));
+  }
+#endif
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool evalSubExprsIfNeeded(EvaluatorPointerType data) {
     return m_impl.evalSubExprsIfNeeded(data);
@@ -194,8 +199,9 @@ struct TensorEvaluator<const TensorReshapingOp<NewDimensions, ArgType>, Device>
   }
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void getResourceRequirements(
-      std::vector<internal::TensorOpResourceRequirements>* resources) const {
-    m_impl.getResourceRequirements(resources);
+      std::vector<internal::TensorOpResourceRequirements>*) const {
+    // TODO(ezhulenev): If we'll ever support block evaluation without raw
+    // access we'll need to get requirements from `m_impl`.
   }
 
   // required in block(OutputTensorBlock* output_block) const
@@ -206,126 +212,25 @@ struct TensorEvaluator<const TensorReshapingOp<NewDimensions, ArgType>, Device>
     Index size;
     Index count;
   };
-  // TODO(andydavis) Reduce the overhead of this function.
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void block(
-      OutputTensorBlock* output_block) const {
-    if (m_impl.data() != NULL) {
-      OutputTensorBlockReader::Run(output_block, m_impl.data());
-      return;
-    }
 
-    // Calculate output block unit-stride inner dimension length.
-    const DSizes<Index, NumOutputDims>& output_block_sizes =
-        output_block->block_sizes();
-    Index output_inner_dim_size = 1;
-    Index output_outer_dim_start = NumOutputDims;
-    for (Index i = 0; i < NumOutputDims; ++i) {
-      const Index dim = static_cast<int>(Layout) == static_cast<int>(ColMajor)
-                        ? i : NumOutputDims - i - 1;
-      output_inner_dim_size *= output_block_sizes[dim];
-      if (output_block_sizes[dim] < m_dimensions[dim]) {
-        output_outer_dim_start = i + 1;
-        break;
-      }
-    }
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2
+  blockV2(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+          bool /*root_of_expr_ast*/ = false) const {
+    eigen_assert(m_impl.data() != NULL);
+    eigen_assert((kind == Runtime) ||
+                 (kind == OneByN && desc.dimensions()[0] == 1) ||
+                 (kind == NByOne && desc.dimensions()[1] == 1));
 
-    // Initialize output block iterator state.
-    array<BlockIteratorState, NumOutputDims> block_iter_state;
-
-    for (Index i = 0; i < NumOutputDims; ++i) {
-      const Index dim = static_cast<int>(Layout) == static_cast<int>(ColMajor)
-                        ? i : NumOutputDims - i - 1;
-      block_iter_state[i].size = output_block_sizes[dim];
-      block_iter_state[i].stride = m_outputStrides[dim];
-      block_iter_state[i].span =
-          block_iter_state[i].stride * (block_iter_state[i].size - 1);
-      block_iter_state[i].count = 0;
-    }
-
-    const Index output_outer_dim_size = output_block_sizes.TotalSize() /
-        output_inner_dim_size;
-    const typename TensorEvaluator<ArgType, Device>::Dimensions& input_dims =
-        m_impl.dimensions();
-
-    Index index = output_block->first_coeff_index();
-    for (Index outer_idx = 0; outer_idx < output_outer_dim_size; ++outer_idx) {
-      Index inner_idx = 0;
-      while (inner_idx < output_inner_dim_size) {
-        // Calculate input coords based on 'index'.
-        array<Index, NumInputDims> input_coords;
-        Index idx = index;
-        if (static_cast<int>(Layout) == static_cast<int>(ColMajor)) {
-          for (int i = NumInputDims - 1; i > 0; --i) {
-            input_coords[i] = idx / m_inputStrides[i];
-            idx -= input_coords[i] * m_inputStrides[i];
-          }
-          input_coords[0] = idx;
-        } else {
-          for (int i = 0; i < NumInputDims - 1; ++i) {
-            input_coords[i] = idx / m_inputStrides[i];
-            idx -= input_coords[i] * m_inputStrides[i];
-          }
-          input_coords[NumInputDims - 1] = idx;
-        }
-
-        // Calculate target input block shape, using at most
-        // 'output_inner_dim_size' coefficients along the input block's inner
-        // dimensions.
-        DSizes<Index, NumInputDims> input_block_sizes;
-        Index num_to_allocate = output_inner_dim_size - inner_idx;
-        for (Index i = 0; i < NumInputDims; ++i) {
-          const Index dim =
-              static_cast<int>(Layout) == static_cast<int>(ColMajor)
-              ? i : NumInputDims - i - 1;
-          input_block_sizes[dim] = numext::mini(
-              num_to_allocate, (static_cast<Index>(input_dims[dim]) -
-                  input_coords[dim]));
-          if (input_coords[dim] == 0) {
-            num_to_allocate /= input_block_sizes[dim];
-          } else {
-            num_to_allocate = 1;
-          }
-        }
-
-        // Calculate input block strides.
-        DSizes<Index, NumInputDims> input_block_strides;
-        if (static_cast<int>(Layout) == static_cast<int>(ColMajor)) {
-          input_block_strides[0] = 1;
-          for (int i = 1; i < NumInputDims; ++i) {
-            input_block_strides[i] = input_block_strides[i - 1] *
-                input_block_sizes[i - 1];
-          }
-        } else {
-          input_block_strides[NumInputDims - 1] = 1;
-          for (int i = NumInputDims - 2; i >= 0; --i) {
-            input_block_strides[i] = input_block_strides[i + 1] *
-                input_block_sizes[i + 1];
-          }
-        }
-
-        // Instantiate and read input block from input tensor.
-        InputTensorBlock input_block(index, input_block_sizes,
-                                     input_block_strides, m_inputStrides,
-                                     output_block->data() + outer_idx *
-                                         output_inner_dim_size + inner_idx);
-
-        m_impl.block(&input_block);
-
-        const Index input_block_total_size = input_block_sizes.TotalSize();
-        index += input_block_total_size;
-        inner_idx += input_block_total_size;
-      }
-      eigen_assert(inner_idx == output_inner_dim_size);
-      index -= output_inner_dim_size;
-      // Update index.
-      for (Index i = output_outer_dim_start; i < NumOutputDims; ++i) {
-        if (++block_iter_state[i].count < block_iter_state[i].size) {
-          index += block_iter_state[i].stride;
-          break;
-        }
-        block_iter_state[i].count = 0;
-        index -= block_iter_state[i].span;
-      }
+    if (kind == OneByN || kind == NByOne) {
+      // We can guarantee at compile time that block is just a contiguous slice
+      // of the underlying expression memory buffer.
+      return TensorBlockV2(internal::TensorBlockKind::kView,
+                           m_impl.data() + desc.offset(), desc.dimensions());
+    } else {
+      // This will do additional runtime checks, and in the end it might be also
+      // a view, or it might be a block materialized in the temporary buffer.
+      return TensorBlockV2::materialize(m_impl.data(), m_dimensions, desc,
+                                        scratch);
     }
   }
 
@@ -344,8 +249,6 @@ struct TensorEvaluator<const TensorReshapingOp<NewDimensions, ArgType>, Device>
  protected:
   TensorEvaluator<ArgType, Device> m_impl;
   NewDimensions m_dimensions;
-  DSizes<Index, NumOutputDims> m_outputStrides;
-  DSizes<Index, NumInputDims> m_inputStrides;
 };
 
 
@@ -360,13 +263,13 @@ template<typename NewDimensions, typename ArgType, typename Device>
   typedef NewDimensions Dimensions;
 
   enum {
-    IsAligned = TensorEvaluator<ArgType, Device>::IsAligned,
-    PacketAccess = TensorEvaluator<ArgType, Device>::PacketAccess,
-    BlockAccess = false,
+    IsAligned         = TensorEvaluator<ArgType, Device>::IsAligned,
+    PacketAccess      = TensorEvaluator<ArgType, Device>::PacketAccess,
+    BlockAccessV2     = TensorEvaluator<ArgType, Device>::RawAccess,
     PreferBlockAccess = false,
-    Layout = TensorEvaluator<ArgType, Device>::Layout,
-    CoordAccess = false,  // to be implemented
-    RawAccess = TensorEvaluator<ArgType, Device>::RawAccess
+    Layout            = TensorEvaluator<ArgType, Device>::Layout,
+    CoordAccess       = false,  // to be implemented
+    RawAccess         = TensorEvaluator<ArgType, Device>::RawAccess
   };
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const XprType& op, const Device& device)
@@ -378,14 +281,37 @@ template<typename NewDimensions, typename ArgType, typename Device>
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename PacketType<CoeffReturnType, Device>::type PacketReturnType;
 
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockDescriptor<TensorEvaluator::NumOutputDims, Index>
+      TensorBlockDesc;
+  //===--------------------------------------------------------------------===//
+
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE CoeffReturnType& coeffRef(Index index)
   {
     return this->m_impl.coeffRef(index);
   }
+
   template <int StoreMode> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
   void writePacket(Index index, const PacketReturnType& x)
   {
     this->m_impl.template writePacket<StoreMode>(index, x);
+  }
+
+  template <typename TensorBlock>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void writeBlockV2(
+      const TensorBlockDesc& desc, const TensorBlock& block) {
+    assert(this->m_impl.data() != NULL);
+
+    typedef typename TensorBlock::XprType TensorBlockExpr;
+    typedef internal::TensorBlockAssignment<
+        Scalar, TensorEvaluator::NumOutputDims, TensorBlockExpr, Index>
+        TensorBlockAssign;
+
+    TensorBlockAssign::Run(
+        TensorBlockAssign::target(desc.dimensions(),
+                                  internal::strides<Layout>(this->dimensions()),
+                                  this->m_impl.data(), desc.offset()),
+        block.expr());
   }
 };
 
@@ -495,7 +421,7 @@ template <typename Index, typename Device, bool BlockAccess> struct MemcpyTrigge
 #ifdef EIGEN_USE_GPU
 template <typename Index, bool BlockAccess> struct MemcpyTriggerForSlicing<Index, GpuDevice, BlockAccess>  {
   EIGEN_DEVICE_FUNC MemcpyTriggerForSlicing(const GpuDevice&) { }
-  EIGEN_DEVICE_FUNC bool operator ()(Index total, Index contiguous) const { return contiguous > 4*1024*1024; }
+  EIGEN_DEVICE_FUNC bool operator ()(Index, Index contiguous) const { return contiguous > 4*1024*1024; }
 };
 #endif
 
@@ -504,7 +430,7 @@ template <typename Index, bool BlockAccess> struct MemcpyTriggerForSlicing<Index
 #ifdef EIGEN_USE_SYCL
 template <typename Index, bool BlockAccess> struct MemcpyTriggerForSlicing<Index, Eigen::SyclDevice, BlockAccess>  {
   EIGEN_DEVICE_FUNC MemcpyTriggerForSlicing(const SyclDevice&) { }
-  EIGEN_DEVICE_FUNC bool operator ()(Index total, Index contiguous) const { return contiguous > 4*1024*1024; }
+  EIGEN_DEVICE_FUNC bool operator ()(Index, Index contiguous) const { return contiguous > 4*1024*1024; }
 };
 #endif
 
@@ -531,7 +457,7 @@ struct TensorEvaluator<const TensorSlicingOp<StartIndices, Sizes, ArgType>, Devi
     // slice offsets and sizes.
     IsAligned         = false,
     PacketAccess      = TensorEvaluator<ArgType, Device>::PacketAccess,
-    BlockAccess       = TensorEvaluator<ArgType, Device>::BlockAccess,
+    BlockAccessV2     = TensorEvaluator<ArgType, Device>::BlockAccessV2,
     PreferBlockAccess = true,
     Layout            = TensorEvaluator<ArgType, Device>::Layout,
     CoordAccess       = false,
@@ -542,6 +468,15 @@ struct TensorEvaluator<const TensorSlicingOp<StartIndices, Sizes, ArgType>, Devi
 
   typedef internal::TensorBlock<ScalarNoConst, Index, NumDims, Layout> TensorBlock;
   typedef typename TensorBlock::Dimensions TensorBlockDimensions;
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockDescriptor<NumDims, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+
+  // Tensor slicing does not change the block type.
+  typedef typename TensorEvaluator<const ArgType, Device>::TensorBlockV2
+      TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const XprType& op, const Device& device)
       : m_impl(op.expression(), device), m_device(device), m_dimensions(op.sizes()), m_offsets(op.startIndices())
@@ -559,6 +494,9 @@ struct TensorEvaluator<const TensorSlicingOp<StartIndices, Sizes, ArgType>, Devi
         m_is_identity = false;
       }
     }
+
+    // No strides for scalars.
+    if (NumDims == 0) return;
 
     const typename TensorEvaluator<ArgType, Device>::Dimensions& input_dims = m_impl.dimensions();
     const Sizes& output_dims = op.sizes();
@@ -613,7 +551,7 @@ struct TensorEvaluator<const TensorSlicingOp<StartIndices, Sizes, ArgType>, Devi
         }
       }
       // Use memcpy if it's going to be faster than using the regular evaluation.
-      const MemcpyTriggerForSlicing<Index, Device, BlockAccess> trigger(m_device);
+      const MemcpyTriggerForSlicing<Index, Device, BlockAccessV2> trigger(m_device);
       if (trigger(internal::array_prod(dimensions()), contiguous_values)) {
         EvaluatorPointerType src = (EvaluatorPointerType)m_impl.data();
         for (Index i = 0; i < internal::array_prod(dimensions()); i += contiguous_values) {
@@ -707,14 +645,13 @@ struct TensorEvaluator<const TensorSlicingOp<StartIndices, Sizes, ArgType>, Devi
     m_impl.getResourceRequirements(resources);
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void block(
-      TensorBlock* output_block) const {
-    TensorBlock input_block(srcCoeff(output_block->first_coeff_index()),
-                            output_block->block_sizes(),
-                            output_block->block_strides(),
-                            TensorBlockDimensions(m_inputStrides),
-                            output_block->data());
-    m_impl.block(&input_block);
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2
+  blockV2(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+          bool /*root_of_expr_ast*/ = false) const {
+    TensorBlockDesc arg_desc = desc.WithOffset(srcCoeff(desc.offset()));
+    TensorBlockV2 block = m_impl.blockV2(arg_desc, scratch);
+    if (!arg_desc.HasDestinationBuffer()) desc.DropDestinationBuffer();
+    return block;
   }
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE typename Storage::Type data() const {
@@ -812,7 +749,7 @@ struct TensorEvaluator<TensorSlicingOp<StartIndices, Sizes, ArgType>, Device>
   enum {
     IsAligned         = false,
     PacketAccess      = TensorEvaluator<ArgType, Device>::PacketAccess,
-    BlockAccess       = TensorEvaluator<ArgType, Device>::BlockAccess,
+    BlockAccessV2     = TensorEvaluator<ArgType, Device>::BlockAccessV2,
     PreferBlockAccess = true,
     Layout            = TensorEvaluator<ArgType, Device>::Layout,
     CoordAccess       = false,
@@ -823,6 +760,11 @@ struct TensorEvaluator<TensorSlicingOp<StartIndices, Sizes, ArgType>, Device>
 
   typedef internal::TensorBlock<ScalarNoConst, Index, NumDims, Layout> TensorBlock;
   typedef typename TensorBlock::Dimensions TensorBlockDimensions;
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockDescriptor<NumDims, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const XprType& op, const Device& device)
     : Base(op, device)
@@ -894,6 +836,13 @@ struct TensorEvaluator<TensorSlicingOp<StartIndices, Sizes, ArgType>, Device>
         this->srcCoeff(block.first_coeff_index()), block.block_sizes(),
         block.block_strides(), TensorBlockDimensions(this->m_inputStrides),
         const_cast<ScalarNoConst*>(block.data())));
+  }
+
+  template<typename TensorBlockV2>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void writeBlockV2(
+      const TensorBlockDesc& desc, const TensorBlockV2& block) {
+    TensorBlockDesc arg_desc = desc.WithOffset(this->srcCoeff(desc.offset()));
+    this->m_impl.writeBlockV2(arg_desc, block);
   }
 };
 
@@ -1001,11 +950,15 @@ struct TensorEvaluator<const TensorStridingSlicingOp<StartIndices, StopIndices, 
     // slice offsets and sizes.
     IsAligned = false,
     PacketAccess = false,
-    BlockAccess = false,
-    PreferBlockAccess = false,
+    BlockAccessV2 = false,
+    PreferBlockAccess = TensorEvaluator<ArgType, Device>::PreferBlockAccess,
     Layout = TensorEvaluator<ArgType, Device>::Layout,
     RawAccess = false
   };
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockNotImplemented TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const XprType& op, const Device& device)
       : m_impl(op.expression(), device),
@@ -1178,12 +1131,16 @@ struct TensorEvaluator<TensorStridingSlicingOp<StartIndices, StopIndices, Stride
   enum {
     IsAligned = false,
     PacketAccess = false,
-    BlockAccess = false,
-    PreferBlockAccess = false,
+    BlockAccessV2 = false,
+    PreferBlockAccess = TensorEvaluator<ArgType, Device>::PreferBlockAccess,
     Layout = TensorEvaluator<ArgType, Device>::Layout,
     CoordAccess = TensorEvaluator<ArgType, Device>::CoordAccess,
     RawAccess = false
   };
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockNotImplemented TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const XprType& op, const Device& device)
     : Base(op, device)

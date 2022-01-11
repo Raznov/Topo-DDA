@@ -43,28 +43,29 @@ struct TensorEvaluator
                                internal::traits<Derived>::NumDimensions : 0;
 
   enum {
-    IsAligned = Derived::IsAligned,
-    PacketAccess = (PacketType<CoeffReturnType, Device>::size > 1),
-    BlockAccess = internal::is_arithmetic<typename internal::remove_const<Scalar>::type>::value,
-    PreferBlockAccess = false,
-    Layout = Derived::Layout,
-    CoordAccess = NumCoords > 0,
-    RawAccess = true
+    IsAligned          = Derived::IsAligned,
+    PacketAccess       = (PacketType<CoeffReturnType, Device>::size > 1),
+    BlockAccessV2      = internal::is_arithmetic<typename internal::remove_const<Scalar>::type>::value,
+    PreferBlockAccess  = false,
+    Layout             = Derived::Layout,
+    CoordAccess        = NumCoords > 0,
+    RawAccess          = true
   };
 
-  typedef typename internal::TensorBlock<
-      typename internal::remove_const<Scalar>::type, Index, NumCoords, Layout>
-      TensorBlock;
-  typedef typename internal::TensorBlockReader<
-      typename internal::remove_const<Scalar>::type, Index, NumCoords, Layout>
-      TensorBlockReader;
-  typedef typename internal::TensorBlockWriter<
-      typename internal::remove_const<Scalar>::type, Index, NumCoords, Layout>
-      TensorBlockWriter;
+  typedef typename internal::remove_const<Scalar>::type ScalarNoConst;
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockDescriptor<NumCoords, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+
+  typedef typename internal::TensorMaterializedBlock<ScalarNoConst, NumCoords,
+                                                     Layout, Index>
+      TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const Derived& m, const Device& device)
-      : m_data(device.get((const_cast<TensorPointerType>(m.data())))), 
-        m_dims(m.dimensions()), 
+      : m_data(device.get((const_cast<TensorPointerType>(m.data())))),
+        m_dims(m.dimensions()),
         m_device(device)
   { }
 
@@ -79,7 +80,16 @@ struct TensorEvaluator
     return true;
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup() { }
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalSubExprsCallback>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(
+      EvaluatorPointerType dest, EvalSubExprsCallback done) {
+    // TODO(ezhulenev): ThreadPoolDevice memcpy is blockign operation.
+    done(evalSubExprsIfNeeded(dest));
+  }
+#endif  // EIGEN_USE_THREADS
+
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup() {}
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE CoeffReturnType coeff(Index index) const {
     eigen_assert(m_data != NULL);
@@ -142,15 +152,28 @@ struct TensorEvaluator
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void getResourceRequirements(
       std::vector<internal::TensorOpResourceRequirements>*) const {}
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void block(TensorBlock* block) const {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2
+  blockV2(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+          bool /*root_of_expr_ast*/ = false) const {
     assert(m_data != NULL);
-    TensorBlockReader::Run(block, m_data);
+    return TensorBlockV2::materialize(m_data, m_dims, desc, scratch);
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void writeBlock(
-      const TensorBlock& block) {
+  template<typename TensorBlockV2>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void writeBlockV2(
+      const TensorBlockDesc& desc, const TensorBlockV2& block) {
     assert(m_data != NULL);
-    TensorBlockWriter::Run(block, m_data);
+
+    typedef typename TensorBlockV2::XprType TensorBlockExpr;
+    typedef internal::TensorBlockAssignment<Scalar, NumCoords, TensorBlockExpr,
+                                            Index>
+        TensorBlockAssign;
+
+    TensorBlockAssign::Run(
+        TensorBlockAssign::target(desc.dimensions(),
+                                  internal::strides<Layout>(m_dims), m_data,
+                                  desc.offset()),
+        block.expr());
   }
 
   EIGEN_DEVICE_FUNC EvaluatorPointerType data() const { return m_data; }
@@ -211,27 +234,31 @@ struct TensorEvaluator<const Derived, Device>
   typedef StorageMemory<const Scalar, Device> Storage;
   typedef typename Storage::Type EvaluatorPointerType;
 
+  typedef typename internal::remove_const<Scalar>::type ScalarNoConst;
+
   // NumDimensions is -1 for variable dim tensors
   static const int NumCoords = internal::traits<Derived>::NumDimensions > 0 ?
                                internal::traits<Derived>::NumDimensions : 0;
   static const int PacketSize = PacketType<CoeffReturnType, Device>::size;
 
   enum {
-    IsAligned = Derived::IsAligned,
-    PacketAccess = (PacketType<CoeffReturnType, Device>::size > 1),
-    BlockAccess = internal::is_arithmetic<typename internal::remove_const<Scalar>::type>::value,
+    IsAligned         = Derived::IsAligned,
+    PacketAccess      = (PacketType<CoeffReturnType, Device>::size > 1),
+    BlockAccessV2     = internal::is_arithmetic<ScalarNoConst>::value,
     PreferBlockAccess = false,
-    Layout = Derived::Layout,
-    CoordAccess = NumCoords > 0,
-    RawAccess = true
+    Layout            = Derived::Layout,
+    CoordAccess       = NumCoords > 0,
+    RawAccess         = true
   };
 
-  typedef typename internal::TensorBlock<
-      typename internal::remove_const<Scalar>::type, Index, NumCoords, Layout>
-      TensorBlock;
-  typedef typename internal::TensorBlockReader<
-      typename internal::remove_const<Scalar>::type, Index, NumCoords, Layout>
-      TensorBlockReader;
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockDescriptor<NumCoords, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+
+  typedef typename internal::TensorMaterializedBlock<ScalarNoConst, NumCoords,
+                                                     Layout, Index>
+      TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const Derived& m, const Device& device)
       : m_data(device.get(m.data())), m_dims(m.dimensions()), m_device(device)
@@ -246,6 +273,15 @@ struct TensorEvaluator<const Derived, Device>
     }
     return true;
   }
+
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalSubExprsCallback>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(
+      EvaluatorPointerType dest, EvalSubExprsCallback done) {
+    // TODO(ezhulenev): ThreadPoolDevice memcpy is a blockign operation.
+    done(evalSubExprsIfNeeded(dest));
+  }
+#endif  // EIGEN_USE_THREADS
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup() { }
 
@@ -287,9 +323,11 @@ struct TensorEvaluator<const Derived, Device>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void getResourceRequirements(
       std::vector<internal::TensorOpResourceRequirements>*) const {}
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void block(TensorBlock* block) const {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2
+  blockV2(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+          bool /*root_of_expr_ast*/ = false) const {
     assert(m_data != NULL);
-    TensorBlockReader::Run(block, m_data);
+    return TensorBlockV2::materialize(m_data, m_dims, desc, scratch);
   }
 
   EIGEN_DEVICE_FUNC EvaluatorPointerType data() const { return m_data; }
@@ -336,16 +374,29 @@ struct TensorEvaluator<const TensorCwiseNullaryOp<NullaryOp, ArgType>, Device>
     &&  (PacketType<CoeffReturnType, Device>::size >1)
     #endif
     ,
-    BlockAccess = false,
+    BlockAccessV2 = false,
     PreferBlockAccess = false,
     Layout = TensorEvaluator<ArgType, Device>::Layout,
     CoordAccess = false,  // to be implemented
     RawAccess = false
   };
 
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockNotImplemented TensorBlockV2;
+  //===--------------------------------------------------------------------===//
+
   EIGEN_DEVICE_FUNC const Dimensions& dimensions() const { return m_argImpl.dimensions(); }
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool evalSubExprsIfNeeded(EvaluatorPointerType) { return true; }
+
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalSubExprsCallback>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(
+      EvaluatorPointerType, EvalSubExprsCallback done) {
+    done(true);
+  }
+#endif  // EIGEN_USE_THREADS
+
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup() { }
 
   EIGEN_DEVICE_FUNC CoeffReturnType coeff(Index index) const
@@ -393,7 +444,7 @@ struct TensorEvaluator<const TensorCwiseUnaryOp<UnaryOp, ArgType>, Device>
     IsAligned          = TensorEvaluator<ArgType, Device>::IsAligned,
     PacketAccess       = TensorEvaluator<ArgType, Device>::PacketAccess &
                          internal::functor_traits<UnaryOp>::PacketAccess,
-    BlockAccess        = TensorEvaluator<ArgType, Device>::BlockAccess,
+    BlockAccessV2      = TensorEvaluator<ArgType, Device>::BlockAccessV2,
     PreferBlockAccess  = TensorEvaluator<ArgType, Device>::PreferBlockAccess,
     Layout             = TensorEvaluator<ArgType, Device>::Layout,
     CoordAccess        = false,  // to be implemented
@@ -419,12 +470,32 @@ struct TensorEvaluator<const TensorCwiseUnaryOp<UnaryOp, ArgType>, Device>
   typedef internal::TensorBlock<ScalarNoConst, Index, NumDims, Layout>
       TensorBlock;
 
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockDescriptor<NumDims, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+
+  typedef typename TensorEvaluator<const ArgType, Device>::TensorBlockV2
+      ArgTensorBlock;
+
+  typedef internal::TensorCwiseUnaryBlock<UnaryOp, ArgTensorBlock>
+      TensorBlockV2;
+  //===--------------------------------------------------------------------===//
+
   EIGEN_DEVICE_FUNC const Dimensions& dimensions() const { return m_argImpl.dimensions(); }
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool evalSubExprsIfNeeded(EvaluatorPointerType) {
     m_argImpl.evalSubExprsIfNeeded(NULL);
     return true;
   }
+
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalSubExprsCallback>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(
+      EvaluatorPointerType, EvalSubExprsCallback done) {
+    m_argImpl.evalSubExprsIfNeededAsync(nullptr, [done](bool) { done(true); });
+  }
+#endif  // EIGEN_USE_THREADS
+
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup() {
     m_argImpl.cleanup();
   }
@@ -451,22 +522,10 @@ struct TensorEvaluator<const TensorCwiseUnaryOp<UnaryOp, ArgType>, Device>
     m_argImpl.getResourceRequirements(resources);
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void block(
-      TensorBlock* output_block) const {
-    if (NumDims <= 0) {
-      output_block->data()[0] = coeff(0);
-      return;
-    }
-    internal::TensorBlockView<ArgType, Device> arg_block(m_device, m_argImpl,
-                                                         *output_block);
-    internal::TensorBlockCwiseUnaryIO<UnaryOp, Index, ScalarNoConst, NumDims,
-                                      Layout>::Run(m_functor,
-                                                   output_block->block_sizes(),
-                                                   output_block
-                                                       ->block_strides(),
-                                                   output_block->data(),
-                                                   arg_block.block_strides(),
-                                                   arg_block.data());
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2
+  blockV2(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+          bool /*root_of_expr_ast*/ = false) const {
+    return TensorBlockV2(m_argImpl.blockV2(desc, scratch), m_functor);
   }
 
   EIGEN_DEVICE_FUNC EvaluatorPointerType data() const { return NULL; }
@@ -499,8 +558,8 @@ struct TensorEvaluator<const TensorCwiseBinaryOp<BinaryOp, LeftArgType, RightArg
     PacketAccess      = TensorEvaluator<LeftArgType, Device>::PacketAccess &
                         TensorEvaluator<RightArgType, Device>::PacketAccess &
                         internal::functor_traits<BinaryOp>::PacketAccess,
-    BlockAccess       = TensorEvaluator<LeftArgType, Device>::BlockAccess &
-                        TensorEvaluator<RightArgType, Device>::BlockAccess,
+    BlockAccessV2     = TensorEvaluator<LeftArgType, Device>::BlockAccessV2 &
+                        TensorEvaluator<RightArgType, Device>::BlockAccessV2,
     PreferBlockAccess = TensorEvaluator<LeftArgType, Device>::PreferBlockAccess |
                         TensorEvaluator<RightArgType, Device>::PreferBlockAccess,
     Layout            = TensorEvaluator<LeftArgType, Device>::Layout,
@@ -535,6 +594,20 @@ struct TensorEvaluator<const TensorCwiseBinaryOp<BinaryOp, LeftArgType, RightArg
       TensorEvaluator<LeftArgType, Device>::Layout>
       TensorBlock;
 
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockDescriptor<NumDims, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+
+  typedef typename TensorEvaluator<const LeftArgType, Device>::TensorBlockV2
+      LeftTensorBlock;
+  typedef typename TensorEvaluator<const RightArgType, Device>::TensorBlockV2
+      RightTensorBlock;
+
+  typedef internal::TensorCwiseBinaryBlock<BinaryOp, LeftTensorBlock,
+                                           RightTensorBlock>
+      TensorBlockV2;
+  //===--------------------------------------------------------------------===//
+
   EIGEN_DEVICE_FUNC const Dimensions& dimensions() const
   {
     // TODO: use right impl instead if right impl dimensions are known at compile time.
@@ -546,6 +619,19 @@ struct TensorEvaluator<const TensorCwiseBinaryOp<BinaryOp, LeftArgType, RightArg
     m_rightImpl.evalSubExprsIfNeeded(NULL);
     return true;
   }
+
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalSubExprsCallback>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(
+      EvaluatorPointerType, EvalSubExprsCallback done) {
+    // TODO(ezhulenev): Evaluate two expression in parallel?
+    m_leftImpl.evalSubExprsIfNeededAsync(nullptr, [this, done](bool) {
+      m_rightImpl.evalSubExprsIfNeededAsync(nullptr,
+                                            [done](bool) { done(true); });
+    });
+  }
+#endif  // EIGEN_USE_THREADS
+
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup() {
     m_leftImpl.cleanup();
     m_rightImpl.cleanup();
@@ -575,22 +661,12 @@ struct TensorEvaluator<const TensorCwiseBinaryOp<BinaryOp, LeftArgType, RightArg
     m_rightImpl.getResourceRequirements(resources);
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void block(
-      TensorBlock* output_block) const {
-    if (NumDims <= 0) {
-      output_block->data()[0] = coeff(Index(0));
-      return;
-    }
-    internal::TensorBlockView<LeftArgType, Device> left_block(
-        m_device, m_leftImpl, *output_block);
-    internal::TensorBlockView<RightArgType, Device> right_block(
-        m_device, m_rightImpl, *output_block);
-    internal::TensorBlockCwiseBinaryIO<
-        BinaryOp, Index, typename internal::remove_const<Scalar>::type, NumDims,
-        Layout>::Run(m_functor, output_block->block_sizes(),
-                     output_block->block_strides(), output_block->data(),
-                     left_block.block_strides(), left_block.data(),
-                     right_block.block_strides(), right_block.data());
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2
+  blockV2(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+          bool /*root_of_expr_ast*/ = false) const {
+    desc.DropDestinationBuffer();
+    return TensorBlockV2(m_leftImpl.blockV2(desc, scratch),
+                         m_rightImpl.blockV2(desc, scratch), m_functor);
   }
 
   EIGEN_DEVICE_FUNC EvaluatorPointerType data() const { return NULL; }
@@ -618,13 +694,17 @@ struct TensorEvaluator<const TensorCwiseTernaryOp<TernaryOp, Arg1Type, Arg2Type,
 
   enum {
     IsAligned = TensorEvaluator<Arg1Type, Device>::IsAligned & TensorEvaluator<Arg2Type, Device>::IsAligned & TensorEvaluator<Arg3Type, Device>::IsAligned,
-    PacketAccess = TensorEvaluator<Arg1Type, Device>::PacketAccess & TensorEvaluator<Arg2Type, Device>::PacketAccess & TensorEvaluator<Arg3Type, Device>::PacketAccess &
-                   internal::functor_traits<TernaryOp>::PacketAccess,
-    BlockAccess = false,
-    PreferBlockAccess = false,
-    Layout = TensorEvaluator<Arg1Type, Device>::Layout,
-    CoordAccess = false,  // to be implemented
-    RawAccess = false
+    PacketAccess      = TensorEvaluator<Arg1Type, Device>::PacketAccess &&
+                        TensorEvaluator<Arg2Type, Device>::PacketAccess &&
+                        TensorEvaluator<Arg3Type, Device>::PacketAccess &&
+                        internal::functor_traits<TernaryOp>::PacketAccess,
+    BlockAccessV2     = false,
+    PreferBlockAccess = TensorEvaluator<Arg1Type, Device>::PreferBlockAccess ||
+                        TensorEvaluator<Arg2Type, Device>::PreferBlockAccess ||
+                        TensorEvaluator<Arg3Type, Device>::PreferBlockAccess,
+    Layout            = TensorEvaluator<Arg1Type, Device>::Layout,
+    CoordAccess       = false,  // to be implemented
+    RawAccess         = false
   };
 
   EIGEN_DEVICE_FUNC TensorEvaluator(const XprType& op, const Device& device)
@@ -659,6 +739,10 @@ struct TensorEvaluator<const TensorCwiseTernaryOp<TernaryOp, Arg1Type, Arg2Type,
   typedef typename TensorEvaluator<Arg1Type, Device>::Dimensions Dimensions;
   typedef StorageMemory<CoeffReturnType, Device> Storage;
   typedef typename Storage::Type EvaluatorPointerType;
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockNotImplemented TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC const Dimensions& dimensions() const
   {
@@ -727,14 +811,20 @@ struct TensorEvaluator<const TensorSelectOp<IfArgType, ThenArgType, ElseArgType>
   typedef typename XprType::Scalar Scalar;
 
   enum {
-    IsAligned = TensorEvaluator<ThenArgType, Device>::IsAligned & TensorEvaluator<ElseArgType, Device>::IsAligned,
-    PacketAccess = TensorEvaluator<ThenArgType, Device>::PacketAccess & TensorEvaluator<ElseArgType, Device>::PacketAccess &
-                    PacketType<Scalar, Device>::HasBlend,
-    BlockAccess = false,
-    PreferBlockAccess = false,
-    Layout = TensorEvaluator<IfArgType, Device>::Layout,
-    CoordAccess = false,  // to be implemented
-    RawAccess = false
+    IsAligned         = TensorEvaluator<ThenArgType, Device>::IsAligned &
+                        TensorEvaluator<ElseArgType, Device>::IsAligned,
+    PacketAccess      = TensorEvaluator<ThenArgType, Device>::PacketAccess &
+                        TensorEvaluator<ElseArgType, Device>::PacketAccess &
+                        PacketType<Scalar, Device>::HasBlend,
+    BlockAccessV2     = TensorEvaluator<IfArgType, Device>::BlockAccessV2 &&
+                        TensorEvaluator<ThenArgType, Device>::BlockAccessV2 &&
+                        TensorEvaluator<ElseArgType, Device>::BlockAccessV2,
+    PreferBlockAccess = TensorEvaluator<IfArgType, Device>::PreferBlockAccess ||
+                        TensorEvaluator<ThenArgType, Device>::PreferBlockAccess ||
+                        TensorEvaluator<ElseArgType, Device>::PreferBlockAccess,
+    Layout            = TensorEvaluator<IfArgType, Device>::Layout,
+    CoordAccess       = false,  // to be implemented
+    RawAccess         = false
   };
 
   EIGEN_DEVICE_FUNC TensorEvaluator(const XprType& op, const Device& device)
@@ -755,6 +845,38 @@ struct TensorEvaluator<const TensorSelectOp<IfArgType, ThenArgType, ElseArgType>
   typedef typename TensorEvaluator<IfArgType, Device>::Dimensions Dimensions;
   typedef StorageMemory<CoeffReturnType, Device> Storage;
   typedef typename Storage::Type EvaluatorPointerType;
+
+  static const int NumDims = internal::array_size<Dimensions>::value;
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+    typedef internal::TensorBlockDescriptor<NumDims, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+
+  typedef typename TensorEvaluator<const IfArgType, Device>::TensorBlockV2
+      IfArgTensorBlock;
+  typedef typename TensorEvaluator<const ThenArgType, Device>::TensorBlockV2
+      ThenArgTensorBlock;
+  typedef typename TensorEvaluator<const ElseArgType, Device>::TensorBlockV2
+      ElseArgTensorBlock;
+
+  struct TensorSelectOpBlockFactory {
+    template <typename IfArgXprType, typename ThenArgXprType, typename ElseArgXprType>
+    struct XprType {
+      typedef TensorSelectOp<const IfArgXprType, const ThenArgXprType, const ElseArgXprType> type;
+    };
+
+    template <typename IfArgXprType, typename ThenArgXprType, typename ElseArgXprType>
+    typename XprType<IfArgXprType, ThenArgXprType, ElseArgXprType>::type expr(
+        const IfArgXprType& if_expr, const ThenArgXprType& then_expr, const ElseArgXprType& else_expr) const {
+      return typename XprType<IfArgXprType, ThenArgXprType, ElseArgXprType>::type(if_expr, then_expr, else_expr);
+    }
+  };
+
+  typedef internal::TensorTernaryExprBlock<TensorSelectOpBlockFactory,
+                                           IfArgTensorBlock, ThenArgTensorBlock,
+                                           ElseArgTensorBlock>
+      TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC const Dimensions& dimensions() const
   {
@@ -797,6 +919,25 @@ struct TensorEvaluator<const TensorSelectOp<IfArgType, ThenArgType, ElseArgType>
     return m_condImpl.costPerCoeff(vectorized) +
            m_thenImpl.costPerCoeff(vectorized)
         .cwiseMax(m_elseImpl.costPerCoeff(vectorized));
+  }
+
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void getResourceRequirements(
+      std::vector<internal::TensorOpResourceRequirements>* resources) const {
+    m_condImpl.getResourceRequirements(resources);
+    m_thenImpl.getResourceRequirements(resources);
+    m_elseImpl.getResourceRequirements(resources);
+  }
+
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2
+  blockV2(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+          bool /*root_of_expr_ast*/ = false) const {
+    // It's unsafe to pass destination buffer to underlying expressions, because
+    // output might be aliased with one of the inputs.
+    desc.DropDestinationBuffer();
+
+    return TensorBlockV2(
+        m_condImpl.blockV2(desc, scratch), m_thenImpl.blockV2(desc, scratch),
+        m_elseImpl.blockV2(desc, scratch), TensorSelectOpBlockFactory());
   }
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE EvaluatorPointerType data() const { return NULL; }

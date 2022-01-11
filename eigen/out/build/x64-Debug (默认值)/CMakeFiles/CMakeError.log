@@ -1,0 +1,91 @@
+Performing C++ SOURCE FILE Test EIGEN_COMPILER_SUPPORT_CPP11 failed with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_4801f && [1/2] Building CXX object CMakeFiles\cmTC_4801f.dir\src.cxx.obj
+cl: 命令行 warning D9002 :忽略未知选项“-std=c++11”
+[2/2] Linking CXX executable cmTC_4801f.exe
+
+
+Source file was:
+int main() { return 0; }
+Performing C++ SOURCE FILE Test COMPILER_SUPPORT_std=cpp03 failed with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_907bb && [1/2] Building CXX object CMakeFiles\cmTC_907bb.dir\src.cxx.obj
+cl: 命令行 warning D9002 :忽略未知选项“-std=c++03”
+[2/2] Linking CXX executable cmTC_907bb.exe
+
+
+Source file was:
+int main() { return 0; }
+Determining if the include file pthread.h exists failed with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_34c2f && [1/2] Building C object CMakeFiles\cmTC_34c2f.dir\CheckIncludeFile.c.obj
+FAILED: CMakeFiles/cmTC_34c2f.dir/CheckIncludeFile.c.obj 
+C:\PROGRA~2\MICROS~4\2019\COMMUN~1\VC\Tools\MSVC\1426~1.288\bin\HostX64\x64\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\cmTC_34c2f.dir\CheckIncludeFile.c.obj /FdCMakeFiles\cmTC_34c2f.dir\ /FS -c CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: 无法打开包括文件: “pthread.h”: No such file or directory
+ninja: build stopped: subcommand failed.
+
+
+
+Performing C SOURCE FILE Test SCOTCH_Num_4 failed with the following compile output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_a647b && [1/2] Building C object CMakeFiles\cmTC_a647b.dir\src.c.obj
+FAILED: CMakeFiles/cmTC_a647b.dir/src.c.obj 
+C:\PROGRA~2\MICROS~4\2019\COMMUN~1\VC\Tools\MSVC\1426~1.288\bin\HostX64\x64\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3 -DSCOTCH_Num_4 /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\cmTC_a647b.dir\src.c.obj /FdCMakeFiles\cmTC_a647b.dir\ /FS -c src.c
+src.c(4): fatal error C1083: 无法打开包括文件: “scotch.h”: No such file or directory
+ninja: build stopped: subcommand failed.
+
+
+...and run output:
+
+Return value: 1
+Source file was:
+
+#include <stdio.h>
+#include <stdint.h>
+#include <scotch.h>
+int main(int argc, char **argv) {
+  if (sizeof(SCOTCH_Num) == 4)
+    return 0;
+  else
+    return 1;
+}
+
+Performing C SOURCE FILE Test SCOTCH_Num_8 failed with the following compile output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_510d3 && [1/2] Building C object CMakeFiles\cmTC_510d3.dir\src.c.obj
+FAILED: CMakeFiles/cmTC_510d3.dir/src.c.obj 
+C:\PROGRA~2\MICROS~4\2019\COMMUN~1\VC\Tools\MSVC\1426~1.288\bin\HostX64\x64\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3 -DSCOTCH_Num_8 /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\cmTC_510d3.dir\src.c.obj /FdCMakeFiles\cmTC_510d3.dir\ /FS -c src.c
+src.c(4): fatal error C1083: 无法打开包括文件: “scotch.h”: No such file or directory
+ninja: build stopped: subcommand failed.
+
+
+...and run output:
+
+Return value: 1
+Source file was:
+
+#include <stdio.h>
+#include <stdint.h>
+#include <scotch.h>
+int main(int argc, char **argv) {
+  if (sizeof(SCOTCH_Num) == 8)
+    return 0;
+  else
+    return 1;
+}
+
+Performing C++ SOURCE FILE Test COMPILER_SUPPORT_FASTMATH failed with the following output:
+Change Dir: E:/Topo-DDA-forWin64/eigen-eigen-94875feeeeb9/out/build/x64-Debug (默认值)/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_bee34 && [1/2] Building CXX object CMakeFiles\cmTC_bee34.dir\src.cxx.obj
+cl: 命令行 warning D9002 :忽略未知选项“-ffast-math”
+[2/2] Linking CXX executable cmTC_bee34.exe
+
+
+Source file was:
+int main() { return 0; }

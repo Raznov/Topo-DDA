@@ -180,6 +180,10 @@ template <typename ResScalar, typename LhsScalar, typename RhsScalar,
     typename StorageIndex, typename OutputMapper, typename LhsMapper,
     typename RhsMapper>
 struct TensorContractionKernel {
+  // True if `invoke()` supports `beta` in `C <- alpha * A * B + beta * C`
+  // (otherwise beta should be always equal to 1).
+  enum { HasBeta = false };
+
   EIGEN_DEVICE_FUNC
   TensorContractionKernel(StorageIndex m_, StorageIndex k_, StorageIndex n_,
                           StorageIndex bm_, StorageIndex bk_, StorageIndex bn_)
@@ -248,7 +252,9 @@ struct TensorContractionKernel {
       const OutputMapper& output_mapper, const LhsBlock& lhsBlock,
       const RhsBlock& rhsBlock, const StorageIndex rows,
       const StorageIndex depth, const StorageIndex cols,
-      const ResScalar alpha) {
+      const ResScalar alpha, const ResScalar beta) {
+    // Default GEBP kernel does not support beta.
+    eigen_assert(beta == ResScalar(1));
     static const int kComputeStrideFromBlockDimensions = -1;
     GebpKernel()(output_mapper, lhsBlock, rhsBlock, rows, depth, cols, alpha,
         /*strideA*/ kComputeStrideFromBlockDimensions,
@@ -373,14 +379,18 @@ struct TensorContractionEvaluatorBase
   typedef typename Storage::Type EvaluatorPointerType;
 
   enum {
-    IsAligned = true,
-    PacketAccess = (PacketType<CoeffReturnType, Device>::size > 1),
-    BlockAccess = false,
+    IsAligned         = true,
+    PacketAccess      = (PacketType<CoeffReturnType, Device>::size > 1),
+    BlockAccessV2     = false,
     PreferBlockAccess = false,
-    Layout = TensorEvaluator<LeftArgType, Device>::Layout,
-    CoordAccess = false,  // to be implemented
-    RawAccess = true
+    Layout            = TensorEvaluator<LeftArgType, Device>::Layout,
+    CoordAccess       = false,  // to be implemented
+    RawAccess         = true
   };
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockNotImplemented TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   // Most of the code is assuming that both input tensors are ColMajor. If the
   // inputs are RowMajor, we will "cheat" by swapping the LHS and RHS:
@@ -390,7 +400,7 @@ struct TensorContractionEvaluatorBase
     static_cast<int>(Layout) == static_cast<int>(ColMajor), LeftArgType, RightArgType>::type EvalLeftArgType;
   typedef typename internal::conditional<
     static_cast<int>(Layout) == static_cast<int>(ColMajor), RightArgType, LeftArgType>::type EvalRightArgType;
-  
+
   typedef TensorEvaluator<EvalLeftArgType, Device> LeftEvaluatorType;
   typedef TensorEvaluator<EvalRightArgType, Device> RightEvaluatorType;
 
@@ -605,47 +615,98 @@ struct TensorContractionEvaluatorBase
     }
   }
 
-#define TENSOR_CONTRACTION_DISPATCH(METHOD, ALIGNMENT, ARGS)   \
-    if (this->m_lhs_inner_dim_contiguous) { \
-      if (this->m_rhs_inner_dim_contiguous) { \
-        if (this->m_rhs_inner_dim_reordered) { \
-          METHOD<true, true, true, ALIGNMENT>ARGS;    \
-        } \
-        else { \
-          METHOD<true, true, false, ALIGNMENT>ARGS; \
-        } \
-      } \
-      else { \
-       if (this->m_rhs_inner_dim_reordered) { \
-          METHOD<true, false, true, ALIGNMENT>ARGS; \
-        } \
-        else { \
-          METHOD<true, false, false, ALIGNMENT>ARGS; \
-        } \
-      } \
-    } \
-    else { \
-      if (this->m_rhs_inner_dim_contiguous) { \
-        if (this->m_rhs_inner_dim_reordered) { \
-          METHOD<false, true, true, ALIGNMENT>ARGS; \
-        } \
-        else { \
-          METHOD<false, true, false, ALIGNMENT>ARGS; \
-        } \
-      } \
-      else { \
-       if (this->m_rhs_inner_dim_reordered) { \
-          METHOD<false, false, true, ALIGNMENT>ARGS; \
-        } \
-        else { \
-          METHOD<false, false, false, ALIGNMENT>ARGS; \
-        } \
-      } \
-    }
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalSubExprsCallback>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(
+      EvaluatorPointerType dest, EvalSubExprsCallback done) {
+    m_leftImpl.evalSubExprsIfNeededAsync(nullptr, [this, done, dest](bool) {
+      m_rightImpl.evalSubExprsIfNeededAsync(nullptr, [this, done, dest](bool) {
+        if (dest) {
+          evalToAsync(dest, [done]() { done(false); });
+        } else {
+          m_result = static_cast<EvaluatorPointerType>(
+              m_device.allocate(dimensions().TotalSize() * sizeof(Scalar)));
+          evalToAsync(m_result, [done]() { done(true); });
+        }
+      });
+    });
+  }
+#endif  // EIGEN_USE_THREADS
+
+#define TENSOR_CONTRACTION_DISPATCH(METHOD, ALIGNMENT, ARGS) \
+  if (this->m_lhs_inner_dim_contiguous) {                    \
+    if (this->m_rhs_inner_dim_contiguous) {                  \
+      if (this->m_rhs_inner_dim_reordered) {                 \
+        METHOD<true, true, true, ALIGNMENT> ARGS;            \
+      } else {                                               \
+        METHOD<true, true, false, ALIGNMENT> ARGS;           \
+      }                                                      \
+    } else {                                                 \
+      if (this->m_rhs_inner_dim_reordered) {                 \
+        METHOD<true, false, true, ALIGNMENT> ARGS;           \
+      } else {                                               \
+        METHOD<true, false, false, ALIGNMENT> ARGS;          \
+      }                                                      \
+    }                                                        \
+  } else {                                                   \
+    if (this->m_rhs_inner_dim_contiguous) {                  \
+      if (this->m_rhs_inner_dim_reordered) {                 \
+        METHOD<false, true, true, ALIGNMENT> ARGS;           \
+      } else {                                               \
+        METHOD<false, true, false, ALIGNMENT> ARGS;          \
+      }                                                      \
+    } else {                                                 \
+      if (this->m_rhs_inner_dim_reordered) {                 \
+        METHOD<false, false, true, ALIGNMENT> ARGS;          \
+      } else {                                               \
+        METHOD<false, false, false, ALIGNMENT> ARGS;         \
+      }                                                      \
+    }                                                        \
+  }
+
+#define TENSOR_CONTRACTION_ASYNC_DISPATCH(METHOD, DONE, ALIGNMENT, ARGS, FN) \
+  if (this->m_lhs_inner_dim_contiguous) {                                    \
+    if (this->m_rhs_inner_dim_contiguous) {                                  \
+      if (this->m_rhs_inner_dim_reordered) {                                 \
+        (new METHOD<DONE, true, true, true, ALIGNMENT> ARGS)->FN;            \
+      } else {                                                               \
+        (new METHOD<DONE, true, true, false, ALIGNMENT> ARGS)->FN;           \
+      }                                                                      \
+    } else {                                                                 \
+      if (this->m_rhs_inner_dim_reordered) {                                 \
+        (new METHOD<DONE, true, false, true, ALIGNMENT> ARGS)->FN;           \
+      } else {                                                               \
+        (new METHOD<DONE, true, false, false, ALIGNMENT> ARGS)->FN;          \
+      }                                                                      \
+    }                                                                        \
+  } else {                                                                   \
+    if (this->m_rhs_inner_dim_contiguous) {                                  \
+      if (this->m_rhs_inner_dim_reordered) {                                 \
+        (new METHOD<DONE, false, true, true, ALIGNMENT> ARGS)->FN;           \
+      } else {                                                               \
+        (new METHOD<DONE, false, true, false, ALIGNMENT> ARGS)->FN;          \
+      }                                                                      \
+    } else {                                                                 \
+      if (this->m_rhs_inner_dim_reordered) {                                 \
+        (new METHOD<DONE, false, false, true, ALIGNMENT> ARGS)->FN;          \
+      } else {                                                               \
+        (new METHOD<DONE, false, false, false, ALIGNMENT> ARGS)->FN;         \
+      }                                                                      \
+    }                                                                        \
+  }
 
   EIGEN_DEVICE_FUNC void evalTo(Scalar* buffer) const {
    static_cast<const Derived*>(this)->template evalProduct<Unaligned>(buffer);
   }
+
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalToCallback>
+  void evalToAsync(Scalar* buffer, EvalToCallback done) const {
+    static_cast<const Derived*>(this)
+        ->template evalProductAsync<EvalToCallback, Unaligned>(buffer,
+                                                               std::move(done));
+  }
+#endif  // EIGEN_USE_THREADS
 
   template <bool lhs_inner_dim_contiguous, bool rhs_inner_dim_contiguous,
             bool rhs_inner_dim_reordered, int Alignment>
@@ -716,15 +777,6 @@ struct TensorContractionEvaluatorBase
   void evalGemm(Scalar* buffer) const {
     // columns in left side, rows in right side
     const Index k = this->m_k_size;
-
-    // rows in left side
-    const Index m = this->m_i_size;
-
-    // columns in right side
-    const Index n = this->m_j_size;
-
-    // zero out the result buffer (which must be of size at least m * n * sizeof(Scalar)
-    this->m_device.memset(buffer, 0, m * n * sizeof(Scalar));
     this->template evalGemmPartial<lhs_inner_dim_contiguous,
                                    rhs_inner_dim_contiguous,
                                    rhs_inner_dim_reordered,
@@ -810,6 +862,12 @@ struct TensorContractionEvaluatorBase
     const BlockMemHandle packed_mem =
         kernel.allocate(this->m_device, &blockA, &blockB);
 
+    // If a contraction kernel does not support beta, explicitly initialize
+    // output buffer with zeroes.
+    if (!TensorContractionKernel::HasBeta) {
+      this->m_device.memset(buffer, 0, m * n * sizeof(Scalar));
+    }
+
     for(Index i2=0; i2<m; i2+=mc)
     {
       const Index actual_mc = numext::mini(i2+mc,m)-i2;
@@ -817,6 +875,13 @@ struct TensorContractionEvaluatorBase
         // make sure we don't overshoot right edge of left matrix, then pack vertical panel
         const Index actual_kc = numext::mini(k2 + kc, k_end) - k2;
         kernel.packLhs(&blockA, lhs.getSubMapper(i2, k2), actual_kc, actual_mc);
+
+        // If kernel supports beta, there is no need to initialize output
+        // buffer with zeroes.
+        const Scalar alpha = Scalar(1);
+        const Scalar beta = (TensorContractionKernel::HasBeta && k2 == k_start)
+                                ? Scalar(0)
+                                : Scalar(1);
 
         // series of horizontal blocks
         for (Index j2 = 0; j2 < n; j2 += nc) {
@@ -829,7 +894,7 @@ struct TensorContractionEvaluatorBase
           // The parameters here are copied from Eigen's GEMM implementation
           const OutputMapper output_mapper = output.getSubMapper(i2, j2);
           kernel.invoke(output_mapper, blockA, blockB, actual_mc, actual_kc,
-                        actual_nc, Scalar(1));
+                        actual_nc, alpha, beta);
 
           // We are done with this [i2, j2] output block.
           if (use_output_kernel && k2 + kc >= k_end) {

@@ -54,6 +54,7 @@ struct sycl_packet_traits : default_packet_traits {
     HasPolygamma = 0,
     HasErf = 0,
     HasErfc = 0,
+    HasNdtri = 0,
     HasIGamma = 0,
     HasIGammac = 0,
     HasBetaInc = 0,
@@ -160,6 +161,8 @@ struct PacketWrapper<PacketReturnType, 4> {
         eigen_assert(false && "INDEX MUST BE BETWEEN 0 and 3");
         abort();
     }
+    __builtin_unreachable();
+
   }
   EIGEN_DEVICE_FUNC static PacketReturnType convert_to_packet_type(
       Scalar in, Scalar other) {
@@ -202,6 +205,8 @@ struct PacketWrapper<PacketReturnType, 2> {
         eigen_assert(false && "INDEX MUST BE BETWEEN 0 and 1");
         abort();
     }
+    __builtin_unreachable();
+  
   }
   EIGEN_DEVICE_FUNC static PacketReturnType convert_to_packet_type(
       Scalar in, Scalar other) {

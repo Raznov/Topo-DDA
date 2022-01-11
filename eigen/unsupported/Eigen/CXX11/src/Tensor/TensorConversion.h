@@ -178,6 +178,27 @@ template <typename Eval, typename EvalPointerType> struct ConversionSubExprEval<
   }
 };
 
+#ifdef EIGEN_USE_THREADS
+template <bool SameType, typename Eval, typename EvalPointerType,
+          typename EvalSubExprsCallback>
+struct ConversionSubExprEvalAsync {
+  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void run(
+      Eval& impl, EvalPointerType, EvalSubExprsCallback done) {
+    impl.evalSubExprsIfNeededAsync(nullptr, std::move(done));
+  }
+};
+
+template <typename Eval, typename EvalPointerType,
+          typename EvalSubExprsCallback>
+struct ConversionSubExprEvalAsync<true, Eval, EvalPointerType,
+                                  EvalSubExprsCallback> {
+  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void run(
+      Eval& impl, EvalPointerType data, EvalSubExprsCallback done) {
+    impl.evalSubExprsIfNeededAsync(data, std::move(done));
+  }
+};
+#endif
+
 namespace internal {
 
 template <typename SrcType, typename TargetType, bool IsSameT>
@@ -273,19 +294,45 @@ struct TensorEvaluator<const TensorConversionOp<TargetType, ArgType>, Device>
   typedef typename Storage::Type EvaluatorPointerType;
 
   enum {
-    IsAligned = false,
-    PacketAccess =
+    IsAligned         = false,
+    PacketAccess      =
     #ifndef EIGEN_USE_SYCL
-    true,
+                        true,
     #else
-    TensorEvaluator<ArgType, Device>::PacketAccess &
-        internal::type_casting_traits<SrcType, TargetType>::VectorizedCast,
+                        TensorEvaluator<ArgType, Device>::PacketAccess &
+                        internal::type_casting_traits<SrcType, TargetType>::VectorizedCast,
     #endif
-    BlockAccess = false,
-    PreferBlockAccess = false,
-    Layout = TensorEvaluator<ArgType, Device>::Layout,
-    RawAccess = false
+    BlockAccessV2     = TensorEvaluator<ArgType, Device>::BlockAccessV2,
+    PreferBlockAccess = TensorEvaluator<ArgType, Device>::PreferBlockAccess,
+    Layout            = TensorEvaluator<ArgType, Device>::Layout,
+    RawAccess         = false
   };
+
+  static const int NumDims = internal::array_size<Dimensions>::value;
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockDescriptor<NumDims, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+
+  typedef typename TensorEvaluator<const ArgType, Device>::TensorBlockV2
+      ArgTensorBlock;
+
+  struct TensorConversionOpBlockFactory {
+    template <typename ArgXprType>
+    struct XprType {
+      typedef TensorConversionOp<TargetType, const ArgXprType> type;
+    };
+
+    template <typename ArgXprType>
+    typename XprType<ArgXprType>::type expr(const ArgXprType& expr) const {
+      return typename XprType<ArgXprType>::type(expr);
+    }
+  };
+
+  typedef internal::TensorUnaryExprBlock<TensorConversionOpBlockFactory,
+                                         ArgTensorBlock>
+      TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const XprType& op, const Device& device)
     : m_impl(op.expression(), device)
@@ -298,6 +345,16 @@ struct TensorEvaluator<const TensorConversionOp<TargetType, ArgType>, Device>
   {
     return ConversionSubExprEval<IsSameType, TensorEvaluator<ArgType, Device>, EvaluatorPointerType>::run(m_impl, data);
   }
+
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalSubExprsCallback>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(
+      EvaluatorPointerType data, EvalSubExprsCallback done) {
+    ConversionSubExprEvalAsync<IsSameType, TensorEvaluator<ArgType, Device>,
+                               EvaluatorPointerType,
+        EvalSubExprsCallback>::run(m_impl, data, std::move(done));
+  }
+#endif
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup()
   {
@@ -338,6 +395,18 @@ struct TensorEvaluator<const TensorConversionOp<TargetType, ArgType>, Device>
     } else {
       return m_impl.costPerCoeff(vectorized) + TensorOpCost(0, 0, cast_cost);
     }
+  }
+
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void getResourceRequirements(
+      std::vector<internal::TensorOpResourceRequirements>* resources) const {
+    m_impl.getResourceRequirements(resources);
+  }
+
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2
+  blockV2(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+          bool /*root_of_expr_ast*/ = false) const {
+    return TensorBlockV2(m_impl.blockV2(desc, scratch),
+                         TensorConversionOpBlockFactory());
   }
 
   EIGEN_DEVICE_FUNC EvaluatorPointerType data() const { return NULL; }

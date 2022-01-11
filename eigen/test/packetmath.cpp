@@ -39,9 +39,12 @@ bits(const T& x) {
 // The following implement bitwise operations on floating point types
 template<typename T,typename Bits,typename Func>
 T apply_bit_op(Bits a, Bits b, Func f) {
-  Array<unsigned char,sizeof(T),1> res;
-  for(Index i=0; i<res.size();++i) res[i] = f(a[i],b[i]);
-  return *reinterpret_cast<T*>(&res);
+  Array<unsigned char,sizeof(T),1> data;
+  T res;
+  for(Index i = 0; i < data.size(); ++i)
+    data[i] = f(a[i], b[i]);
+  std::memcpy(&res, &data, sizeof(T));
+  return res;
 }
 
 #define EIGEN_TEST_MAKE_BITWISE2(OP,FUNC,T)             \
@@ -578,7 +581,7 @@ template<typename Scalar,typename Packet> void packetmath_real()
     h.store(data2, internal::plgamma(h.load(data1)));
     VERIFY((numext::isnan)(data2[0]));
   }
-  {
+  if (internal::packet_traits<Scalar>::HasErf) {
     data1[0] = std::numeric_limits<Scalar>::quiet_NaN();
     packet_helper<internal::packet_traits<Scalar>::HasErf,Packet> h;
     h.store(data2, internal::perf(h.load(data1)));
@@ -590,6 +593,12 @@ template<typename Scalar,typename Packet> void packetmath_real()
     h.store(data2, internal::perfc(h.load(data1)));
     VERIFY((numext::isnan)(data2[0]));
   }
+  {
+    for (int i=0; i<size; ++i) {
+      data1[i] = internal::random<Scalar>(0,1);
+    }
+    CHECK_CWISE1_IF(internal::packet_traits<Scalar>::HasNdtri, numext::ndtri, internal::pndtri);
+  }
 #endif  // EIGEN_HAS_C99_MATH
 
   for (int i=0; i<size; ++i)
@@ -599,16 +608,44 @@ template<typename Scalar,typename Packet> void packetmath_real()
   }
 
   if(internal::random<float>(0,1)<0.1f)
-    data1[internal::random<int>(0, PacketSize)] = 0;
+     data1[internal::random<int>(0, PacketSize)] = 0;
   CHECK_CWISE1_IF(PacketTraits::HasSqrt, std::sqrt, internal::psqrt);
-  CHECK_CWISE1_IF(PacketTraits::HasSqrt, Scalar(1)/std::sqrt, internal::prsqrt);
   CHECK_CWISE1_IF(PacketTraits::HasLog, std::log, internal::plog);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_i0, internal::pbessel_i0);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_i0e, internal::pbessel_i0e);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_i1, internal::pbessel_i1);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_i1e, internal::pbessel_i1e);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_j0, internal::pbessel_j0);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_j1, internal::pbessel_j1);
+
+  data1[0] = std::numeric_limits<Scalar>::infinity();
+  CHECK_CWISE1_IF(PacketTraits::HasRsqrt, Scalar(1)/std::sqrt, internal::prsqrt);
+
+  // Use a smaller data range for the positive bessel operations as these
+  // can have much more error at very small and very large values.
+  for (int i=0; i<size; ++i) {
+      data1[i] = internal::random<Scalar>(0.01,1) * std::pow(
+          Scalar(10), internal::random<Scalar>(-1,2));
+      data2[i] = internal::random<Scalar>(0.01,1) * std::pow(
+          Scalar(10), internal::random<Scalar>(-1,2));
+  }
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_y0, internal::pbessel_y0);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_y1, internal::pbessel_y1);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_k0, internal::pbessel_k0);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_k0e, internal::pbessel_k0e);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_k1, internal::pbessel_k1);
+  CHECK_CWISE1_IF(PacketTraits::HasBessel, numext::bessel_k1e, internal::pbessel_k1e);
+
 #if EIGEN_HAS_C99_MATH && (__cplusplus > 199711L)
-  CHECK_CWISE1_IF(PacketTraits::HasExpm1, std::expm1, internal::pexpm1);
-  CHECK_CWISE1_IF(PacketTraits::HasLog1p, std::log1p, internal::plog1p);
   CHECK_CWISE1_IF(internal::packet_traits<Scalar>::HasLGamma, std::lgamma, internal::plgamma);
   CHECK_CWISE1_IF(internal::packet_traits<Scalar>::HasErf, std::erf, internal::perf);
   CHECK_CWISE1_IF(internal::packet_traits<Scalar>::HasErfc, std::erfc, internal::perfc);
+  data1[0] = std::numeric_limits<Scalar>::infinity();
+  data1[1] = Scalar(-1);
+  CHECK_CWISE1_IF(PacketTraits::HasLog1p, std::log1p, internal::plog1p);
+  data1[0] = std::numeric_limits<Scalar>::infinity();
+  data1[1] = -std::numeric_limits<Scalar>::infinity();
+  CHECK_CWISE1_IF(PacketTraits::HasExpm1, std::expm1, internal::pexpm1);
 #endif
 
   if(PacketSize>=2)
@@ -647,6 +684,14 @@ template<typename Scalar,typename Packet> void packetmath_real()
       data1[0] = std::numeric_limits<Scalar>::infinity();
       h.store(data2, internal::plog(h.load(data1)));
       VERIFY((numext::isinf)(data2[0]));
+    }
+    if(PacketTraits::HasLog1p) {
+      packet_helper<PacketTraits::HasLog1p,Packet> h;
+      data1[0] = Scalar(-2);
+      data1[1] = -std::numeric_limits<Scalar>::infinity();
+      h.store(data2, internal::plog1p(h.load(data1)));
+      VERIFY((numext::isnan)(data2[0]));
+      VERIFY((numext::isnan)(data2[1]));
     }
     if(PacketTraits::HasSqrt)
     {
@@ -925,7 +970,7 @@ EIGEN_DECLARE_TEST(packetmath)
 {
   g_first_pass = true;
   for(int i = 0; i < g_repeat; i++) {
-    
+
     CALL_SUBTEST_1( runner<float>::run() );
     CALL_SUBTEST_2( runner<double>::run() );
     CALL_SUBTEST_3( runner<int>::run() );

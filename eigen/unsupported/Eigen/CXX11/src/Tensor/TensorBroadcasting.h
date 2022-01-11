@@ -114,7 +114,7 @@ struct TensorEvaluator<const TensorBroadcastingOp<Broadcast, ArgType>, Device>
   enum {
     IsAligned         = true,
     PacketAccess      = TensorEvaluator<ArgType, Device>::PacketAccess,
-    BlockAccess       = TensorEvaluator<ArgType, Device>::BlockAccess,
+    BlockAccessV2     = TensorEvaluator<ArgType, Device>::BlockAccessV2,
     PreferBlockAccess = true,
     Layout            = TensorEvaluator<ArgType, Device>::Layout,
     RawAccess         = false
@@ -122,19 +122,21 @@ struct TensorEvaluator<const TensorBroadcastingOp<Broadcast, ArgType>, Device>
 
   typedef typename internal::remove_const<Scalar>::type ScalarNoConst;
 
-  // Block based access to the XprType (input) tensor.
-  typedef internal::TensorBlock<ScalarNoConst, Index, NumDims, Layout>
-      TensorBlock;
-  typedef internal::TensorBlockReader<ScalarNoConst, Index, NumDims, Layout>
-      TensorBlockReader;
-
   // We do block based broadcasting using a trick with 2x tensor rank and 0
   // strides. See block method implementation for details.
   typedef DSizes<Index, 2 * NumDims> BroadcastDimensions;
-  typedef internal::TensorBlock<ScalarNoConst, Index, 2 * NumDims, Layout>
-      BroadcastTensorBlock;
-  typedef internal::TensorBlockReader<ScalarNoConst, Index, 2 * NumDims, Layout>
-      BroadcastTensorBlockReader;
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+ typedef internal::TensorBlockDescriptor<NumDims, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+
+  typedef typename TensorEvaluator<const ArgType, Device>::TensorBlockV2
+      ArgTensorBlock;
+
+  typedef typename internal::TensorMaterializedBlock<ScalarNoConst, NumDims,
+                                                     Layout, Index>
+      TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const XprType& op,
                                                         const Device& device)
@@ -213,6 +215,14 @@ struct TensorEvaluator<const TensorBroadcastingOp<Broadcast, ArgType>, Device>
     m_impl.evalSubExprsIfNeeded(NULL);
     return true;
   }
+
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalSubExprsCallback>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(
+      EvaluatorPointerType, EvalSubExprsCallback done) {
+    m_impl.evalSubExprsIfNeededAsync(nullptr, [done](bool) { done(true); });
+  }
+#endif  // EIGEN_USE_THREADS
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup() {
     m_impl.cleanup();
@@ -619,244 +629,67 @@ struct TensorEvaluator<const TensorBroadcastingOp<Broadcast, ArgType>, Device>
     m_impl.getResourceRequirements(resources);
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void block(
-      TensorBlock* output_block) const {
-    if (NumDims <= 0) {
-      output_block->data()[0] = m_impl.coeff(0);
-      return;
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2
+  blockV2(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+          bool /*root_of_expr_ast*/ = false) const {
+    BlockBroadcastingParams params = blockBroadcastingParams(desc);
+
+    if (params.inner_dim_size == 0 || params.bcast_dim_size == 0) {
+      return emptyBlock();
     }
 
-    // Because we only support kSkewedInnerDims blocking, block size should be
-    // equal to m_dimensions for inner dims, a smaller than m_dimensions[i] size
-    // for the first outer dim, and 1 for other outer dims. This is guaranteed
-    // by MergeResourceRequirements() in TensorBlock.h.
-    const Dimensions& output_block_sizes = output_block->block_sizes();
-    const Dimensions& output_block_strides = output_block->block_strides();
+    // Prepare storage for the materialized broadcasting result.
+    const typename TensorBlockV2::Storage block_storage =
+        TensorBlockV2::prepareStorage(desc, scratch);
+    ScalarNoConst* materialized_output = block_storage.data();
 
-    // Find where outer dims start.
-    int outer_dim_start = 0;
-    Index outer_dim_size = 1, inner_dim_size = 1;
-    for (int i = 0; i < NumDims; ++i) {
-      const int dim = static_cast<int>(Layout) == static_cast<int>(ColMajor)
-                          ? i
-                          : NumDims - i - 1;
-      if (i > outer_dim_start) {
-        eigen_assert(output_block_sizes[dim] == 1);
-      } else if (output_block_sizes[dim] != m_dimensions[dim]) {
-        eigen_assert(output_block_sizes[dim] < m_dimensions[dim]);
-        outer_dim_size = output_block_sizes[dim];
-      } else {
-        inner_dim_size *= output_block_sizes[dim];
-        ++outer_dim_start;
-      }
+    // We potentially will need to materialize input blocks.
+    size_t materialized_input_size = 0;
+    ScalarNoConst* materialized_input = NULL;
+
+    // Initialize block broadcating iterator state for outer dimensions (outer
+    // with regard to bcast dimension). Dimension in this array are always in
+    // inner_most -> outer_most order (col major layout).
+    array<BlockBroadcastingIteratorState, NumDims> it;
+    int idx = 0;
+
+    for (int i = params.inner_dim_count + 1; i < NumDims; ++i) {
+      const Index dim = IsColMajor ? i : NumDims - 1 - i;
+      it[idx].size = params.output_dims[dim];
+      it[idx].count = 0;
+      it[idx].output_stride = m_outputStrides[dim];
+      it[idx].output_span = it[idx].output_stride * (it[idx].size - 1);
+      idx++;
     }
 
-    if (inner_dim_size == 0 || outer_dim_size == 0) {
-      return;
-    }
+    // Write output into the beginning of `materialized_output`.
+    Index output_offset = 0;
 
-    const Dimensions& input_dims = Dimensions(m_impl.dimensions());
+    // We will fill output block by broadcasting along the bcast dim, and
+    // iterating over outer dimension.
+    const Index output_size = NumDims == 0 ? 1 : params.output_dims.TotalSize();
 
-    // Pre-fill input_block_sizes, broadcast_block_sizes,
-    // broadcast_block_strides, and broadcast_tensor_strides. Later on we will
-    // only modify the outer_dim_start-th dimension on these arrays.
+    for (Index num_output_coeffs = 0; num_output_coeffs < output_size;) {
+      ScalarNoConst* bcast_output = materialized_output + num_output_coeffs;
+      Index bcast_offset = desc.offset() + output_offset;
 
-    // Calculate the input block size for looking into the input.
-    Dimensions input_block_sizes;
-    if (static_cast<int>(Layout) == static_cast<int>(ColMajor)) {
-      for (int i = 0; i < outer_dim_start; ++i) {
-        input_block_sizes[i] = input_dims[i];
-      }
-      for (int i = outer_dim_start; i < NumDims; ++i) {
-        input_block_sizes[i] = 1;
-      }
-    } else {
-      for (int i = 0; i < outer_dim_start; ++i) {
-        input_block_sizes[NumDims - i - 1] = input_dims[NumDims - i - 1];
-      }
-      for (int i = outer_dim_start; i < NumDims; ++i) {
-        input_block_sizes[NumDims - i - 1] = 1;
-      }
-    }
+      // Broadcast along the bcast dimension.
+      num_output_coeffs += BroadcastBlockAlongBcastDim(
+          params, bcast_offset, scratch, bcast_output, &materialized_input,
+          &materialized_input_size);
 
-    // Broadcast with the 0-stride trick: Create 1 extra dim for each
-    // broadcast, set the input stride to 0.
-    //
-    // When ColMajor:
-    // - broadcast_block_sizes is [d_0, b_0, d_1, b_1, ...].
-    //
-    // - broadcast_block_strides is [output_block_strides[0],
-    //                               output_block_strides[0] * d_0,
-    //                               output_block_strides[1],
-    //                               output_block_strides[1] * d_1,
-    //                               ...].
-    //
-    // - broadcast_tensor_strides is [output_block_strides[0],
-    //                                0,
-    //                                output_block_strides[1],
-    //                                0,
-    //                                ...].
-    BroadcastDimensions broadcast_block_sizes, broadcast_block_strides,
-        broadcast_tensor_strides;
-
-    for (int i = 0; i < outer_dim_start; ++i) {
-      const int dim = static_cast<int>(Layout) == static_cast<int>(ColMajor)
-                          ? i
-                          : NumDims - i - 1;
-      const int copy_dim =
-          static_cast<int>(Layout) == static_cast<int>(ColMajor)
-              ? 2 * i
-              : 2 * NumDims - 2 * i - 1;
-      const int broadcast_dim =
-          static_cast<int>(Layout) == static_cast<int>(ColMajor) ? copy_dim + 1
-                                                                 : copy_dim - 1;
-      broadcast_block_sizes[copy_dim] = input_dims[dim];
-      broadcast_block_sizes[broadcast_dim] = m_broadcast[dim];
-      broadcast_block_strides[copy_dim] = output_block_strides[dim];
-      broadcast_block_strides[broadcast_dim] =
-          output_block_strides[dim] * input_dims[dim];
-      broadcast_tensor_strides[copy_dim] = m_inputStrides[dim];
-      broadcast_tensor_strides[broadcast_dim] = 0;
-    }
-    for (int i = 2 * outer_dim_start; i < 2 * NumDims; ++i) {
-      const int dim = static_cast<int>(Layout) == static_cast<int>(ColMajor)
-                          ? i
-                          : 2 * NumDims - i - 1;
-      broadcast_block_sizes[dim] = 1;
-      broadcast_block_strides[dim] = 0;
-      broadcast_tensor_strides[dim] = 0;
-    }
-
-    const int outer_dim = static_cast<int>(Layout) == static_cast<int>(ColMajor)
-                              ? outer_dim_start
-                              : NumDims - outer_dim_start - 1;
-
-    if (outer_dim_size == 1) {
-      // We just need one block read using the ready-set values above.
-      BroadcastBlock(input_block_sizes, broadcast_block_sizes,
-                     broadcast_block_strides, broadcast_tensor_strides, 0,
-                     output_block);
-    } else if (input_dims[outer_dim] == 1) {
-      // Broadcast outer_dim_start-th dimension (< NumDims) by outer_dim_size.
-      const int broadcast_outer_dim =
-          static_cast<int>(Layout) == static_cast<int>(ColMajor)
-              ? 2 * outer_dim_start + 1
-              : 2 * NumDims - 2 * outer_dim_start - 2;
-      broadcast_block_sizes[broadcast_outer_dim] = outer_dim_size;
-      broadcast_tensor_strides[broadcast_outer_dim] = 0;
-      broadcast_block_strides[broadcast_outer_dim] =
-          output_block_strides[outer_dim];
-      BroadcastBlock(input_block_sizes, broadcast_block_sizes,
-                     broadcast_block_strides, broadcast_tensor_strides, 0,
-                     output_block);
-    } else {
-      // The general case. Let's denote the output block as x[...,
-      // a:a+outer_dim_size, :, ..., :], where a:a+outer_dim_size is a slice on
-      // the outer_dim_start-th dimension (< NumDims). We need to split the
-      // a:a+outer_dim_size into possibly 3 sub-blocks:
-      //
-      // (1) a:b, where b is the smallest multiple of
-      // input_dims[outer_dim_start] in [a, a+outer_dim_size].
-      //
-      // (2) b:c, where c is the largest multiple of input_dims[outer_dim_start]
-      // in [a, a+outer_dim_size].
-      //
-      // (3) c:a+outer_dim_size .
-      //
-      // Or, when b and c do not exist, we just need to process the whole block
-      // together.
-
-      // Find a.
-      const Index outer_dim_left_index =
-          output_block->first_coeff_index() / m_outputStrides[outer_dim];
-
-      // Find b and c.
-      const Index input_outer_dim_size = input_dims[outer_dim];
-
-      // First multiple after a. This is b when <= outer_dim_left_index +
-      // outer_dim_size.
-      const Index first_multiple =
-          divup<Index>(outer_dim_left_index, input_outer_dim_size) *
-          input_outer_dim_size;
-
-      if (first_multiple <= outer_dim_left_index + outer_dim_size) {
-        // b exists, so does c. Find it.
-        const Index last_multiple = (outer_dim_left_index + outer_dim_size) /
-                                    input_outer_dim_size * input_outer_dim_size;
-        const int copy_outer_dim =
-            static_cast<int>(Layout) == static_cast<int>(ColMajor)
-                ? 2 * outer_dim_start
-                : 2 * NumDims - 2 * outer_dim_start - 1;
-        const int broadcast_outer_dim =
-            static_cast<int>(Layout) == static_cast<int>(ColMajor)
-                ? 2 * outer_dim_start + 1
-                : 2 * NumDims - 2 * outer_dim_start - 2;
-        if (first_multiple > outer_dim_left_index) {
-          const Index head_size = first_multiple - outer_dim_left_index;
-          input_block_sizes[outer_dim] = head_size;
-          broadcast_block_sizes[copy_outer_dim] = head_size;
-          broadcast_tensor_strides[copy_outer_dim] = m_inputStrides[outer_dim];
-          broadcast_block_strides[copy_outer_dim] =
-              output_block_strides[outer_dim];
-          broadcast_block_sizes[broadcast_outer_dim] = 1;
-          broadcast_tensor_strides[broadcast_outer_dim] = 0;
-          broadcast_block_strides[broadcast_outer_dim] =
-              output_block_strides[outer_dim] * input_dims[outer_dim];
-          BroadcastBlock(input_block_sizes, broadcast_block_sizes,
-                         broadcast_block_strides, broadcast_tensor_strides, 0,
-                         output_block);
+      // Switch to the next outer dimension.
+      for (int j = 0; j < idx; ++j) {
+        if (++it[j].count < it[j].size) {
+          output_offset += it[j].output_stride;
+          break;
         }
-        if (first_multiple < last_multiple) {
-          input_block_sizes[outer_dim] = input_outer_dim_size;
-          broadcast_block_sizes[copy_outer_dim] = input_outer_dim_size;
-          broadcast_tensor_strides[copy_outer_dim] = m_inputStrides[outer_dim];
-          broadcast_block_strides[copy_outer_dim] =
-              output_block_strides[outer_dim];
-          broadcast_block_sizes[broadcast_outer_dim] =
-              (last_multiple - first_multiple) / input_outer_dim_size;
-          broadcast_tensor_strides[broadcast_outer_dim] = 0;
-          broadcast_block_strides[broadcast_outer_dim] =
-              output_block_strides[outer_dim] * input_dims[outer_dim];
-          const Index offset = (first_multiple - outer_dim_left_index) *
-                               m_outputStrides[outer_dim];
-          BroadcastBlock(input_block_sizes, broadcast_block_sizes,
-                         broadcast_block_strides, broadcast_tensor_strides,
-                         offset, output_block);
-        }
-        if (last_multiple < outer_dim_left_index + outer_dim_size) {
-          const Index tail_size =
-              outer_dim_left_index + outer_dim_size - last_multiple;
-          input_block_sizes[outer_dim] = tail_size;
-          broadcast_block_sizes[copy_outer_dim] = tail_size;
-          broadcast_tensor_strides[copy_outer_dim] = m_inputStrides[outer_dim];
-          broadcast_block_strides[copy_outer_dim] =
-              output_block_strides[outer_dim];
-          broadcast_block_sizes[broadcast_outer_dim] = 1;
-          broadcast_tensor_strides[broadcast_outer_dim] = 0;
-          broadcast_block_strides[broadcast_outer_dim] =
-              output_block_strides[outer_dim] * input_dims[outer_dim];
-          const Index offset = (last_multiple - outer_dim_left_index) *
-                               m_outputStrides[outer_dim];
-          BroadcastBlock(input_block_sizes, broadcast_block_sizes,
-                         broadcast_block_strides, broadcast_tensor_strides,
-                         offset, output_block);
-        }
-      } else {
-        // b and c do not exist.
-        const int copy_outer_dim =
-            static_cast<int>(Layout) == static_cast<int>(ColMajor)
-                ? 2 * outer_dim_start
-                : 2 * NumDims - 2 * outer_dim_start - 1;
-        input_block_sizes[outer_dim] = outer_dim_size;
-        broadcast_block_sizes[copy_outer_dim] = outer_dim_size;
-        broadcast_tensor_strides[copy_outer_dim] = m_inputStrides[outer_dim];
-        broadcast_block_strides[copy_outer_dim] =
-            output_block_strides[outer_dim];
-        BroadcastBlock(input_block_sizes, broadcast_block_sizes,
-                       broadcast_block_strides, broadcast_tensor_strides, 0,
-                       output_block);
+        it[j].count = 0;
+        output_offset -= it[j].output_span;
       }
     }
+
+    return block_storage.AsTensorMaterializedBlock();
   }
 
   EIGEN_DEVICE_FUNC EvaluatorPointerType data() const { return NULL; }
@@ -864,33 +697,389 @@ struct TensorEvaluator<const TensorBroadcastingOp<Broadcast, ArgType>, Device>
   const TensorEvaluator<ArgType, Device>& impl() const { return m_impl; }
 
   Broadcast functor() const { return m_broadcast; }
-  #ifdef EIGEN_USE_SYCL
+#ifdef EIGEN_USE_SYCL
   // binding placeholder accessors to a command group handler for SYCL
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void bind(cl::sycl::handler &cgh) const {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void bind(
+      cl::sycl::handler& cgh) const {
     m_impl.bind(cgh);
   }
-  #endif
+#endif
  private:
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void BroadcastBlock(
+  static const bool IsColMajor =
+      static_cast<int>(Layout) == static_cast<int>(ColMajor);
+
+  // We will build a general case block broadcasting on top of broadcasting
+  // primitive that will do broadcasting only for the inner dimension(s) along
+  // the first dimension smaller than the input size (it's called `bcast_dim`).
+  //
+  // Example:
+  //           dim:  0  1  2   (ColMajor)
+  //    input size: [9, 3, 6]
+  //    block size: [9, 2, 6]
+  //
+  // We will compute broadcasted block by iterating over the outer dimensions
+  // before `bcast_dim` (only dimension `2` in this example) and computing
+  // broadcasts along the `bcast_dim` (dimension `1` in this example).
+
+  // BlockBroadcastingParams holds precomputed parameters for broadcasting a
+  // single block along the broadcasting dimension. Sizes and strides along the
+  // `bcast_dim` might be invalid, they will be adjusted later in
+  // `BroadcastBlockAlongBcastDim`.
+  struct BlockBroadcastingParams {
+    Dimensions input_dims;      // input expression dimensions
+    Dimensions output_dims;     // output block sizes
+    Dimensions output_strides;  // output block strides
+
+    int inner_dim_count;   // count inner dimensions matching in size
+    int bcast_dim;         // broadcasting dimension index
+    Index bcast_dim_size;  // broadcasting dimension size
+    Index inner_dim_size;  // inner dimensions size
+
+    // Block sizes and strides for the input block where all dimensions before
+    // `bcast_dim` are equal to `1`.
+    Dimensions input_block_sizes;
+    Dimensions input_block_strides;
+
+    // Block sizes and strides for blocks with extra dimensions and strides `0`.
+    BroadcastDimensions bcast_block_sizes;
+    BroadcastDimensions bcast_block_strides;
+    BroadcastDimensions bcast_input_strides;
+  };
+
+  struct BlockBroadcastingIteratorState {
+    Index size;
+    Index count;
+    Index output_stride;
+    Index output_span;
+  };
+
+  EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE BlockBroadcastingParams
+  blockBroadcastingParams(TensorBlockDesc& desc) const {
+    BlockBroadcastingParams params;
+
+    params.input_dims = Dimensions(m_impl.dimensions());
+
+    // Output block sizes and strides.
+    params.output_dims = desc.dimensions();
+    params.output_strides = internal::strides<Layout>(params.output_dims);
+
+    // Find the broadcasting dimension (first dimension with output size smaller
+    // that the input size).
+    params.bcast_dim = 0;
+    params.bcast_dim_size = 1;
+    params.inner_dim_size = 1;
+
+    // Count the number of inner dimensions that have the same size in the block
+    // and in the broadcast expression.
+    params.inner_dim_count = 0;
+
+    for (int i = 0; i < NumDims; ++i) {
+      const int dim = IsColMajor ? i : NumDims - i - 1;
+
+      if (params.output_dims[dim] == m_dimensions[dim]) {
+        params.inner_dim_size *= params.output_dims[dim];
+        ++params.inner_dim_count;
+        continue;
+      }
+
+      // First non-matching dimension is the broadcasting dimension.
+      eigen_assert(params.output_dims[dim] < m_dimensions[dim]);
+      params.bcast_dim = dim;
+      params.bcast_dim_size = params.output_dims[dim];
+      break;
+    }
+
+    // Calculate the input block size for looking into the input.
+    for (int i = 0; i < params.inner_dim_count; ++i) {
+      const int dim = IsColMajor ? i : NumDims - i - 1;
+      params.input_block_sizes[dim] = params.input_dims[dim];
+    }
+    for (int i = params.inner_dim_count; i < NumDims; ++i) {
+      const int dim = IsColMajor ? i : NumDims - i - 1;
+      params.input_block_sizes[dim] = 1;
+    }
+    params.input_block_strides =
+        internal::strides<Layout>(params.input_block_sizes);
+
+    // Broadcast with the 0-stride trick: Create 1 extra dim for each
+    // broadcast, set the input stride to 0.
+    //
+    // When ColMajor:
+    //
+    // - bcast_block_sizes:
+    //   [d_0, b_0, d_1, b_1, ...]
+    //
+    // - bcast_block_strides:
+    //   [output_block_strides[0], output_block_strides[0] * d_0,
+    //    output_block_strides[1], output_block_strides[1] * d_1,
+    //   ...]
+    //
+    // - bcast_input_strides:
+    //   [input_block_strides[0], 0,
+    //    input_block_strides[1], 0,
+    //   ...].
+    //
+    for (int i = 0; i < params.inner_dim_count; ++i) {
+      const int dim = IsColMajor ? i : NumDims - i - 1;
+
+      const int copy_dim = IsColMajor ? 2 * i : 2 * NumDims - 2 * i - 1;
+      const int broadcast_dim = IsColMajor ? copy_dim + 1 : copy_dim - 1;
+
+      params.bcast_block_sizes[copy_dim] = params.input_dims[dim];
+      params.bcast_block_sizes[broadcast_dim] = m_broadcast[dim];
+      params.bcast_block_strides[copy_dim] = params.output_strides[dim];
+      params.bcast_block_strides[broadcast_dim] =
+          params.output_strides[dim] * params.input_dims[dim];
+      params.bcast_input_strides[copy_dim] = params.input_block_strides[dim];
+      params.bcast_input_strides[broadcast_dim] = 0;
+    }
+
+    for (int i = 2 * params.inner_dim_count; i < 2 * NumDims; ++i) {
+      const int dim = IsColMajor ? i : 2 * NumDims - i - 1;
+      params.bcast_block_sizes[dim] = 1;
+      params.bcast_block_strides[dim] = 0;
+      params.bcast_input_strides[dim] = 0;
+    }
+
+    return params;
+  }
+
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2 emptyBlock() const {
+    DSizes<Index, NumDims> dimensions;
+    for (int i = 0; i < NumDims; ++i) dimensions[i] = 0;
+    return TensorBlockV2(internal::TensorBlockKind::kView, NULL, dimensions);
+  }
+
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Index BroadcastBlockAlongBcastDim(
+      BlockBroadcastingParams params, Index bcast_offset,
+      TensorBlockScratch& scratch, ScalarNoConst* materialized_output,
+      ScalarNoConst** materialized_input,
+      size_t* materialized_input_size) const {
+    if (params.bcast_dim_size == 1) {
+      // We just need one block read using the ready-set values above.
+      return BroadcastBlockV2(
+          params.input_block_sizes, params.input_block_strides,
+          params.bcast_block_sizes, params.bcast_block_strides,
+          params.bcast_input_strides, bcast_offset, 0, scratch,
+          materialized_output, materialized_input, materialized_input_size);
+
+    } else if (params.input_dims[params.bcast_dim] == 1) {
+      // Broadcast bcast dimension (< NumDims) by bcast_dim_size.
+      const int broadcast_bcast_dim =
+          IsColMajor ? 2 * params.inner_dim_count + 1
+                     : 2 * NumDims - 2 * params.inner_dim_count - 2;
+
+      params.bcast_block_sizes[broadcast_bcast_dim] = params.bcast_dim_size;
+      params.bcast_input_strides[broadcast_bcast_dim] = 0;
+      params.bcast_block_strides[broadcast_bcast_dim] =
+          params.output_strides[params.bcast_dim];
+
+      return BroadcastBlockV2(
+          params.input_block_sizes, params.input_block_strides,
+          params.bcast_block_sizes, params.bcast_block_strides,
+          params.bcast_input_strides, bcast_offset, 0, scratch,
+          materialized_output, materialized_input, materialized_input_size);
+
+    } else {
+      // Keep track of the total number of the coefficients written to the
+      // output block.
+      Index num_output_coeffs = 0;
+
+      // The general case. Let's denote the output block as
+      //
+      //   x[..., a:a+bcast_dim_size, :, ..., :]
+      //
+      // where a:a+bcast_dim_size is a slice on the bcast_dim dimension
+      // (< NumDims). We need to split the a:a+bcast_dim_size into possibly 3
+      // sub-blocks:
+      //
+      // (1) a:b, where b is the smallest multiple of
+      //     input_dims[bcast_dim_start] in [a, a+bcast_dim_size].
+      //
+      // (2) b:c, where c is the largest multiple of input_dims[bcast_dim_start]
+      //     in [a, a+bcast_dim_size].
+      //
+      // (3) c:a+bcast_dim_size .
+      //
+      // Or, when b and c do not exist, we just need to process the whole block
+      // together.
+
+      // Find a.
+      const Index bcast_dim_left_index =
+          bcast_offset / m_outputStrides[params.bcast_dim];
+
+      // Find b and c.
+      const Index input_bcast_dim_size = params.input_dims[params.bcast_dim];
+
+      // First multiple after a. This is b when <= bcast_dim_left_index +
+      // bcast_dim_size.
+      const Index first_multiple =
+          divup<Index>(bcast_dim_left_index, input_bcast_dim_size) *
+          input_bcast_dim_size;
+
+      if (first_multiple <= bcast_dim_left_index + params.bcast_dim_size) {
+        // b exists, so does c. Find it.
+        const Index last_multiple =
+            (bcast_dim_left_index + params.bcast_dim_size) /
+            input_bcast_dim_size * input_bcast_dim_size;
+        const int copy_bcast_dim =
+            IsColMajor ? 2 * params.inner_dim_count
+                       : 2 * NumDims - 2 * params.inner_dim_count - 1;
+        const int broadcast_bcast_dim =
+            IsColMajor ? 2 * params.inner_dim_count + 1
+                       : 2 * NumDims - 2 * params.inner_dim_count - 2;
+
+        if (first_multiple > bcast_dim_left_index) {
+          const Index head_size = first_multiple - bcast_dim_left_index;
+          params.input_block_sizes[params.bcast_dim] = head_size;
+          params.bcast_block_sizes[copy_bcast_dim] = head_size;
+          params.bcast_input_strides[copy_bcast_dim] =
+              params.input_block_strides[params.bcast_dim];
+          params.bcast_block_strides[copy_bcast_dim] =
+              params.output_strides[params.bcast_dim];
+          params.bcast_block_sizes[broadcast_bcast_dim] = 1;
+          params.bcast_input_strides[broadcast_bcast_dim] = 0;
+          params.bcast_block_strides[broadcast_bcast_dim] =
+              params.output_strides[params.bcast_dim] *
+              params.input_dims[params.bcast_dim];
+
+          num_output_coeffs += BroadcastBlockV2(
+              params.input_block_sizes, params.input_block_strides,
+              params.bcast_block_sizes, params.bcast_block_strides,
+              params.bcast_input_strides, bcast_offset, 0, scratch,
+              materialized_output, materialized_input, materialized_input_size);
+        }
+        if (first_multiple < last_multiple) {
+          params.input_block_sizes[params.bcast_dim] = input_bcast_dim_size;
+          params.bcast_block_sizes[copy_bcast_dim] = input_bcast_dim_size;
+          params.bcast_input_strides[copy_bcast_dim] =
+              params.input_block_strides[params.bcast_dim];
+          params.bcast_block_strides[copy_bcast_dim] =
+              params.output_strides[params.bcast_dim];
+          params.bcast_block_sizes[broadcast_bcast_dim] =
+              (last_multiple - first_multiple) / input_bcast_dim_size;
+          params.bcast_input_strides[broadcast_bcast_dim] = 0;
+          params.bcast_block_strides[broadcast_bcast_dim] =
+              params.output_strides[params.bcast_dim] *
+              params.input_dims[params.bcast_dim];
+          const Index offset = (first_multiple - bcast_dim_left_index) *
+                               m_outputStrides[params.bcast_dim];
+
+          num_output_coeffs += BroadcastBlockV2(
+              params.input_block_sizes, params.input_block_strides,
+              params.bcast_block_sizes, params.bcast_block_strides,
+              params.bcast_input_strides, bcast_offset, offset, scratch,
+              materialized_output, materialized_input, materialized_input_size);
+        }
+        if (last_multiple < bcast_dim_left_index + params.bcast_dim_size) {
+          const Index tail_size =
+              bcast_dim_left_index + params.bcast_dim_size - last_multiple;
+          params.input_block_sizes[params.bcast_dim] = tail_size;
+          params.bcast_block_sizes[copy_bcast_dim] = tail_size;
+          params.bcast_input_strides[copy_bcast_dim] =
+              params.input_block_strides[params.bcast_dim];
+          params.bcast_block_strides[copy_bcast_dim] =
+              params.output_strides[params.bcast_dim];
+          params.bcast_block_sizes[broadcast_bcast_dim] = 1;
+          params.bcast_input_strides[broadcast_bcast_dim] = 0;
+          params.bcast_block_strides[broadcast_bcast_dim] =
+              params.output_strides[params.bcast_dim] *
+              params.input_dims[params.bcast_dim];
+          const Index offset = (last_multiple - bcast_dim_left_index) *
+                               m_outputStrides[params.bcast_dim];
+
+          num_output_coeffs += BroadcastBlockV2(
+              params.input_block_sizes, params.input_block_strides,
+              params.bcast_block_sizes, params.bcast_block_strides,
+              params.bcast_input_strides, bcast_offset, offset, scratch,
+              materialized_output, materialized_input, materialized_input_size);
+        }
+      } else {
+        // b and c do not exist.
+        const int copy_bcast_dim =
+            IsColMajor ? 2 * params.inner_dim_count
+                       : 2 * NumDims - 2 * params.inner_dim_count - 1;
+        params.input_block_sizes[params.bcast_dim] = params.bcast_dim_size;
+        params.bcast_block_sizes[copy_bcast_dim] = params.bcast_dim_size;
+        params.bcast_input_strides[copy_bcast_dim] =
+            params.input_block_strides[params.bcast_dim];
+        params.bcast_block_strides[copy_bcast_dim] =
+            params.output_strides[params.bcast_dim];
+
+        num_output_coeffs += BroadcastBlockV2(
+            params.input_block_sizes, params.input_block_strides,
+            params.bcast_block_sizes, params.bcast_block_strides,
+            params.bcast_input_strides, bcast_offset, 0, scratch,
+            materialized_output, materialized_input, materialized_input_size);
+      }
+
+      return num_output_coeffs;
+    }
+  }
+
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Index BroadcastBlockV2(
       const Dimensions& input_block_sizes,
-      const BroadcastDimensions& broadcast_block_sizes,
-      const BroadcastDimensions& broadcast_block_strides,
-      const BroadcastDimensions& broadcast_tensor_strides, Index offset,
-      TensorBlock* output_block) const {
-    TensorBlock input_view_block(
-        static_cast<int>(Layout) == static_cast<int>(ColMajor)
-            ? indexColMajor(output_block->first_coeff_index() + offset)
-            : indexRowMajor(output_block->first_coeff_index() + offset),
-        input_block_sizes, Dimensions(m_inputStrides),
-        Dimensions(m_inputStrides), NULL);
+      const Dimensions& input_block_strides,
+      const BroadcastDimensions& bcast_block_sizes,
+      const BroadcastDimensions& bcast_block_strides,
+      const BroadcastDimensions& bcast_input_strides, Index bcast_offset,
+      Index offset, TensorBlockScratch& scratch,
+      ScalarNoConst* materialized_output, ScalarNoConst** materialized_input,
+      size_t* materialized_input_size) const {
+    // ---------------------------------------------------------------------- //
+    // Tensor block descriptor for reading block from the input.
+    const Index input_offset = bcast_offset + offset;
+    TensorBlockDesc input_desc(
+        IsColMajor ? indexColMajor(input_offset) : indexRowMajor(input_offset),
+        input_block_sizes);
 
-    internal::TensorBlockView<ArgType, Device> input_block(m_device, m_impl,
-                                                           input_view_block);
-    BroadcastTensorBlock broadcast_block(
-        0, broadcast_block_sizes, broadcast_block_strides,
-        broadcast_tensor_strides, output_block->data() + offset);
+    ArgTensorBlock input_block = m_impl.blockV2(input_desc, scratch);
 
-    BroadcastTensorBlockReader::Run(&broadcast_block, input_block.data());
+    // ---------------------------------------------------------------------- //
+    // Materialize input block into a temporary memory buffer only if it's not
+    // already available in the arg block.
+    const ScalarNoConst* input_buffer = NULL;
+
+    if (input_block.data() != NULL) {
+      // Input block already has raw data, there is no need to materialize it.
+      input_buffer = input_block.data();
+
+    } else {
+      // Otherwise we have to do block assignment into a temporary buffer.
+
+      // Maybe reuse previously allocated buffer, or allocate a new one with a
+      // scratch allocator.
+      const size_t input_total_size = input_block_sizes.TotalSize();
+      if (*materialized_input == NULL ||
+          *materialized_input_size < input_total_size) {
+        *materialized_input_size = input_total_size;
+        void* mem = scratch.allocate(*materialized_input_size * sizeof(Scalar));
+        *materialized_input = static_cast<ScalarNoConst*>(mem);
+      }
+
+      typedef internal::TensorBlockAssignment<
+          ScalarNoConst, NumDims, typename ArgTensorBlock::XprType, Index>
+          TensorBlockAssignment;
+
+      TensorBlockAssignment::Run(
+          TensorBlockAssignment::target(input_block_sizes, input_block_strides,
+                                        *materialized_input),
+          input_block.expr());
+
+      input_buffer = *materialized_input;
+    }
+
+    // ---------------------------------------------------------------------- //
+    // Copy data from materialized input block to the materialized output, using
+    // given broadcast strides (strides with zeroes).
+    typedef internal::TensorBlockIOV2<ScalarNoConst, Index, 2 * NumDims, Layout>
+        TensorBlockIOV2;
+
+    typename TensorBlockIOV2::Src src(bcast_input_strides, input_buffer);
+    typename TensorBlockIOV2::Dst dst(bcast_block_sizes, bcast_block_strides,
+                                      materialized_output + offset);
+
+    return TensorBlockIOV2::Copy(dst, src);
   }
 
 protected:

@@ -1,12 +1,13 @@
 // This file is part of Eigen, a lightweight C++ template library
 // for linear algebra.
 //
-// Copyright (C) 2018 Gael Guennebaud <gael.guennebaud@inria.fr>
+// Copyright (C) 2018-2019 Gael Guennebaud <gael.guennebaud@inria.fr>
 //
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include <iterator>
 #include <numeric>
 #include "main.h"
 
@@ -271,6 +272,31 @@ void test_stl_iterators(int rows=Rows, int cols=Cols)
       }
     }
   }
+
+  {
+    // check basic for loop on vector-wise iterators
+    j=0;
+    for (auto it = A.colwise().cbegin(); it != A.colwise().cend(); ++it, ++j) {
+      VERIFY_IS_APPROX( it->coeff(0), A(0,j) );
+      VERIFY_IS_APPROX( (*it).coeff(0), A(0,j) );
+    }
+    j=0;
+    for (auto it = A.colwise().begin(); it != A.colwise().end(); ++it, ++j) {
+      (*it).coeffRef(0) = (*it).coeff(0); // compilation check
+      it->coeffRef(0) = it->coeff(0);     // compilation check
+      VERIFY_IS_APPROX( it->coeff(0), A(0,j) );
+      VERIFY_IS_APPROX( (*it).coeff(0), A(0,j) );
+    }
+
+    // check valuetype gives us a copy
+    j=0;
+    for (auto it = A.colwise().cbegin(); it != A.colwise().cend(); ++it, ++j) {
+      typename decltype(it)::value_type tmp = *it;
+      VERIFY_IS_NOT_EQUAL( tmp.data() , it->data() );
+      VERIFY_IS_APPROX( tmp, A.col(j) );
+    }
+  }
+
 #endif
 
   if(rows>=3) {
@@ -409,7 +435,8 @@ void test_stl_iterators(int rows=Rows, int cols=Cols)
 
     VectorType col = VectorType::Random(rows);
     A.colwise() = col;
-    VERIFY( std::all_of(A.colwise().begin(), A.colwise().end(), [&col](typename ColMatrixType::ColXpr x) { return internal::isApprox(x.norm(),col.norm()); }) );
+    VERIFY( std::all_of(A.colwise().begin(),  A.colwise().end(),  [&col](typename ColMatrixType::ColXpr x) { return internal::isApprox(x.norm(),col.norm()); }) );
+    VERIFY( std::all_of(A.colwise().cbegin(), A.colwise().cend(), [&col](typename ColMatrixType::ConstColXpr x) { return internal::isApprox(x.norm(),col.norm()); }) );
 
     i = internal::random<Index>(0,A.rows()-1);
     A.setRandom();
@@ -420,6 +447,16 @@ void test_stl_iterators(int rows=Rows, int cols=Cols)
     A.setRandom();
     A.col(j).setZero();
     VERIFY_IS_EQUAL( std::find_if(A.colwise().begin(), A.colwise().end(), [](typename ColMatrixType::ColXpr x) { return x.norm() == Scalar(0); })-A.colwise().begin(), j );
+  }
+
+  {
+    using VecOp = VectorwiseOp<ArrayXXi, 0>;
+    STATIC_CHECK(( internal::is_same<VecOp::const_iterator, decltype(std::declval<const VecOp&>().cbegin())>::value ));
+    STATIC_CHECK(( internal::is_same<VecOp::const_iterator, decltype(std::declval<const VecOp&>().cend  ())>::value ));
+    #if EIGEN_COMP_CXXVER>=14
+      STATIC_CHECK(( internal::is_same<VecOp::const_iterator, decltype(std::cbegin(std::declval<const VecOp&>()))>::value ));
+      STATIC_CHECK(( internal::is_same<VecOp::const_iterator, decltype(std::cend  (std::declval<const VecOp&>()))>::value ));
+    #endif
   }
 
 #endif

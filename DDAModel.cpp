@@ -46,7 +46,11 @@ DDAModel::DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vecto
     al = VectorXcd::Zero(N*3);
     diel = VectorXcd::Zero(N * 3);
     cout<<"fuck"<<endl;
+    cout<<"al size: "<<al.size()<<endl;
+    cout<<"diel size: "<<diel.size()<<endl;
+    cout<<"diel_old size: "<<diel_old.size()<<endl;
     for (int i = 0; i < N * 3; i++) {
+        cout<<i<<endl;
         int labelfloor = int(floor((*diel_old)(i)));
         std::complex<double> diel_tmp = (*material)(labelfloor) + ((*diel_old)(i)-double(labelfloor)) * ((*material)(labelfloor + 1) - (*material)(labelfloor));
         diel(i) = diel_tmp;

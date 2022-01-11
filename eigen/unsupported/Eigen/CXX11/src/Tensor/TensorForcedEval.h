@@ -96,21 +96,25 @@ struct TensorEvaluator<const TensorForcedEvalOp<ArgType_>, Device>
   enum {
     IsAligned         = true,
     PacketAccess      = (PacketType<CoeffReturnType, Device>::size > 1),
-    BlockAccess       = internal::is_arithmetic<CoeffReturnType>::value,
+    BlockAccessV2     = internal::is_arithmetic<CoeffReturnType>::value,
     PreferBlockAccess = false,
     Layout            = TensorEvaluator<ArgType, Device>::Layout,
     RawAccess         = true
   };
 
-  typedef typename internal::TensorBlock<
-      CoeffReturnType, Index, internal::traits<ArgType>::NumDimensions, Layout>
-      TensorBlock;
-  typedef typename internal::TensorBlockReader<
-      CoeffReturnType, Index, internal::traits<ArgType>::NumDimensions, Layout>
-      TensorBlockReader;
+  static const int NumDims = internal::traits<ArgType>::NumDimensions;
+
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockDescriptor<NumDims, Index> TensorBlockDesc;
+  typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
+
+  typedef typename internal::TensorMaterializedBlock<CoeffReturnType, NumDims,
+                                                     Layout, Index>
+      TensorBlockV2;
+  //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC TensorEvaluator(const XprType& op, const Device& device)
-      : m_impl(op.expression(), device), m_op(op.expression()), 
+      : m_impl(op.expression(), device), m_op(op.expression()),
       m_device(device), m_buffer(NULL)
   { }
 
@@ -122,25 +126,40 @@ struct TensorEvaluator<const TensorForcedEvalOp<ArgType_>, Device>
   EIGEN_STRONG_INLINE bool evalSubExprsIfNeeded(EvaluatorPointerType) {
     const Index numValues =  internal::array_prod(m_impl.dimensions());
     m_buffer = m_device.get((CoeffReturnType*)m_device.allocate_temp(numValues * sizeof(CoeffReturnType)));
-    #ifndef EIGEN_USE_SYCL
-    // Should initialize the memory in case we're dealing with non POD types.
-    if (NumTraits<CoeffReturnType>::RequireInitialization) {
-      for (Index i = 0; i < numValues; ++i) {
-        new(m_buffer+i) CoeffReturnType();
-      }
-    }
-    #endif
     typedef TensorEvalToOp< const typename internal::remove_const<ArgType>::type > EvalTo;
     EvalTo evalToTmp(m_device.get(m_buffer), m_op);
-    const bool Vectorize = internal::IsVectorizable<Device, const ArgType>::value;
-    const bool Tile = TensorEvaluator<const ArgType, Device>::BlockAccess &&
-                      TensorEvaluator<const ArgType, Device>::PreferBlockAccess;
 
-    internal::TensorExecutor<const EvalTo,
-                             typename internal::remove_const<Device>::type,
-                             Vectorize, Tile>::run(evalToTmp, m_device);
+    internal::TensorExecutor<
+        const EvalTo, typename internal::remove_const<Device>::type,
+        /*Vectorizable=*/internal::IsVectorizable<Device, const ArgType>::value,
+        /*Tiling=*/internal::IsTileable<Device, const ArgType>::value>::
+        run(evalToTmp, m_device);
+
     return true;
   }
+
+#ifdef EIGEN_USE_THREADS
+  template <typename EvalSubExprsCallback>
+  EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC void evalSubExprsIfNeededAsync(
+      EvaluatorPointerType, EvalSubExprsCallback done) {
+    const Index numValues = internal::array_prod(m_impl.dimensions());
+    m_buffer = m_device.get((CoeffReturnType*)m_device.allocate_temp(
+        numValues * sizeof(CoeffReturnType)));
+    typedef TensorEvalToOp<const typename internal::remove_const<ArgType>::type>
+        EvalTo;
+    EvalTo evalToTmp(m_device.get(m_buffer), m_op);
+
+    auto on_done = std::bind([](EvalSubExprsCallback done) { done(true); },
+                             std::move(done));
+    internal::TensorAsyncExecutor<
+        const EvalTo, typename internal::remove_const<Device>::type,
+        decltype(on_done),
+        /*Vectorizable=*/internal::IsVectorizable<Device, const ArgType>::value,
+        /*Tiling=*/internal::IsTileable<Device, const ArgType>::value>::
+        runAsync(evalToTmp, m_device, std::move(on_done));
+  }
+#endif
+
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup() {
     m_device.deallocate_temp(m_buffer);
     m_buffer = NULL;
@@ -160,9 +179,11 @@ struct TensorEvaluator<const TensorForcedEvalOp<ArgType_>, Device>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void getResourceRequirements(
       std::vector<internal::TensorOpResourceRequirements>*) const {}
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void block(TensorBlock* block) const {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlockV2
+  blockV2(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+          bool /*root_of_expr_ast*/ = false) const {
     assert(m_buffer != NULL);
-    TensorBlockReader::Run(block, m_buffer);
+    return TensorBlockV2::materialize(m_buffer, m_impl.dimensions(), desc, scratch);
   }
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorOpCost costPerCoeff(bool vectorized) const {

@@ -180,7 +180,7 @@
   #define EIGEN_COMP_ARM 0
 #endif
 
-/// \internal EIGEN_COMP_ARM set to 1 if the compiler is ARM Compiler
+/// \internal EIGEN_COMP_EMSCRIPTEN set to 1 if the compiler is Emscripten Compiler
 #if defined(__EMSCRIPTEN__)
   #define EIGEN_COMP_EMSCRIPTEN 1
 #else
@@ -757,6 +757,21 @@
   #endif
 #endif
 
+// Does the compiler support the __int128 and __uint128_t extensions for 128-bit
+// integer arithmetic?
+//
+// Clang and GCC define __SIZEOF_INT128__ when these extensions are supported,
+// but we avoid using them in certain cases:
+//
+// * Building using Clang for Windows, where the Clang runtime library has
+//   128-bit support only on LP64 architectures, but Windows is LLP64.
+#ifndef EIGEN_HAS_BUILTIN_INT128
+#if defined(__SIZEOF_INT128__) && !(EIGEN_OS_WIN && EIGEN_COMP_CLANG)
+#define EIGEN_HAS_BUILTIN_INT128 1
+#else
+#define EIGEN_HAS_BUILTIN_INT128 0
+#endif
+#endif
 
 //------------------------------------------------------------------------------------------
 // Preprocessor programming helpers
@@ -839,7 +854,7 @@
   #ifndef EIGEN_DONT_VECTORIZE
     #define EIGEN_DONT_VECTORIZE
   #endif
-  #define EIGEN_DEVICE_FUNC __attribute__((always_inline))
+  #define EIGEN_DEVICE_FUNC __attribute__((flatten)) __attribute__((always_inline))
 // All functions callable from CUDA/HIP code must be qualified with __device__
 #elif defined(EIGEN_GPUCC) 
     #define EIGEN_DEVICE_FUNC __host__ __device__
