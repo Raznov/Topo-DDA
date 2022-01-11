@@ -29,7 +29,7 @@ int main() {
     list<double> ObjectParameter{ center(0) * d,center(1) * d,focus };  //Focal spot postition.
     bool HavePathRecord = false;
     bool HavePenalty = false;
-    bool HaveOriginHeritage = true;
+    bool HaveOriginHeritage = false;
     bool HaveAdjointHeritage = false;
     double PenaltyFactor = 0.0001;
     Vector3d n_K;                                                       //Wave vector direction.

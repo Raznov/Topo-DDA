@@ -612,8 +612,17 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
             VectorXd devx;
             VectorXcd Adevxp;
             VectorXcd devp;
+
+            cout<<"1"<<endl;
+
             tie(devx, Adevxp) = this->devx_and_Adevxp(epsilon_partial, *it_ModelList, *it_ObjList, Originarray(i));
+
+            cout<<"2"<<endl;
+
             devp = this->devp(epsilon_partial, *it_ModelList, *it_ObjList, Originarray(i));
+
+            cout<<"3"<<endl;
+
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
             auto duration = duration_cast<milliseconds>(t2 - t1).count();
             //cout << "------------------------PARTIAL DERIVATIVE finished in " << duration / 1000 << " s-------------------------" << endl;
@@ -621,8 +630,12 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
             //------------------------------------Solving adjoint problem-----------------------------------------
             //cout << "---------------------------START ADJOINT PROBLEM of Model" << i << " ----------------------" << endl;
             (*(*it_ModelList)).change_E(devp);
+            
+            cout<<"4"<<endl;
 
             (*(*it_ModelList)).InitializeP(*(it_PforAdjoint));
+            
+            cout<<"5"<<endl;
 
             (*(*it_ModelList)).bicgstab(MAX_ITERATION, MAX_ERROR);
 
