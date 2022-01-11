@@ -15,7 +15,7 @@
 #include <tuple>
 #include <set>
 
-#include <Eigen/Dense>
+#include "eigen/Eigen/Dense"
 #include <Eigen/Core>
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/Sparse>
