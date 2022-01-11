@@ -5,7 +5,7 @@
 
 int main() {
 
-    string save_position = "./200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-r_filter2-beta50/";       //output file
+    string save_position = "./200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-r_filter2-beta80/";       //output file
     Vector3d l;
     Vector3d center;
     l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
@@ -83,7 +83,7 @@ int main() {
     list<double> BParal{ 1.0, 2.0 };
     bool Filter = true;
     double r_f = 2.0;
-    FilterOption filteropt(0.0, 50.0, 0.5, "piecewise", r_f);
+    FilterOption filteropt(0.0, 80.0, 0.5, "piecewise", r_f);
     SpacePara spacepara(&S, bind, "ONES", FPGeometryl, BPGeometryl, BParal, Filter, &filteropt);
     //SpacePara is where the parameter<->geometry link is established.
     list<string> ObjectFunctionNames{ "PointE" };                       //Name of the object function.
@@ -123,39 +123,23 @@ int main() {
                                                                       //And one AProductCore can be shared among several DDAModel, such that the memory consumption for multiple-angle optimization
                                                                       //should be similar to single-angle case. Of course, this is optimization for performance for a range of angles averaged. 
             for (int j = 0; j <= phi_num - 1; j++) {
-                if (theta(i) != 0) {
-                    double theta_tmp = theta(i) * M_PI / 180;
-                    double phi_tmp = phi(j) * M_PI / 180;
-                    n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
-                    n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
-                    if (CheckPerp(n_E0, n_K) == false) {
-                        cout << "----------------------------------------theta" << theta[i] << "phi" << phi[j] << "Not perpendicular---------------------------------------" << endl;
-                    }
-                    if (k == 0) {
-                        AngleInfo << theta[i] << endl;
-                        AngleInfo << phi[j] << endl;
-                        nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
-                    }
-                    DDAModel Model(Core, n_K, E0, n_E0);
-                    ModelList.push_back(Model);
+                double theta_tmp = theta(i) * M_PI / 180;
+                double phi_tmp = phi(j) * M_PI / 180;
+                n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
+                n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
+                if (CheckPerp(n_E0, n_K) == false) {
+                    cout << "----------------------------------------theta" << theta[i] << "phi" << phi[j] << "Not perpendicular---------------------------------------" << endl;
                 }
+                if (k == 0) {
+                    AngleInfo << theta[i] << endl;
+                    AngleInfo << phi[j] << endl;
+                    nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
+                }
+                DDAModel Model(Core, n_K, E0, n_E0);
+                ModelList.push_back(Model);
+
             }
         }
-        double theta_tmp = 0 * M_PI / 180;
-        double phi_tmp = 0 * M_PI / 180;
-        n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
-        n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
-        if (CheckPerp(n_E0, n_K) == false) {
-            cout << "----------------------------------------theta" << 0 << "phi" << 0 << "Not perpendicular---------------------------------------" << endl;
-        }
-        if (k == 0) {
-            AngleInfo << 0.0 << endl;
-            AngleInfo << 0.0 << endl;
-            nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
-        }
-        DDAModel Model(Core, n_K, E0, n_E0);
-        ModelList.push_back(Model);
-
         it++;
     }
     AngleInfo.close();

@@ -37,6 +37,7 @@ DDAModel::DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vecto
     E = VectorXcd::Zero(N*3);
     Einternal = VectorXcd::Zero(N*3);
     EResult = VectorXcd::Zero(N*3);
+    cout<<"fuck"<<endl;
     for (int i=0;i<N;i++) {
         E(3 * i) = E0 * n_E0(0) * (cos(K * d * (n_K(0) * (*R)(3 * i) + n_K(1) * (*R)(3 * i + 1) + n_K(2) * (*R)(3 * i + 2))) + sin(K * d * (n_K(0) * (*R)(3 * i) + n_K(1) * (*R)(3 * i + 1) + n_K(2) * (*R)(3 * i + 2))) * 1i);
         E(3 * i + 1) = E0 * n_E0(1) * (cos(K * d * (n_K(0) * (*R)(3 * i) + n_K(1) * (*R)(3 * i + 1) + n_K(2) * (*R)(3 * i + 2))) + sin(K * d * (n_K(0) * (*R)(3 * i) + n_K(1) * (*R)(3 * i + 1) + n_K(2) * (*R)(3 * i + 2))) * 1i);
@@ -44,13 +45,14 @@ DDAModel::DDAModel(AProductCore* AProductCore_, Vector3d n_K_, double E0_, Vecto
     }
     al = VectorXcd::Zero(N*3);
     diel = VectorXcd::Zero(N * 3);
+    cout<<"fuck"<<endl;
     for (int i = 0; i < N * 3; i++) {
         int labelfloor = int(floor((*diel_old)(i)));
         std::complex<double> diel_tmp = (*material)(labelfloor) + ((*diel_old)(i)-double(labelfloor)) * ((*material)(labelfloor + 1) - (*material)(labelfloor));
         diel(i) = diel_tmp;
         al(i) = 1.0 / Get_Alpha(lam, K, d, diel_tmp, n_E0, n_K);
     }  
-
+    cout<<"fuck"<<endl;
     //cout << "al" << al(0) << endl;
 
     al_max = al;
