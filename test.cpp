@@ -6,14 +6,14 @@
 int main() {
      
     
-    int N=12000;
-    VectorXcd al = VectorXcd::Zero(N*3);
-    VectorXcd diel = VectorXcd::Zero(N * 3);
+    int tmp=12000;
+    VectorXcd al = VectorXcd::Zero(tmp*3);
+    VectorXcd diel = VectorXcd::Zero(tmp * 3);
     cout<<"fuck"<<endl;
     cout<<"al size: "<<al.size()<<endl;
     cout<<"diel size: "<<diel.size()<<endl;
     complex<double> diel_tmp=1.0+1.0j;
-    for (int i = 0; i < N * 3; i++) {
+    for (int i = 0; i < tmp * 3; i++) {
         cout<<i<<endl;
         diel(i) = diel_tmp;
         al(i) = diel_tmp;
