@@ -23,6 +23,7 @@ CoreStructure::CoreStructure(SpacePara* spacepara_, double d_) {
         diel_old(3 * i + 1) = dieltmp;
         diel_old(3 * i + 2) = dieltmp;
     }
+    cout<<diel_old<<endl;
 }
 
 void CoreStructure::UpdateStr(VectorXd step, int current_it, int Max_it) {

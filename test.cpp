@@ -6,30 +6,6 @@
 int main() {
      
     
-    int tmp=12000;
-    VectorXcd al = VectorXcd::Zero(tmp*3);
-    VectorXcd diel = VectorXcd::Zero(tmp * 3);
-    cout<<"fuck"<<endl;
-    cout<<"al size: "<<al.size()<<endl;
-    cout<<"diel size: "<<diel.size()<<endl;
-    complex<double> diel_tmp=1.0+1.0j;
-    for (int i = 0; i < tmp * 3; i++) {
-        cout<<i<<endl;
-        diel(i) = diel_tmp;
-        al(i) = diel_tmp;
-    }  
-    cout<<"fuck"<<endl;
-
-
-
-
-
-
-
-
-
-
-
     string save_position = "./200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-r_filter2-beta80/";       //output file
     Vector3d l;
     Vector3d center;
