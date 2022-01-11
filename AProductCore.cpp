@@ -3,7 +3,7 @@
 
 
 
-AProductCore::AProductCore(CoreStructure* CStr_, double lam_, Vector2cd material_, string AMatrixMethod_){
+AProductCore::AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, string AMatrixMethod_){
     
     CStr = CStr_;
     lam=lam_;
@@ -236,7 +236,7 @@ AProductCore::AProductCore(CoreStructure* CStr_, double lam_, Vector2cd material
     
 }
 
-AProductCore::AProductCore(CoreStructure* CStr_, double lam_, Vector2cd material_, int MAXm_, int MAXn_, double Lm_, double Ln_, string AMatrixMethod_) {
+AProductCore::AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, int MAXm_, int MAXn_, double Lm_, double Ln_, string AMatrixMethod_) {
     MAXm = MAXm_;
     MAXn = MAXn_;
     Lm = Lm_;
@@ -851,7 +851,7 @@ double AProductCore::get_lam() {
 VectorXd* AProductCore::get_diel_old() {
     return (*CStr).get_diel_old();
 }
-Vector2cd* AProductCore::get_material() {
+VectorXcd* AProductCore::get_material() {
     return &material;
 }
 VectorXd* AProductCore::get_diel_old_max() {

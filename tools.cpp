@@ -215,6 +215,89 @@ void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATI
     return;
 }
 
+void eval_FOM(string name, DDAModel* TestModel, list<double> theta, list<double> phi) {
+    ofstream fout(name);
+
+    list<double> ObjectParameter;
+    list<double>::iterator itheta = theta.begin();
+    
+    for (int i = 0; i <= theta.size() - 1; i++) {
+        double ttheta = (*itheta);
+        itheta++;
+        list<double>::iterator iphi = phi.begin();
+        for (int j = 0; j <= phi.size() - 1; j++) {
+            double tphi = (*iphi);
+            iphi++;
+            ObjectParameter.push_back(sin(ttheta) * cos(tphi));
+            ObjectParameter.push_back(sin(ttheta) * sin(tphi));
+            ObjectParameter.push_back(cos(ttheta));
+            //cout << "(" << sin(ttheta) * cos(tphi) << " " << sin(ttheta) * sin(tphi) << " " << cos(ttheta) << ")" << endl;
+        }
+    }
+
+    FOMscattering0D FOMcal(ObjectParameter, TestModel);
+    list<double> FOMresults = FOMcal.GetVal();
+
+    itheta = theta.begin();
+    list<double>::iterator iresult = FOMresults.begin();
+    for (int i = 0; i <= theta.size() - 1; i++) {
+        double ttheta = (*itheta);
+        itheta++;
+        list<double>::iterator iphi = phi.begin();
+        for (int j = 0; j <= phi.size() - 1; j++) {
+            double tphi = (*iphi);
+            double tresult = (*iresult);
+            iphi++;
+            iresult++;
+            fout << (ttheta * 360) / (2 * M_PI) << " " << (tphi * 360) / (2 * M_PI) << " " << tresult << endl;
+        }
+    }
+
+    fout.close();
+
+}
+
+void eval_FOM_2Dperiod(string name, DDAModel* TestModel, list<double> theta, list<double> phi) {
+    ofstream fout(name);
+
+    list<double> ObjectParameter;
+    list<double>::iterator itheta = theta.begin();
+
+    for (int i = 0; i <= theta.size() - 1; i++) {
+        double ttheta = (*itheta);
+        itheta++;
+        list<double>::iterator iphi = phi.begin();
+        for (int j = 0; j <= phi.size() - 1; j++) {
+            double tphi = (*iphi);
+            iphi++;
+            ObjectParameter.push_back(sin(ttheta) * cos(tphi));
+            ObjectParameter.push_back(sin(ttheta) * sin(tphi));
+            ObjectParameter.push_back(cos(ttheta));
+            //cout << "(" << sin(ttheta) * cos(tphi) << " " << sin(ttheta) * sin(tphi) << " " << cos(ttheta) << ")" << endl;
+        }
+    }
+
+    FOMscattering2D FOMcal(ObjectParameter, TestModel);
+    list<double> FOMresults = FOMcal.GetVal();
+
+    itheta = theta.begin();
+    list<double>::iterator iresult = FOMresults.begin();
+    for (int i = 0; i <= theta.size() - 1; i++) {
+        double ttheta = (*itheta);
+        itheta++;
+        list<double>::iterator iphi = phi.begin();
+        for (int j = 0; j <= phi.size() - 1; j++) {
+            double tphi = (*iphi);
+            double tresult = (*iresult);
+            iphi++;
+            iresult++;
+            fout << (ttheta * 360) / (2 * M_PI) << " " << (tphi * 360) / (2 * M_PI) << " " << tresult << endl;
+        }
+    }
+
+    fout.close();
+
+}
 //Find the Max and Min of the input geometry in each direction
 MatrixXi find_scope_3_dim(VectorXi* x) {
     int N = round((*x).size() / 3);
@@ -334,6 +417,9 @@ complex<double> Get_material(string mat, double wl, string unit){
     diel_dic.insert(pair<string,string>("4.0","diel/Diel4.0"));
     diel_dic.insert(pair<string,string>("4.5","diel/Diel4.5"));
     diel_dic.insert(pair<string,string>("5.0","diel/Diel5.0"));
+    diel_dic.insert(pair<string, string>("H2O", "diel/H2O"));
+    diel_dic.insert(pair<string, string>("TiN", "diel/TiN-Pfluger"));
+    diel_dic.insert(pair<string, string>("Ti", "diel/Ti-JC"));
     wl=wl/unit_dic[unit];
     string real="Re_eps.txt";
     string imag="Im_eps.txt";
@@ -398,6 +484,18 @@ Vector2cd Get_2_material(string sub, string mat, double wl, string unit){
     Vector2cd result;
     result(0)=Get_material(sub,wl,unit);
     result(1)=Get_material(mat,wl,unit);
+    return result;
+}
+
+VectorXcd Get_X_material(list<string> mat_l, double wl, string unit) {
+    list<string>::iterator it = mat_l.begin();
+    VectorXcd result = VectorXcd::Zero(mat_l.size());
+    int i = 0;
+    while (it != mat_l.end()) {
+        result(i) = Get_material(*it, wl, unit);
+        i++;
+        it++;
+    }
     return result;
 }
 
@@ -488,5 +586,53 @@ Vector3d nEPerpinXZ(double theta, double phi) {
     cout << "ERROR : perp nE not found in Vector3d nEPerpinXZ(double theta, double phi)" << endl;
 
     return nE;
+}
+
+int makedirect(string name) {
+    const char* tmp = name.c_str();
+    return _mkdir(tmp);
+}
+
+list<double> makelist(double start, double end, double interval) {
+    list<double> result;
+    int number = floor((end - start) / interval + 1);
+    for (int i = 0; i <= number - 1; i++) {
+        result.push_back(start + i * interval);
+    }
+    return result;
+}
+
+list<double> makelist(double start, double end, int number) {
+    list<double> result;
+    double interval = (end - start) / (double(number) - 1.0);
+    for (int i = 0; i <= number - 1; i++) {
+        //cout << start + i * interval << endl;
+        result.push_back(start + i * interval);
+    }
+    return result;
+}
+
+double exp_update(const double x, const double x_max, const double y_min, const double y_max) {
+    return y_min + (y_max - y_min) * exp((x / x_max - 1.0));
+}
+
+double piecewise_update(const double x, const double x_max, const double y_min, const double y_max) {
+    if (x <= 0.4 * x_max) {
+        return y_min;
+    }
+    else if(0.4 * x_max < x&& x <= 0.6 * x_max) {
+        return y_min+(y_max-y_min)/10;
+    }
+    else if (0.6 * x_max < x && x <= 0.8 * x_max) {
+        return y_min + (y_max - y_min) / 5;
+    }
+    else {
+        return y_max;
+    }
+
+}
+
+double linear_update(const double x, const double x_max, const double y_min, const double y_max) {
+    return y_min + (y_max - y_min) * x / x_max;
 }
 

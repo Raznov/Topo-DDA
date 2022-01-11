@@ -2,10 +2,6 @@
 
 
 
-#include "definition.h"
-
-
-
 EvoDDAModel::EvoDDAModel(list<string>* ObjectFunctionNames_, list<list<double>*>* ObjectParameters_, double epsilon_fix_, bool HavePathRecord_, bool HavePenalty_, bool HaveOriginHeritage_, bool HaveAdjointHeritage_, double PenaltyFactor_, string save_position_, CoreStructure* CStr_, list<DDAModel*> ModelList_){
     output_time = 0.0;
     ObjectFunctionNames = ObjectFunctionNames_;
@@ -113,7 +109,7 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp_tmp(double epsilon, DDAM
     VectorXi* Free = (*spacepara).get_Free();
 
     VectorXd* diel_old = (*CurrentModel).get_diel_old();
-    Vector2cd* material = (*CurrentModel).get_material();
+    VectorXcd* material = (*CurrentModel).get_material();
     double lam = (*CurrentModel).get_lam();
     double K = 2 * M_PI / lam;
     double d = (*CurrentModel).get_d();
@@ -157,8 +153,8 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp_tmp(double epsilon, DDAM
 
         //because i am changing diel_old_tmp as local variable and this does not influence diel_old, the singleresponse will not respond to this change
         //if (objective->Have_Devx) objective->SingleResponse(position1, true);
-
-        complex<double> diel_tmp = (*material)(0) + diel_old_tmp * ((*material)(1) - (*material)(0));
+        int labelfloor = int(floor((*Para)(FreeParaPos)));
+        complex<double> diel_tmp = (*material)(labelfloor) + (diel_old_tmp - double(labelfloor)) * ((*material)(labelfloor + 1) - (*material)(labelfloor));
 
         //if (objective->Have_Devx) objective->SingleResponse(position1, false);
         complex<double> oneoveralpha = (1.0 / Get_Alpha(lam, K, d, diel_tmp, n_E0, n_K));
@@ -220,7 +216,7 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel
     */
     
     VectorXd* diel_old = (*CurrentModel).get_diel_old();
-    Vector2cd* material = (*CurrentModel).get_material();
+    VectorXcd* material = (*CurrentModel).get_material();
     double lam = (*CurrentModel).get_lam();
     double K = 2 * M_PI / lam;
     double d = (*CurrentModel).get_d();
@@ -247,84 +243,102 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp(double epsilon, DDAModel
         (Paratogeometry[(*geometryPara)(i)]).push_back(i);
     }
 
-    for (int i = 0; i <= n_para - 1; i++) {
-        int FreeParaPos = (*Free)(i);
+    if (!(*spacepara).get_Filter()) {
+        for (int i = 0; i <= n_para - 1; i++) {
+            int FreeParaPos = (*Free)(i);
 
-        double diel_old_origin = (*Para)(FreeParaPos);
-        double diel_old_tmp = diel_old_origin;
-        int sign = 0;
-        if (diel_old_origin >= epsilon) {
-            sign = -1;
-        }
-        else {
-            sign = 1;
-        }
-        diel_old_tmp += sign * epsilon;
-
-
-
-        //because i am changing diel_old_tmp as local variable and this does not influence diel_old, the singleresponse will not respond to this change
-        //if (objective->Have_Devx) objective->SingleResponse(position1, true);
-
-        //complex<double> diel_tmp = (*material)(0) + diel_old_tmp * ((*material)(1) - (*material)(0));
-
-        //if (objective->Have_Devx) objective->SingleResponse(position1, false);
-        //complex<double> oneoveralpha = (1.0 / Get_Alpha(lam, K, d, diel_tmp, n_E0, n_K));
-
-        
-
-        list<int>::iterator it = Paratogeometry[FreeParaPos].begin();
-        for (int j = 0; j <= Paratogeometry[FreeParaPos].size() - 1; j++) {
-            //cout << (*it) << endl;
-            int position = *it;
-            complex<double> alphaorigin = (*al)(3 * position);
-            if (objective->Have_Devx) objective->SingleResponse(position, true);
-            (*CStr).UpdateStrSingle(position, diel_old_tmp);
-            (*CurrentModel).UpdateAlphaSingle(position);
-            if (objective->Have_Devx) objective->SingleResponse(position, false);
-            complex<double> change = ((*al)(3 * position) - alphaorigin) / (sign * epsilon);
-            Adevxp(3 * position) = change;
-            Adevxp(3 * position + 1) = change;
-            Adevxp(3 * position + 2) = change;
-
-            it++;
-        }
-
-        devx(i) = (objective->GroupResponse() - origin) / (sign * epsilon);  //If some obj has x dependency but you denote the havepenalty as false, it will still actually be calculated in an efficient way.
-        //devx(i) = (origin - origin) / (sign * epsilon);
-
-        it = Paratogeometry[FreeParaPos].begin();
-        for (int j = 0; j <= Paratogeometry[FreeParaPos].size() - 1; j++) {
-            int position = *it;
-            if (objective->Have_Devx) objective->SingleResponse(position, true);
-            (*CStr).UpdateStrSingle(position, diel_old_origin);
-            (*CurrentModel).UpdateAlphaSingle(position);
-            if (objective->Have_Devx) objective->SingleResponse(position, false);
-            it++;
-        }
+            double diel_old_origin = (*Para)(FreeParaPos);
+            double diel_old_tmp = diel_old_origin;
+            int sign = 0;
+            if (diel_old_origin >= epsilon) {
+                sign = -1;
+            }
+            else {
+                sign = 1;
+            }
+            diel_old_tmp += sign * epsilon;
 
 
 
-        /*
-        if(objective->Have_Devx) objective->SingleResponse(position1, true);
+            list<int>::iterator it = Paratogeometry[FreeParaPos].begin();
+            for (int j = 0; j <= Paratogeometry[FreeParaPos].size() - 1; j++) {
+                //cout << (*it) << endl;
+                int position = *it;
+                complex<double> alphaorigin = (*al)(3 * position);
+                if (objective->Have_Devx) objective->SingleResponse(position, true);
+                (*CStr).UpdateStrSingle(position, diel_old_tmp);
+                (*CurrentModel).UpdateAlphaSingle(position);
+                if (objective->Have_Devx) objective->SingleResponse(position, false);
+                complex<double> change = ((*al)(3 * position) - alphaorigin) / (sign * epsilon);
+                Adevxp(3 * position) = change;
+                Adevxp(3 * position + 1) = change;
+                Adevxp(3 * position + 2) = change;
 
-        if(objective->Have_Devx) objective->SingleResponse(position1, false);
+                it++;
+            }
 
-        it2 = (*it1).begin();
-
-        for (int j = 0; j <= (*it1).size()-1; j++) {
-            int position2 = (*it2);
-
-            if(objective->Have_Devx) objective->SingleResponse(position2, true);
-
-            if(objective->Have_Devx) objective->SingleResponse(position2, false);
-
-            it2++;
+            devx(i) = (objective->GroupResponse() - origin) / (sign * epsilon);  //If some obj has x dependency but you denote the havepenalty as false, it will still actually be calculated in an efficient way.
+            it = Paratogeometry[FreeParaPos].begin();
+            for (int j = 0; j <= Paratogeometry[FreeParaPos].size() - 1; j++) {
+                int position = *it;
+                if (objective->Have_Devx) objective->SingleResponse(position, true);
+                (*CStr).UpdateStrSingle(position, diel_old_origin);
+                (*CurrentModel).UpdateAlphaSingle(position);
+                if (objective->Have_Devx) objective->SingleResponse(position, false);
+                it++;
+            }
 
         }
-        */
-
     }
+    else {
+        for (int i = 0; i <= n_para - 1; i++) {
+            int FreeParaPos = (*Free)(i);
+
+            double diel_old_origin = (*Para)(FreeParaPos);
+            double diel_old_tmp = diel_old_origin;
+            int sign = 0;
+            if (diel_old_origin >= epsilon) {
+                sign = -1;
+            }
+            else {
+                sign = 1;
+            }
+            diel_old_tmp += sign * epsilon;
+
+
+
+            list<int>::iterator it = Paratogeometry[FreeParaPos].begin();
+            for (int j = 0; j <= Paratogeometry[FreeParaPos].size() - 1; j++) {
+                //cout << (*it) << endl;
+                int position = *it;
+                complex<double> alphaorigin = (*al)(3 * position);
+                if (objective->Have_Devx) objective->SingleResponse(position, true);
+                (*CStr).UpdateStrSingle(position, diel_old_tmp);
+                (*CurrentModel).UpdateAlphaSingle(position);
+                if (objective->Have_Devx) objective->SingleResponse(position, false);
+                complex<double> change = ((*al)(3 * position) - alphaorigin) / (sign * epsilon);
+                Adevxp(3 * position) = change;
+                Adevxp(3 * position + 1) = change;
+                Adevxp(3 * position + 2) = change;
+
+                it++;
+            }
+
+            devx(i) = (objective->GroupResponse() - origin) / (sign * epsilon);  //If some obj has x dependency but you denote the havepenalty as false, it will still actually be calculated in an efficient way.
+            it = Paratogeometry[FreeParaPos].begin();
+            for (int j = 0; j <= Paratogeometry[FreeParaPos].size() - 1; j++) {
+                int position = *it;
+                if (objective->Have_Devx) objective->SingleResponse(position, true);
+                (*CStr).UpdateStrSingle(position, diel_old_origin);
+                (*CurrentModel).UpdateAlphaSingle(position);
+                if (objective->Have_Devx) objective->SingleResponse(position, false);
+                it++;
+            }
+
+        }
+    }
+    
+    
     for (int i = 0; i <= 3 * N - 1; i++) {
         Adevxp(i) = Adevxp(i) * ((*P)(i));
     }
@@ -386,7 +400,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
     //double beta1 = 0.9;
     //double beta2 = 0.99;
     //---------------new beta for THG test----------------
-    double beta1 = 0.7;
+    double beta1 = 0.9;
     double beta2 = 1 - (1 - beta1) * (1 - beta1);
     VectorXd V;
     VectorXd S;
@@ -655,6 +669,17 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
 
         //The final gradients for this iteration
         gradients = gradients / ModelNum;
+
+        if ((*((*CStr).get_spacepara())).get_Filter() && (iteration >= 1)) {
+            //For iteration=0, Para, Para_origin, Para_filtered are all the same. No need for updating gradients.
+            //current_it is actually the it in current evo-1 as the str is updated in iteration-1.
+            gradients = gradients_filtered(gradients, iteration-1, MAX_ITERATION_EVO-1);  
+        }
+            
+        
+
+
+
         double epsilon_final=epsilon;
 
 
@@ -744,7 +769,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
         //cout << "step = "<< step.mean() << endl;
 
            
-        (*CStr).UpdateStr(step); 
+        (*CStr).UpdateStr(step, iteration, MAX_ITERATION_EVO - 1);
         it_ModelList = ModelList.begin();
         for (int i = 0; i <= ModelNum - 1; i++) {
             (*(*it_ModelList)).UpdateAlpha();                  //Dont forget this, otherwise bicgstab wont change
@@ -1114,7 +1139,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
         //cout << "step = "<< step.mean() << endl;
 
 
-        (*CStr).UpdateStr(step);
+        (*CStr).UpdateStr(step, iteration, MAX_ITERATION_EVO - 1);
         it_ModelList = ModelList.begin();
         for (int i = 0; i <= ModelNum - 1; i++) {
             (*(*it_ModelList)).UpdateAlpha();                  //Dont forget this, otherwise bicgstab wont change
@@ -1199,4 +1224,65 @@ double EvoDDAModel::L1Norm(){
 
 double EvoDDAModel::get_output_time() {
     return output_time / 1000;      //seconds
+}
+
+double PtoFderivative(const double input, const double beta, const double ita) {
+    double result = 0.0;
+    if (input <= ita && input >= 0.0) {
+        return beta * exp(-beta * (1 - input / ita)) + exp(-beta);
+    }
+    else if (input > ita && input <= 1.0) {
+        return beta * exp(-beta * (input - ita) / (1 - ita)) + exp(-beta);
+    }
+    else {
+        cout << "ERROR: PtoFderivative(const double input, const double beta, const double ita)--input out of range" << endl;
+        throw 1;
+    }
+}
+
+VectorXd EvoDDAModel::gradients_filtered(VectorXd gradients, int current_it, int Max_it) {
+    SpacePara* sp = (*CStr).get_spacepara();
+    FilterOption* fo = (*sp).get_Filterstats();
+    const VectorXd* Para_filtered = (*sp).get_Para_filtered();
+    const VectorXi* Free = (*sp).get_Free();
+    (*fo).update_beta(current_it, Max_it);                     //current_it is actually the it in current evo-1 as the str is updated in iteration-1.
+    const double gbeta = (*fo).get_beta();
+    const double gita = (*fo).get_ita();
+    
+
+    int NFpara = gradients.size();
+    VectorXd result = VectorXd::Zero(NFpara);
+    const vector<vector<WeightPara>>* FreeWeight = (*sp).get_FreeWeight();
+    if (NFpara != (*FreeWeight).size()) {
+        cout << "ERROR: EvoDDAModel::gradients_filtered--NFpara != (*FreeWeight).size()" << endl;
+        throw 1;
+    }
+    for (int i = 0; i <= NFpara - 1; i++) {
+        //int position = (*Free)(i);
+        //double pftmp = (*Para_filtered)(position);
+        //double ptofd = PtoFderivative(pftmp, gbeta, gita);
+
+        int num_weight = ((*FreeWeight)[i]).size();
+        double sum_weight = 0.0;
+        for (int j = 0; j <= num_weight - 1; j++) {
+            double weight = (*FreeWeight)[i][j].weight;
+            int weightpos = (*FreeWeight)[i][j].position;
+            sum_weight += weight;
+        }
+        for (int j = 0; j <= num_weight - 1; j++) {
+            double weight = (*FreeWeight)[i][j].weight;
+            int weightpos = (*FreeWeight)[i][j].position;
+            result(weightpos) += (weight / sum_weight);
+        }
+    }
+
+    for (int i = 0; i <= NFpara - 1; i++) {
+        int position = (*Free)(i);
+        double pftmp = (*Para_filtered)(position);
+        double ptofd = PtoFderivative(pftmp, gbeta, gita);
+        result(position) = result(position) * ptofd * gradients(position);
+    }
+
+    return result;
+
 }

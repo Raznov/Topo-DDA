@@ -13,6 +13,7 @@
 #include <map>
 #include <list>
 #include <tuple>
+#include <set>
 
 #include "eigen/Eigen/Dense"
 #include "eigen/Eigen/Core"
@@ -44,6 +45,7 @@ complex<double> Get_Alpha(double lam, double K, double d, complex<double> diel, 
 complex<double> Get_Alpha_FCD(double lam, double K, double d, complex<double> diel);
 complex<double> Get_material(string mat, double wl, string unit);                  //name of mat to get its diel function at certain wavlength              
 Vector2cd Get_2_material(string sub, string mat, double wl, string unit);          //a wrapper for Get_material
+VectorXcd Get_X_material(list<string> mat_l, double wl, string unit);
 double Average(VectorXcd* E, int N, double exponent);
 double Get_Max(VectorXcd* E, int N);
 double G(VectorXcd* E, int N, double exponent, double E0);
@@ -57,9 +59,31 @@ double initial_diel_func(string initial_diel);
 list<double> makelist(double start, double end, double interval);
 list<double> makelist(double start, double end, int number);
 
-
+double exp_update(const double x, const double x_max, const double y_min, const double y_max);
+double piecewise_update(const double x, const double x_max, const double y_min, const double y_max);
+double linear_update(const double x, const double x_max, const double y_min, const double y_max);
 
 int makedirect(string name);
+
+class FilterOption {
+    private:
+        double beta;
+        double ita;
+        string beta_type;
+        double beta_min;
+        double beta_max;
+        double rfilter;
+        bool fixit;
+        int MAX_ITERATION_FIXED;
+
+    public:
+        FilterOption(double beta_min_, double beta_max_, double ita_, string beta_type_, double rfilter_, bool fixit_=false, int MAX_ITERATION_FIXED_=100);
+        double get_beta();
+        double get_ita();
+        double get_rfilter();
+        void update_beta(const int iteration, const int Max_iteration);
+        double SmoothDensity(double input);
+};
 
 class Structure{
     private:
@@ -118,18 +142,29 @@ class Space{
 
 };
 
+struct WeightPara {
+    double weight;
+    int position;
+};
+
 class SpacePara {
 private:
     Space* space;
     VectorXi geometry;                //3N dimension
     VectorXi geometryPara;            //N dimension. N=number of dipoles. Each position stores the para index in VectorXi Para : 0->Para[0]...
-    VectorXd Para;                    //P dimension. P=number of parameters.
+    VectorXd Para;                    //P dimension. P=number of parameters. Same as Para_origin if Filter=False. Filtered and biased para if Filter=True.
+    VectorXd Para_origin;             //Un-filtered, unbiased para. No use when Filter=False.
+    VectorXd Para_filtered;           //Filtered but unbiased para. No use when Filter=False.
     MatrixXi scope;                   //[[xmin, xmax],[ymin, ymax],[zmin, zmax]]
     Vector3i bind;
     VectorXi FreeparatoPara;          //Position of free parameters inside Para. dimension<=P. FreeparatoPara[i] is the index of a free parameter inside Para.
     //vector<list<int>> Paratogeometry;  //P dimension. Each position stores a list of corresponding dipole index for parameter for this specific position.
+    bool Filter;                      //True for with Filter. False for without Filter. Defualt as False for most initilizations.
+    FilterOption* Filterstats;        //Only used when Filter=True
+    vector<vector<WeightPara>> FreeWeight;
+
 public:
-    SpacePara(Space* space_, string initial_diel, VectorXi geometry_, VectorXd diel_);
+    SpacePara(Space* space_, string initial_diel, VectorXi geometry_, VectorXd diel_); //Can freeze part of the parameter space
     SpacePara(Space* space_, Vector3i bind_, VectorXi* geometryPara_, VectorXd* Para_, VectorXi* FreeparatoPara_);
     SpacePara(Space* space_, Vector3i bind_, string initial_diel); //l, center similar to bulk build in Structure class. Every 'bind' nearby dipoles correspond 
                                                                     //to 1 parameter in this bulk. bind=(2,2,2): 2*2*2; bind=(1,1,3):1*1*3
@@ -146,7 +181,8 @@ public:
     SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, double limitx2, double limity1, double limity2, VectorXi* geometryPara_);
     SpacePara(Space* space_, Vector3i bind_, int number, double limitx1, double limitx2, double limity1, double limity2, double limitz1, double limitz2, VectorXi* geometryPara_);
 
-
+    SpacePara(Space* space_, Vector3i bind_, string initial_diel, list<VectorXi*> FParaGeometry_, list<VectorXi*> BParaGeometry_, list<double> BPara_);
+    SpacePara(Space* space_, Vector3i bind_, string initial_diel, list<VectorXi*> FParaGeometry_, list<VectorXi*> BParaGeometry_, list<double> BPara_, bool Filter_, FilterOption* Filterstats_=NULL); //Should be exactly the same with the previous one except of Filter
     void ChangeBind(Vector3i bind_);                                  //Change bind number
     VectorXi cut(VectorXi* big, VectorXi* smalll);
 
@@ -154,9 +190,14 @@ public:
     VectorXi get_geometry();
     VectorXi* get_geometryPara();
     VectorXd* get_Para();
+    VectorXd* get_Para_origin();
+    VectorXd* get_Para_filtered();
     Vector3i* get_bind();
     VectorXi* get_Free();
     //vector<list<int>>* get_Paratogeometry();
+    bool get_Filter();
+    FilterOption* get_Filterstats();
+    vector<vector<WeightPara>>* get_FreeWeight();
 };
 
 //Abstract parent class for objective function.
@@ -201,7 +242,7 @@ private:
     VectorXd diel_old_max;
 public:
     CoreStructure(SpacePara* spacepara_, double d_);
-    void UpdateStr(VectorXd step);
+    void UpdateStr(VectorXd step, int current_it, int Max_it);
     void UpdateStr(SpacePara* spacepara_);
     void UpdateStrSingle(int idx, double value);
     void output_to_file();
@@ -255,7 +296,7 @@ private:
     //--------------------------------Not necessary for A matrix but should be the same for diff DDAModel using the same A matrix------------------------------
     
     //VectorXcd diel;                   //real diel after 0~1 corresponds to real numbers
-    Vector2cd material;
+    VectorXcd material;
     //VectorXcd diel_max;                         //corresponds to the previous maximum obj
     
     //------------------------------For FCD and LDR choice-----------------------
@@ -263,8 +304,8 @@ private:
     SiCi* SiCiValue;
 
 public:
-    AProductCore(CoreStructure* CStr_, double lam_, Vector2cd material_, string AMatrixMethod_);
-    AProductCore(CoreStructure* CStr_, double lam_, Vector2cd material_, int MAXm_, int MAXn_, double Lm_, double Ln_, string AMatrixMethod_);
+    AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, string AMatrixMethod_);
+    AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, int MAXm_, int MAXn_, double Lm_, double Ln_, string AMatrixMethod_);
     ~AProductCore();
     Matrix3cd A_dic_generator(double x, double y, double z);
     Matrix3cd A_dic_generator(double x, double y, double z, int m, int n);
@@ -286,7 +327,7 @@ public:
     double get_lam();
     //VectorXcd* get_diel();        
     VectorXd* get_diel_old();               
-    Vector2cd* get_material();
+    VectorXcd* get_material();
     //VectorXcd* get_diel_max();                        
     VectorXd* get_diel_old_max();
     Matrix3cd FCD_inter(double x, double y, double z);
@@ -359,7 +400,7 @@ public:
     SpacePara* get_spacepara();
     double get_lam();
     VectorXd* get_diel_old();
-    Vector2cd* get_material();
+    VectorXcd* get_material();
     VectorXd* get_diel_old_max();
 };
 
@@ -422,6 +463,7 @@ public:
 
     double get_output_time();
     double L1Norm();
+    VectorXd gradients_filtered(VectorXd gradients, int current_it, int Max_it);
 
 
 
@@ -608,7 +650,30 @@ public:
     double FTUCnsquare();
 };
 
-
+class ObjectiveAbs : public ObjectiveDDAModel {
+private:
+    double d;
+    int N;
+    int Nx;
+    int Ny;
+    int Nz;
+    double K;
+    double K3;
+    double E0;
+    VectorXcd* P;
+    VectorXcd* al;
+    DDAModel* model;
+    EvoDDAModel* evomodel;
+    VectorXcd E;
+    double Cabs;
+    VectorXi* R;
+public:
+    ObjectiveAbs(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
+    void SingleResponse(int idx, bool deduction);
+    double GroupResponse();
+    double GetVal();
+    void Reset();
+};
 
 class FOMscattering2D{
 private:
@@ -629,6 +694,29 @@ private:
 
 public:
     FOMscattering2D(list<double> parameters, DDAModel* model_);
+    list<double> GetVal();                                                        //Return list of far field abs(Es) at specified directions
+    Vector3cd FTUC(Vector3d n_K_s);
+};
+
+class FOMreflect2D {
+private:
+    VectorXd FOMParameters;
+    double d;
+    int N;
+    VectorXcd* P;
+    VectorXi* R;
+    DDAModel* model;
+    double K;
+    int Paralength;
+    list<Vector3d> n_K_s_l;
+    double ATUC;
+    double E0;
+    Vector3d n_E0;
+    //Matrix3d FconstM;
+
+
+public:
+    FOMreflect2D(list<double> parameters, DDAModel* model_);
     list<double> GetVal();                                                        //Return list of far field abs(Es) at specified directions
     Vector3cd FTUC(Vector3d n_K_s);
 };
@@ -655,30 +743,30 @@ public:
     double FTUCnsquare(Vector3d n_K_s);
 };
 
-class ObjectiveAbs : public ObjectiveDDAModel {
+/*
+class FOMAbs {
 private:
+
     double d;
     int N;
-    int Nx;
-    int Ny;
-    int Nz;
-    double K;
-    double K3;
-    double E0;
     VectorXcd* P;
-    VectorXcd* al;
-    DDAModel* model;
-    EvoDDAModel* evomodel;
-    VectorXcd E;
-    double Cabs;
     VectorXi* R;
+    DDAModel* model;
+    double K;
+    double E0;
+    int Paralength;
+    list<Vector3d> n_K_s_l;
+    //double ATUC;
+    //Matrix3d FconstM;
+
+
 public:
-    ObjectiveAbs(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_);
-    void SingleResponse(int idx, bool deduction);
-    double GroupResponse();
-    double GetVal();
-    void Reset();
+    FOMAbs(list<double> parameters, DDAModel* model_);
+    list<double> GetVal();                                                      //Return list of dCsca/dOmega at specified directions
+    double FTUCnsquare(Vector3d n_K_s);
 };
+*/
+
 
 
 

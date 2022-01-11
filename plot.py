@@ -21,6 +21,7 @@ plotfor=""
 plotlimit=None
 Elimitlow=0.7
 Elimithigh=2.1
+colormax=2
 
 def deleteindice(object, target, col):
     result=[]
@@ -56,7 +57,7 @@ def Shape(geometry,diel,d,iteration=-1,position="./",decimal=0,FullLattice=False
 
 
     cmaparg = 'Spectral_r'
-    minn, maxx = 0, 1
+    minn, maxx = 0, colormax
     norm = matplotlib.colors.Normalize(minn, maxx)
     colorset = cm.ScalarMappable(norm=norm, cmap=cmaparg)
     colorset.set_array([])
@@ -586,8 +587,165 @@ def EField_slice_arrow(geometry,diel,d,k_dir,E_dir,E_tot,Xslice=-1,Yslice=-1,Zsl
     plt.savefig(position+"{}E_field_arrow at {}degree.png".format(str(iteration).zfill(decimal), "45"), dpi=plotdpi)
     #ax2.view_init(elev=90, azim=0)
     #plt.savefig(position+"{}E_field_arrow at {}degree.png".format(str(iteration).zfill(decimal), "90"), dpi=1200)
+
+def P_slice(geometry,diel,d,k_dir,E_dir,E_tot,Xslice=-1,Yslice=-1,Zslice=-1,iteration=-1,position="./",decimal=0,FullLattice=False):
+    """Plot the E field of object as arrow matrix.
+    # Input:
+    # --SC         SolutionClass
+    #   Solved Solution Class.
+    # --idx1,idx2  int
+    #   Indexs of the target instance.
+    """
+    #print(geometry)
+
+    N=round(np.shape(geometry)[0]/3)
+    print(N)
+    geometry=np.reshape(geometry,(N,3))
+    
+    print(geometry.shape)
+    #diel=np.reshape(diel,(N,3))
+    #diel=diel[:,0]
     
 
+    for i in range(3):
+        geometry[:,i] -= np.amin(geometry[:,i])
+    
+    #print(geometry)
+    [X,Y,Z] = list(np.amax(geometry,axis=0)+1)
+    Axis_max = max(X,Y,Z)*1.2*d
+    
+    print("{}, {}, {}".format(X,Y,Z))
+
+    E_tot = E_tot.reshape(int(E_tot.size/3),3)
+    E_tot_real=E_tot.real
+    E_tot_imag=E_tot.imag
+    E_tot_abs = np.sqrt(np.sum(E_tot_real**2+E_tot_imag**2,axis=1))
+    
+    #P_phase=np.zeros(shape(E_tot_real))
+
+    slicedim=-1
+    
+
+    if Xslice!=-1:
+        slicedim=0
+        Eslice=np.zeros((Y, Z))
+        Exslice=np.zeros((Y, Z))
+        Eyslice=np.zeros((Y, Z))
+        Ezslice=np.zeros((Y, Z))
+        P1=np.zeros((Y, Z))
+        P2=np.zeros((Y, Z))
+    if Yslice!=-1:
+        slicedim=1
+        Eslice=np.zeros((Z, X))
+        Exslice=np.zeros((Z, X))
+        Eyslice=np.zeros((Z, X))
+        Ezslice=np.zeros((Z, X))
+        P1=np.zeros((Z, X))
+        P2=np.zeros((Z, X))
+    if Zslice!=-1:
+        slicedim=2
+        Eslice=np.zeros((X, Y))
+        Exslice=np.zeros((X, Y))
+        Eyslice=np.zeros((X, Y))
+        Ezslice=np.zeros((X, Y))
+        P1=np.zeros((X, Y))
+        P2=np.zeros((X, Y))
+    
+    slicepos= max([Xslice, Yslice, Zslice])
+    for i, ele in enumerate(E_tot_abs):
+        if geometry[i][slicedim]==slicepos:
+            Eslice[geometry[i][slicedim-2]][geometry[i][slicedim-1]]=ele
+            Exslice[geometry[i][slicedim-2]][geometry[i][slicedim-1]]=E_tot_real[i][0]
+            Eyslice[geometry[i][slicedim-2]][geometry[i][slicedim-1]]=E_tot_real[i][1]
+            Ezslice[geometry[i][slicedim-2]][geometry[i][slicedim-1]]=E_tot_real[i][2]
+            P1[geometry[i][slicedim-2]][geometry[i][slicedim-1]]=E_tot_real[i][slicedim-2]
+            P2[geometry[i][slicedim-2]][geometry[i][slicedim-1]]=E_tot_real[i][slicedim-1]
+            Exslice
+    
+    
+
+    """
+    if Xslice!=-1:
+        slicedim=0
+        Eslice=np.zeros((Z, Y))
+    if Yslice!=-1:
+        slicedim=1
+        Eslice=np.zeros((X, Z))
+    if Zslice!=-1:
+        slicedim=2
+        Eslice=np.zeros((Y, X))
+    
+    slicepos= max([Xslice, Yslice, Zslice])
+    for i, ele in enumerate(E_tot_abs):
+        if geometry[i][slicedim]==slicepos:
+            Eslice[geometry[i][slicedim-1]][geometry[i][slicedim-2]]=ele
+    """
+    rotated_img = ndimage.rotate(Eslice, 90)
+    
+    fig1 = plt.figure(figsize=(10, 10))
+    plt.imshow(rotated_img, cmap='jet', interpolation='bilinear')
+    if plotlimit:
+        plt.clim(Elimitlow, Elimithigh)
+    plt.colorbar()
+    plt.savefig(position+"Model{} P_slice_{}at{}.png".format(iteration, (["X", "Y", "Z"])[slicedim], slicepos), dpi=plotdpi) 
+
+    """
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(111, projection='3d')
+    #plt.quiver(geometry[:,0]*d, geometry[:,1]*d, np.real(E_tot[:,0]),np.real(E_tot[:,1]))
+    ax2.quiver(geometry[:,0]*d,geometry[:,1]*d,geometry[:,2]*d,np.real(E_tot[:,0]),np.real(E_tot[:,1]),np.real(E_tot[:,2]),
+                length=10, lw=1)
+    ax2.set_xlim(-(Axis_max-X*d)/2,(Axis_max+X*d)/2)
+    ax2.set_ylim(-(Axis_max-Y*d)/2,(Axis_max+Y*d)/2)
+    #ax2.set_zlim(-(Axis_max-Z*d)/2,(Axis_max+Z*d)/2)
+    ax2.set_xlabel("x[nm]")
+    ax2.set_ylabel("y[nm]")
+    #ax2.set_zlabel("z[nm]")
+    ax2.grid(False)
+    fig2.suptitle("P field - Arrow plot\n {}".format(E_dir))
+    plt.savefig(position+"{}P_field_arrow.png".format(str(iteration).zfill(decimal)))
+    """
+    coordinates=[X,Y,Z]
+    #coord1=coordinates[([0, 1, 2])[slicedim-2]]
+    coord1=coordinates[slicedim-2]
+    coord2=coordinates[slicedim-1]
+
+    fig3 = plt.figure()
+    ax3 = fig3.add_subplot(111)
+    ax3.quiver([i for i in range(coord1)], [i for i in range(coord2)], P1, P2)
+    #ax3.set_xlim(-(Axis_max-X*d)/2,(Axis_max+X*d)/2)
+    #ax3.set_ylim(-(Axis_max-Y*d)/2,(Axis_max+Y*d)/2)
+    #ax2.set_zlim(-(Axis_max-Z*d)/2,(Axis_max+Z*d)/2)
+    ax3.set_xlabel("{}".format((["X", "Y", "Z"])[slicedim-2]))
+    ax3.set_ylabel("{}".format((["X", "Y", "Z"])[slicedim-1]))
+    #ax2.set_zlabel("z[nm]")
+    ax3.grid(False)
+    fig3.suptitle("P field - Arrow plot\n {}".format(E_dir))
+    plt.savefig(position+"{}P_field_arrow_slice_{}at{}.png".format(str(iteration).zfill(decimal), (["X", "Y", "Z"])[slicedim], slicepos))
+    
+    rotated_img = ndimage.rotate(Exslice, 90)
+    fig4 = plt.figure(figsize=(10, 10))
+    plt.imshow(rotated_img, cmap='jet', interpolation='bilinear')
+    if plotlimit:
+        plt.clim(Elimitlow, Elimithigh)
+    plt.colorbar()
+    plt.savefig(position+"Model{} P_slicex_{}at{}.png".format(iteration, (["X", "Y", "Z"])[slicedim], slicepos), dpi=plotdpi) 
+
+    rotated_img = ndimage.rotate(Eyslice, 90)
+    fig5 = plt.figure(figsize=(10, 10))
+    plt.imshow(rotated_img, cmap='jet', interpolation='bilinear')
+    if plotlimit:
+        plt.clim(Elimitlow, Elimithigh)
+    plt.colorbar()
+    plt.savefig(position+"Model{} P_slicey_{}at{}.png".format(iteration, (["X", "Y", "Z"])[slicedim], slicepos), dpi=plotdpi) 
+
+    rotated_img = ndimage.rotate(Ezslice, 90)
+    fig6 = plt.figure(figsize=(10, 10))
+    plt.imshow(rotated_img, cmap='jet', interpolation='bilinear')
+    if plotlimit:
+        plt.clim(Elimitlow, Elimithigh)
+    plt.colorbar()
+    plt.savefig(position+"Model{} P_slicez_{}at{}.png".format(iteration, (["X", "Y", "Z"])[slicedim], slicepos), dpi=plotdpi) 
     
 
 """
@@ -838,11 +996,13 @@ if __name__ == "__main__":
         
             diel=np.real(CoreStructure[(0):(3*N)])
             E_tot=(Modelresults[(0):(3*N)])
-            zslice=9
+            P_tot=(Modelresults[(3*N):(6*N)])
+            zslice=17
             if(nameit >= int(it_start) and nameit <= int(it_end)):
                 Shape(geometry, diel, d, iteration=nameit, position=pos+"ShapeSolid"+plotfor+"/", decimal=dec, FullLattice=True)
                 Shape(geometry, diel, d, iteration=nameit, position=pos+"Shape"+plotfor+"/", decimal=dec, FullLattice=False)
                 EField_slice(geometry, diel, d, k_dir, E_dir, E_tot, iteration=nameit, Zslice=zslice,position=pos+"E-field"+plotfor+"/")         #----------electric field intensity-----------
+                #P_slice(geometry, diel, d, k_dir, E_dir, P_tot, iteration=nameit, Zslice=zslice,position=pos+"E-field"+plotfor+"/")         #----------For p----------------
                 #EField_slice_dirx(geometry, diel, d, k_dir, E_dir, E_tot, iteration=it, Zslice=zslice,position=pos+"E-field/")     #----------real Ex-----------------
                 #EField_slice_diry(geometry, diel, d, k_dir, E_dir, E_tot, iteration=it, Zslice=zslice,position=pos+"E-field/")     #----------real Ey-----------------
                 #EField_slice_dirz(geometry, diel, d, k_dir, E_dir, E_tot, iteration=it, Zslice=zslice,position=pos+"E-field/")     #----------real Ez-----------------

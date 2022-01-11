@@ -25,8 +25,7 @@ CoreStructure::CoreStructure(SpacePara* spacepara_, double d_) {
     }
 }
 
-void CoreStructure::UpdateStr(VectorXd step) {
-
+void CoreStructure::UpdateStr(VectorXd step, int current_it, int Max_it) {
     cout << "step in UpdateStr" << step.mean() << endl;
     VectorXi* geometryPara = (*spacepara).get_geometryPara();
     VectorXd* Para = (*spacepara).get_Para();
@@ -35,16 +34,58 @@ void CoreStructure::UpdateStr(VectorXd step) {
     int Parasize = (*Free).size();
     if (Parasize != step.size()) {
         cout << "ERROR: In CoreStructure::UpdateStr(VectorXd step), step.size!=FreePara.size";
+        throw 1;
     }
-    for (int i = 0; i <= Parasize - 1; i++) {
-        (*Para)((*Free)(i)) += step(i);
-        if ((*Para)((*Free)(i)) >= 1) {
-            (*Para)((*Free)(i)) = 1;
+    
+
+    if ((*spacepara).get_Filter()) {
+        //When there is filter
+        VectorXd* Para_origin = (*spacepara).get_Para_origin();
+        VectorXd* Para_filtered = (*spacepara).get_Para_filtered();
+        FilterOption* Filterstats = (*spacepara).get_Filterstats();
+        (*Filterstats).update_beta(current_it, Max_it);                  //Update beta value according to current iteration
+        
+        for (int i = 0; i <= Parasize - 1; i++) {
+            (*Para_origin)((*Free)(i)) += step(i);
+            if ((*Para_origin)((*Free)(i)) >= 1) {
+                (*Para_origin)((*Free)(i)) = 1;
+            }
+            if ((*Para_origin)((*Free)(i)) <= 0) {
+                (*Para_origin)((*Free)(i)) = 0;
+            }
         }
-        if ((*Para)((*Free)(i)) <= 0) {
-            (*Para)((*Free)(i)) = 0;
+        
+        cout << "Beta at iteration " << current_it << " is " << (*Filterstats).get_beta() << endl;
+
+        vector<vector<WeightPara>>* FreeWeight = (*spacepara).get_FreeWeight();
+        for (int i = 0; i <= Parasize - 1; i++) {
+            int weightnum = ((*FreeWeight)[i]).size();
+            double numerator = 0.0;
+            double denominator = 0.0;
+            for (int j = 0; j <= weightnum - 1; j++) {
+                numerator += ((*FreeWeight)[i][j].weight) * (*Para_origin)((*FreeWeight)[i][j].position);
+                denominator += ((*FreeWeight)[i][j].weight);
+            }
+            (*Para_filtered)((*Free)(i)) = numerator / denominator;
+
+            double Para_physical = (*Filterstats).SmoothDensity((*Para_filtered)((*Free)(i)));     
+            (*Para)((*Free)(i)) = Para_physical;
+
         }
     }
+    else {//When there is no filter
+        for (int i = 0; i <= Parasize - 1; i++) {
+            (*Para)((*Free)(i)) += step(i);
+            if ((*Para)((*Free)(i)) >= 1) {
+                (*Para)((*Free)(i)) = 1;
+            }
+            if ((*Para)((*Free)(i)) <= 0) {
+                (*Para)((*Free)(i)) = 0;
+            }
+        }
+    }
+
+
     for (int i = 0; i <= N - 1; i++) {
         int position = (*geometryPara)(i);
         double value = (*Para)(position);

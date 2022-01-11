@@ -2,8 +2,6 @@
 
 
 
-
-
 ObjectivePointEDDAModel::ObjectivePointEDDAModel(list<double> parameters, DDAModel *model_, EvoDDAModel* evomodel_, bool HavePenalty_){
     VectorXd PointEParameters = VectorXd::Zero((parameters).size());
     list<double>::iterator it=(parameters).begin();
@@ -29,7 +27,7 @@ ObjectivePointEDDAModel::ObjectivePointEDDAModel(list<double> parameters, DDAMod
     double lam = (*Core).get_lam();
     cout << "lam" << lam << endl;
     double K = 2*M_PI/lam;
-    E_sum = Vector3cd::Zero();                                                                             //ÊÇ²»ÊÇE_sumÍüÁË¼ÓE_extÁË£¿ It is actually in Rest.
+    E_sum = Vector3cd::Zero();                                                                             //�ǲ���E_sum���˼�E_ext�ˣ� It is actually in Rest.
     E_ext = Vector3cd::Zero();
     E_ext(0) = E0*n_E0(0)*(cos(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))+sin(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))*1i);
     E_ext(1) = E0*n_E0(1)*(cos(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))+sin(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))*1i);
@@ -703,12 +701,3 @@ double Objectivescattering2D::FTUCnsquare() {
     double 
 }
 */
-
-
-
-
-
-
-
-
-
