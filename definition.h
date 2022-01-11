@@ -63,7 +63,6 @@ double exp_update(const double x, const double x_max, const double y_min, const 
 double piecewise_update(const double x, const double x_max, const double y_min, const double y_max);
 double linear_update(const double x, const double x_max, const double y_min, const double y_max);
 
-int makedirect(string name);
 
 class FilterOption {
     private:
