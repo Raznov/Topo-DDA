@@ -153,8 +153,12 @@ tuple<VectorXd, VectorXcd> EvoDDAModel::devx_and_Adevxp_tmp(double epsilon, DDAM
 
         //because i am changing diel_old_tmp as local variable and this does not influence diel_old, the singleresponse will not respond to this change
         //if (objective->Have_Devx) objective->SingleResponse(position1, true);
-        int labelfloor = int(floor((*Para)(FreeParaPos)));
-        complex<double> diel_tmp = (*material)(labelfloor) + (diel_old_tmp - double(labelfloor)) * ((*material)(labelfloor + 1) - (*material)(labelfloor));
+        int labelfloor = int(floor((*diel_old)(i)));
+        int labelnext = labelfloor + 1;
+        if (labelfloor >= 1) {
+            labelnext = labelfloor;
+        }
+        std::complex<double> diel_tmp = (*material)(labelfloor) + ((*diel_old)(i) - double(labelfloor)) * ((*material)(labelnext) - (*material)(labelfloor));
 
         //if (objective->Have_Devx) objective->SingleResponse(position1, false);
         complex<double> oneoveralpha = (1.0 / Get_Alpha(lam, K, d, diel_tmp, n_E0, n_K));
@@ -1286,5 +1290,3 @@ VectorXd EvoDDAModel::gradients_filtered(VectorXd gradients, int current_it, int
     return result;
 
 }
-
-
