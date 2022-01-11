@@ -1,4 +1,9 @@
-﻿int main() {
+﻿#include "definition.h"
+#define PI 3.14159265
+
+
+
+int main() {
 
     string save_position = "./200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-r_filter2-beta80/";       //output file
     Vector3d l;
@@ -171,6 +176,3 @@
     return 0;
 
 }
-
-
-
