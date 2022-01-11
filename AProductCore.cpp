@@ -865,5 +865,3 @@ double AProductCore::get_Lm() {
 double AProductCore::get_Ln() {
     return Ln;
 }
-
-

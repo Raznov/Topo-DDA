@@ -630,4 +630,3 @@ double piecewise_update(const double x, const double x_max, const double y_min, 
 double linear_update(const double x, const double x_max, const double y_min, const double y_max) {
     return y_min + (y_max - y_min) * x / x_max;
 }
-

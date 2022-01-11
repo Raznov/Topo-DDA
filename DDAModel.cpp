@@ -665,7 +665,7 @@ void DDAModel::output_to_file(string save_position, double wavelength, int itera
 
     string name;
 
-    name = save_position + "Model_output" + to_string(int(wavelength)) + "/Model_results" + "it" + to_string(iteration) + ".txt";
+    name = save_position + "Model_output" + to_string(int(wavelength)) + "\\Model_results" + "it" + to_string(iteration) + ".txt";
     ofstream fout(name);
     /*
     for (int i = 0; i <= P.size() - 1; i++) {

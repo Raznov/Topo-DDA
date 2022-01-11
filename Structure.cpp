@@ -435,4 +435,3 @@ Structure::Structure(VectorXi* total_space, Structure* s, int dep_way) {
     
 }
 */
-
