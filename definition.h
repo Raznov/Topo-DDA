@@ -15,11 +15,11 @@
 #include <tuple>
 #include <set>
 
-#include "eigen/Eigen/Dense"
-#include "eigen/Eigen/Core"
-#include "eigen/Eigen/IterativeLinearSolvers"
-#include "eigen/Eigen/Sparse"
-#include "eigen/unsupported/Eigen/CXX11/Tensor"
+#include "./eigen/Eigen/Dense"
+#include "./eigen/Eigen/Core"
+#include "./eigen/Eigen/IterativeLinearSolvers"
+#include "./eigen/Eigen/Sparse"
+#include "./eigen/unsupported/Eigen/CXX11/Tensor"
 
 //#include "cufftw.h"
 #include <cuda_runtime_api.h>
