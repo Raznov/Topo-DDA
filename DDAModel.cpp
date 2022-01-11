@@ -504,7 +504,11 @@ void DDAModel::UpdateAlphaSingle(int idx) {
     }
     */
     int labelfloor = int(floor((*diel_old)(3 * idx)));
-    std::complex<double> diel_tmp = (*material)(labelfloor) + ((*diel_old)(3 * idx) - double(labelfloor)) * ((*material)(labelfloor + 1) - (*material)(labelfloor));
+    int labelnext = labelfloor + 1;
+        if (labelfloor >= 1) {
+            labelnext = labelfloor;
+        }
+    std::complex<double> diel_tmp = (*material)(labelfloor) + ((*diel_old)(3 * idx) - double(labelfloor)) * ((*material)(labelnext) - (*material)(labelfloor));
     diel(3 * idx) = diel_tmp;
     diel(3 * idx + 1) = diel_tmp;
     diel(3 * idx + 2) = diel_tmp;
