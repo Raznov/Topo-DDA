@@ -5,7 +5,7 @@
 
 int main() {
 
-    string save_position = "./200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-r_filter2-beta80/";       //output file
+    string save_position = "./200nm2-sub100nm-Air-TiN-Ti-ABS-lam500-period-ones-r_filter2-beta80/";       //output file
     Vector3d l;
     Vector3d center;
     l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
