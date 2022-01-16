@@ -346,6 +346,7 @@ VectorXd initial_diel_func(string initial_diel, int N) {
     }
     else if (initial_diel.compare("RANDOM") == 0) {
         diel = VectorXd::Zero(N);
+        srand(time(0));
         for (int i = 0; i <= N - 1; i++) {
             double r = ((double)rand() / (RAND_MAX));
             diel(i) = r;
