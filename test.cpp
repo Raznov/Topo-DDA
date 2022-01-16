@@ -82,7 +82,7 @@ int main() {
     bool HaveAdjointHeritage = false;
     double PenaltyFactor = 1;
     list<list<double>*> ObjectParameters{ &ObjectParameter };
-    string save_position = "./p330-lam542-TiO2-InE-2layer-rand2-filter-beta80/";
+    string save_position = "./p330-lam542-TiO2-InE-2layer-rand3-filter-beta80/";
 
     Vector3d n_K;
     Vector3d n_E0;
