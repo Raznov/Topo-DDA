@@ -613,13 +613,13 @@ double exp_update(const double x, const double x_max, const double y_min, const 
 }
 
 double piecewise_update(const double x, const double x_max, const double y_min, const double y_max) {
-    if (x <= 0.4 * x_max) {
+    if (x <= 0.6 * x_max) {
         return y_min;
     }
-    else if(0.4 * x_max < x&& x <= 0.6 * x_max) {
+    else if(0.6 * x_max < x&& x <= 0.7 * x_max) {
         return y_min+(y_max-y_min)/10;
     }
-    else if (0.6 * x_max < x && x <= 0.8 * x_max) {
+    else if (0.7 * x_max < x && x <= 0.8 * x_max) {
         return y_min + (y_max - y_min) / 5;
     }
     else {
