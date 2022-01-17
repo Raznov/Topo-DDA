@@ -148,7 +148,8 @@ void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATI
     list<AProductCore*> CorePointList;
     Vector2cd material;
     material = Get_2_material("Air", "2.5", lam(0), "nm");
-    AProductCore Core1(&CStr, lam(0), material, "LDR");
+    double nback = 1.0;
+    AProductCore Core1(&CStr, lam(0), material, nback, "LDR");
     CorePointList.push_back(&Core1);
     ofstream Common;
     Common.open(save_position + "Commondata.txt");
@@ -589,6 +590,7 @@ Vector3d nEPerpinXZ(double theta, double phi) {
     return nE;
 }
 
+
 list<double> makelist(double start, double end, double interval) {
     list<double> result;
     int number = floor((end - start) / interval + 1);
@@ -613,14 +615,14 @@ double exp_update(const double x, const double x_max, const double y_min, const 
 }
 
 double piecewise_update(const double x, const double x_max, const double y_min, const double y_max) {
-    if (x <= 0.6 * x_max) {
+    if (x <= 0.4 * x_max) {
         return y_min;
     }
-    else if(0.6 * x_max < x&& x <= 0.7 * x_max) {
-        return y_min+(y_max-y_min)/10;
+    else if(0.4 * x_max < x&& x <= 0.6 * x_max) {
+        return y_min+(y_max-y_min)/20;
     }
-    else if (0.7 * x_max < x && x <= 0.8 * x_max) {
-        return y_min + (y_max - y_min) / 5;
+    else if (0.6 * x_max < x && x <= 0.8 * x_max) {
+        return y_min + (y_max - y_min) / 10;
     }
     else {
         return y_max;

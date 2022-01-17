@@ -3,13 +3,19 @@
 
 
 
-AProductCore::AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, string AMatrixMethod_){
+AProductCore::AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, double nback_, string AMatrixMethod_){
     
     CStr = CStr_;
-    lam=lam_;
-    cout << "laminAP" << lam << endl;
-    K=2*M_PI/lam;
+    lam = lam_;
+    K = 2 * M_PI / (lam / nback);
     material = material_;
+    nback = nback_;
+    for (int i = 0; i <= material.size() - 1; i++) {
+        material(i) = material(i) / (nback * nback);
+        if (sqrt(norm(material(i))) <= 1.01) {
+            material(i) = material(i) + 0.01;
+        }
+    }
     AMatrixMethod = AMatrixMethod_;
 
     if (AMatrixMethod == "FCD") {
@@ -236,18 +242,26 @@ AProductCore::AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material
     
 }
 
-AProductCore::AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, int MAXm_, int MAXn_, double Lm_, double Ln_, string AMatrixMethod_) {
+AProductCore::AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, double nback_, int MAXm_, int MAXn_, double Lm_, double Ln_, string AMatrixMethod_) {
     MAXm = MAXm_;
     MAXn = MAXn_;
     Lm = Lm_;
     Ln = Ln_;
     cout << "Calculating periodic sturcture, rep in x direction: " << MAXm << ", rep in y direction: " << MAXn << ". Lx: " << Lm << ", Ly: " << Ln << endl;
     CStr = CStr_;
-    lam = lam_;
-    K = 2 * M_PI / lam;
     material = material_;
+    nback = nback_;
+    lam = lam_;
+    K = 2.0 * M_PI / (lam / nback);
+    for (int i = 0; i <= material.size() - 1; i++) {
+        cout << "origin i: " << i << " " << material(i) << endl;
+        material(i) = material(i) / (nback * nback);
+        if (sqrt(norm(material(i))) < 1.01) {
+            material(i) = material(i) + 0.01;
+        }
+        cout << "divided i: " << i << " " << material(i) << endl;
+    }
     AMatrixMethod = AMatrixMethod_;
-
     if (AMatrixMethod == "FCD") {
         SiCiValue = new SiCi();
     }
@@ -848,6 +862,9 @@ double AProductCore::get_d() {
 double AProductCore::get_lam() {
     return lam;
 }
+double AProductCore::get_K() {
+    return K;
+}
 VectorXd* AProductCore::get_diel_old() {
     return (*CStr).get_diel_old();
 }
@@ -864,4 +881,8 @@ double AProductCore::get_Lm() {
 
 double AProductCore::get_Ln() {
     return Ln;
+}
+
+double AProductCore::get_nback() {
+    return nback;
 }

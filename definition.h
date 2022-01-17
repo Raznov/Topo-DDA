@@ -66,6 +66,8 @@ double linear_update(const double x, const double x_max, const double y_min, con
 
 int makedirect(string name);
 
+
+
 class FilterOption {
     private:
         double beta;
@@ -299,14 +301,15 @@ private:
     //VectorXcd diel;                   //real diel after 0~1 corresponds to real numbers
     VectorXcd material;
     //VectorXcd diel_max;                         //corresponds to the previous maximum obj
-    
+    double nback;                       //background material refractive index. 1.0 for air.
+
     //------------------------------For FCD and LDR choice-----------------------
     string AMatrixMethod;
     SiCi* SiCiValue;
 
 public:
-    AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, string AMatrixMethod_);
-    AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, int MAXm_, int MAXn_, double Lm_, double Ln_, string AMatrixMethod_);
+    AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, double nback_, string AMatrixMethod_);
+    AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material_, double nback_, int MAXm_, int MAXn_, double Lm_, double Ln_, string AMatrixMethod_);
     ~AProductCore();
     Matrix3cd A_dic_generator(double x, double y, double z);
     Matrix3cd A_dic_generator(double x, double y, double z, int m, int n);
@@ -326,9 +329,11 @@ public:
     VectorXi* get_R();
     double get_d();
     double get_lam();
+    double get_K();
     //VectorXcd* get_diel();        
     VectorXd* get_diel_old();               
     VectorXcd* get_material();
+    double get_nback();
     //VectorXcd* get_diel_max();                        
     VectorXd* get_diel_old_max();
     Matrix3cd FCD_inter(double x, double y, double z);
@@ -400,6 +405,7 @@ public:
     double get_d();
     SpacePara* get_spacepara();
     double get_lam();
+    double get_K();
     VectorXd* get_diel_old();
     VectorXcd* get_material();
     VectorXd* get_diel_old_max();

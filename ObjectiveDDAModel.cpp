@@ -26,7 +26,7 @@ ObjectivePointEDDAModel::ObjectivePointEDDAModel(list<double> parameters, DDAMod
     double E0 = (*model).get_E0();
     double lam = (*Core).get_lam();
     cout << "lam" << lam << endl;
-    double K = 2*M_PI/lam;
+    double K = (*Core).get_K();
     E_sum = Vector3cd::Zero();                                                                             //�ǲ���E_sum���˼�E_ext�ˣ� It is actually in Rest.
     E_ext = Vector3cd::Zero();
     E_ext(0) = E0*n_E0(0)*(cos(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))+sin(K*(n_K(0)*x+n_K(1)*y+n_K(2)*z))*1i);
@@ -119,7 +119,7 @@ ObjectivePointListEDDAModel::ObjectivePointListEDDAModel(list<double> parameters
     double E0 = (*model).get_E0();
     double lam = (*Core).get_lam();
     cout << "lam" << lam << endl;
-    double K = 2 * M_PI / lam;
+    double K = (*Core).get_K();
 
     for (int i = 0; i <= PNum - 1; i++) {
         E_ext(i, 0) = E0 * n_E0(0) * (cos(K * (n_K(0) * x(i) + n_K(1) * y(i) + n_K(2) * z(i))) + sin(K * (n_K(0) * x(i) + n_K(1) * y(i) + n_K(2) * z(i))) * 1i);
@@ -231,7 +231,7 @@ ObjectivePointIDDAModel::ObjectivePointIDDAModel(list<double> parameters, DDAMod
     double E0 = (*model).get_E0();
     double lam = (*Core).get_lam();
     cout << "lam" << lam << endl;
-    double K = 2 * M_PI / lam;
+    double K = (*Core).get_K();
     E_sum = Vector3cd::Zero();
     E_ext = Vector3cd::Zero();
     E_ext(0) = E0 * n_E0(0) * (cos(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
@@ -469,7 +469,7 @@ Objectivescattering0D::Objectivescattering0D(list<double> parameters, DDAModel* 
     E0 = (*model).get_E0();
     double lam = (*Core).get_lam();
     cout << "lam" << lam << endl;
-    K = 2 * M_PI / lam;
+    K = (*Core).get_K();
     
 
     for (int i = 0; i <= int(round(Paralength / 3) - 1); i++) {
@@ -601,7 +601,7 @@ ObjectiveAbs::ObjectiveAbs(list<double> parameters, DDAModel* model_, EvoDDAMode
     E0 = (*model).get_E0();
     double lam = (*Core).get_lam();
     cout << "lam" << lam << endl;
-    K = 2 * M_PI / lam;
+    K = (*Core).get_K();
     K3 = pow(K, 3);
 }
 
