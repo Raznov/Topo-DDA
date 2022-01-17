@@ -87,7 +87,7 @@ int main() {
     SpacePara spacepara(&S, bind, "RANDOM", FPGeometryl, BPGeometryl, BParal, Filter, &filteropt);
     //SpacePara is where the parameter<->geometry link is established.
     list<string> ObjectFunctionNames{ "Abs" };                       //Name of the object function.
-    list<double> ObjectParameter{};  //Focal spot postition.
+    list<double> ObjectParameter{center2(0) * d,center2(1) * d,17.0 * d};  //Focal spot postition.
     list<list<double>*> ObjectParameters{ &ObjectParameter };
     list<DDAModel> ModelList;
     list<DDAModel*> ModelpointerList;
