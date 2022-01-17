@@ -425,7 +425,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
         list<ObjectiveDDAModel*>::iterator it_ObjList = ObjList.begin();
 
         high_resolution_clock::time_point out_start = high_resolution_clock::now();
-        (*CStr).output_to_file(save_position + "CoreStructure/", iteration + start_num, "simple");
+        (*CStr).output_to_file(save_position + "CoreStructur/", iteration + start_num, "simple");
         high_resolution_clock::time_point out_end = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(out_end - out_start).count();
         output_time += duration;
@@ -839,7 +839,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
             if (iteration == MAX_ITERATION_EVO - 1) {                                    //useless fix, not gonna to use RResultswithc = true feature in the future
                 (*(*it_ModelList)).solve_E();
             }
-            //(*(*it_ModelList)).output_to_file(save_position + "Model_output\\", iteration, i);
+            //(*(*it_ModelList)).output_to_file(save_position + "Model_output/", iteration, i);
             objarray(i) = (*(*it_ObjList)).GetVal();
 
             Originiterations << (*(*it_ModelList)).get_ITERATION() << endl;
@@ -1290,3 +1290,5 @@ VectorXd EvoDDAModel::gradients_filtered(VectorXd gradients, int current_it, int
     return result;
 
 }
+
+
