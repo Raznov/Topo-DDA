@@ -12,7 +12,7 @@ int main() {
     //tie(InputGeo, InputDiel) = InputInitial(open_position, model_label);
 
 
-    string save_position = "./Absbyfar-fromones-sym-filter2/";       //output file
+    string save_position = "./Si-Absbyfar-fromones-sym-filter2/";       //output file
     Vector3d l;
     Vector3d center;
     l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
@@ -25,7 +25,7 @@ int main() {
     int N = 0;                                                          //N counts the number of pixels in the geometries simulated. Initail is one.
 
                                                                         //This can be used to control the finest feature size of the designed structure.
-    double d = 10;                                                      //Size of pixel. Here 25nm.   
+    double d = 20;                                                      //Size of pixel. Here 25nm.   
     double E0 = 1.0;                                                    //Input field amplitude. 1V/m.
     double epsilon = 1;                                                //Fixed learning rate of the optimization.
     //double focus = (l(2) + 2) * d;   //nm                               //Focal spot is 50nm higher than the upper boundary of the intialization block.
@@ -52,7 +52,7 @@ int main() {
     VectorXd lam(lam_num);
     lam << 800;
     VectorXcd material, material1;
-    list<string> mat_l{ "H2O", "TiN", "Ti" };
+    list<string> mat_l{ "Air", "Si"};
     material = Get_X_material(mat_l, lam(0), "nm");              //Air as substrate. material with permittivity of 2.5 as design material.
     //material1 = Get_X_material(mat_l, lam(1), "nm");
 
@@ -102,7 +102,7 @@ int main() {
     string symmetry = "4fold";
     vector<double> symaxis{ 9.5,9.5 };
     //SpacePara spacepara(&S, bind, &InputGeo, &InputDiel, Filter, &filteropt, symmetry, symaxis);
-    SpacePara spacepara(&S, bind, vector<string>{"ONES", "ONES"}, vector<double>{1.0, 2.0}, Filter, & filteropt, symmetry, symaxis);
+    SpacePara spacepara(&S, bind, vector<string>{"ONES", "ONES"}, vector<double>{1.0, 1.0}, Filter, & filteropt, symmetry, symaxis);
     list<string> ObjectFunctionNames{ "Absbyfar" };
     list<double> ObjectParameter{ 0, 0 };  //Focal spot postition.
     list<list<double>*> ObjectParameters{ &ObjectParameter };
