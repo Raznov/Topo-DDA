@@ -97,7 +97,7 @@ int main() {
     Vector3i bind(1, 1, 12);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
 
     bool Filter = true;
-    vector<filterinfo> filterlist{ filterinfo{0,1.0}, filterinfo{100,2.0} };
+    vector<filterinfo> filterlist{ filterinfo{0,1.2}, filterinfo{100,2.0} };
     FilterOption filteropt(0.0, 50.0, 0.5, "piecewise", filterlist);
     string symmetry = "4fold";
     vector<double> symaxis{ 9.5,9.5 };
