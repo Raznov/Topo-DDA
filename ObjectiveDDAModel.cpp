@@ -1047,3 +1047,445 @@ double ObjectiveAbsbyfar::FTUCnsquareoversinal() {
 
 
 
+ObjectiveAbs::ObjectiveAbs(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_) {
+    Have_Penalty = HavePenalty_;
+    Have_Devx = true;
+    model = model_;
+    evomodel = evomodel_;
+    AProductCore* Core = (*model).get_Core();
+    N = (*Core).get_N();
+    Nx = (*Core).get_Nx();
+    Ny = (*Core).get_Ny();
+    Nz = (*Core).get_Nz();
+    d = (*Core).get_d();
+    al = (*model).get_al();
+    P = (*model).get_P();
+    E = VectorXcd::Zero(N * 3);
+    R = (*Core).get_R();
+    Cabs = 0.0;
+    E0 = (*model).get_E0();
+    double lam = (*Core).get_lam();
+    cout << "lam" << lam << endl;
+    K = (*Core).get_K();
+    K3 = pow(K, 3);
+}
+
+void ObjectiveAbs::SingleResponse(int idx, bool deduction) {
+    complex<double> al_tmp = (*al)(3 * idx);
+    Vector3cd P_tmp((*P)(3 * idx), (*P)(3 * idx + 1), (*P)(3 * idx + 2));
+
+    if (deduction == false) {
+        complex<double> tmp = (al_tmp * P_tmp).dot(P_tmp);                    
+        Cabs += (tmp.imag() - (2.0 / 3.0) * K3 * (P_tmp.dot(P_tmp)).real());
+    }
+    else {
+        complex<double> tmp = (al_tmp * P_tmp).dot(P_tmp);                    //Eigen dot product is conjugate linear in the first variable, and linear in the second one.
+        Cabs -= (tmp.imag() - (2.0 / 3.0) * K3 * (P_tmp.dot(P_tmp)).real());  //The Eigen Vector norm turns out to be the square-root term, instead of the one with square like C++ complex number norm.
+    }
+    return;
+}
+
+double ObjectiveAbs::GroupResponse() {
+
+    if (Have_Penalty) {
+        return log10(Cabs * (4 * M_PI * K / pow(E0, 2))) - (*evomodel).L1Norm();
+    }
+    else {
+        return log10(Cabs * (4 * M_PI * K / pow(E0, 2)));
+    }
+
+}
+
+double ObjectiveAbs::GetVal() {
+    Reset();
+    for (int idx = 0; idx < N; idx++) {
+        SingleResponse(idx, false);
+    }
+    return GroupResponse();
+}
+
+void ObjectiveAbs::Reset() {
+    Cabs = 0.0;
+}
+
+
+
+ObjectiveAbsPartial::ObjectiveAbsPartial(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_) {
+    Have_Penalty = HavePenalty_;
+    Have_Devx = true;
+    model = model_;
+    evomodel = evomodel_;
+    AProductCore* Core = (*model).get_Core();
+    N = (*Core).get_N();
+    Nx = (*Core).get_Nx();
+    Ny = (*Core).get_Ny();
+    Nz = (*Core).get_Nz();
+    d = (*Core).get_d();
+    al = (*model).get_al();
+    P = (*model).get_P();
+    E = VectorXcd::Zero(N * 3);
+    R = (*Core).get_R();
+    Cabs = 0.0;
+    E0 = (*model).get_E0();
+    double lam = (*Core).get_lam();
+    cout << "lam" << lam << endl;
+    K = (*Core).get_K();
+    K3 = pow(K, 3);
+    SpacePara* spaceparatmp = (*((*Core).get_CStr())).get_spacepara();
+    vector<int>* ParaDividePos = (*spaceparatmp).get_ParaDividePos();
+    int NPara = (*((*spaceparatmp).get_Para())).size();
+    int numPara = (*ParaDividePos).size();
+    list<double>::iterator it = parameters.begin();
+    vector<int> startpos;
+    vector<int> endpos;
+    while (it != parameters.end()) {
+        int geometrylabel = int(round(*it));
+        if (geometrylabel >= numPara || geometrylabel < 0) {
+            cout << "ERROR:ObjectiveAbsPartial--geometrylabel out of range" << endl;
+            throw 1;
+        }
+        startpos.push_back((*ParaDividePos)[geometrylabel]);
+        cout << "startpos.back(): " << startpos.back() << endl;
+        if (geometrylabel == numPara - 1) {
+            endpos.push_back(NPara - 1);
+        }
+        else {
+            endpos.push_back((*ParaDividePos)[geometrylabel + 1] - 1);
+        }
+        cout << "endpos.back(): " << endpos.back() << endl;
+        it++;
+    }
+    vector<vector<int>>* Paratogeometry = (*spaceparatmp).get_Paratogeometry();
+    
+    for (int i = 0; i < startpos.size(); i++) {
+        for (int j = startpos[i]; j <= endpos[i]; j++) {
+            for (int k = 0; k < (*Paratogeometry)[j].size(); k++) {
+                integralpos.insert((*Paratogeometry)[j][k]);
+                //cout << (*Paratogeometry)[j][k] << endl;
+            }
+        }
+        
+    }
+
+
+}
+
+void ObjectiveAbsPartial::SingleResponse(int idx, bool deduction) {
+    if (integralpos.count(idx)) {
+        complex<double> al_tmp = (*al)(3 * idx);
+        Vector3cd P_tmp((*P)(3 * idx), (*P)(3 * idx + 1), (*P)(3 * idx + 2));
+
+        if (deduction == false) {
+            complex<double> tmp = (al_tmp * P_tmp).dot(P_tmp);
+            Cabs += (tmp.imag() - (2.0 / 3.0) * K3 * (P_tmp.dot(P_tmp)).real());
+        }
+        else {
+            complex<double> tmp = (al_tmp * P_tmp).dot(P_tmp);                    //Eigen dot product is conjugate linear in the first variable, and linear in the second one.
+            Cabs -= (tmp.imag() - (2.0 / 3.0) * K3 * (P_tmp.dot(P_tmp)).real());  //The Eigen Vector norm turns out to be the square-root term, instead of the one with square like C++ complex number norm.
+        }
+        return;
+    }
+
+    
+}
+
+double ObjectiveAbsPartial::GroupResponse() {
+
+    if (Have_Penalty) {
+        return log10(Cabs * (4 * M_PI * K / pow(E0, 2))) - (*evomodel).L1Norm();
+    }
+    else {
+        return log10(Cabs * (4 * M_PI * K / pow(E0, 2)));
+    }
+
+}
+
+double ObjectiveAbsPartial::GetVal() {
+    Reset();
+    for (int idx = 0; idx < N; idx++) {
+        SingleResponse(idx, false);
+    }
+    return GroupResponse();
+}
+
+void ObjectiveAbsPartial::Reset() {
+    Cabs = 0.0;
+}
+/*
+Objectivescattering2D::Objectivescattering2D(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_) {
+    VectorXd PointEParameters = VectorXd::Zero((parameters).size());
+    list<double>::iterator it = (parameters).begin();
+    for (int i = 0; i <= int((parameters).size() - 1); i++) {
+        PointEParameters(i) = (*it);
+        it++;
+    }
+    Have_Penalty = HavePenalty_;
+    x = PointEParameters(0);
+    y = PointEParameters(1);
+    z = PointEParameters(2);
+    Have_Devx = false;
+    model = model_;
+    evomodel = evomodel_;
+    AProductCore* Core = (*model).get_Core();
+    d = (*Core).get_d();
+    N = (*Core).get_N();
+    P = (*model).get_P();
+    R = (*Core).get_R();
+    Vector3d n_E0 = (*model).get_nE0();
+    Vector3d n_K = (*model).get_nK();
+    double E0 = (*model).get_E0();
+    double lam = (*Core).get_lam();
+    cout << "lam" << lam << endl;
+    double K = 2 * M_PI / lam;
+    E_sum = Vector3cd::Zero();
+    E_ext = Vector3cd::Zero();
+    E_ext(0) = E0 * n_E0(0) * (cos(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
+    E_ext(1) = E0 * n_E0(1) * (cos(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
+    E_ext(2) = E0 * n_E0(2) * (cos(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) + sin(K * (n_K(0) * x + n_K(1) * y + n_K(2) * z)) * 1i);
+    // cout << R(3*5444+2) << "this" << endl;
+}
+
+void Objectivescattering2D::SingleResponse(int idx, bool deduction) {
+}
+
+double Objectivescattering2D::GroupResponse() {
+}
+
+double Objectivescattering2D::GetVal() {
+    Reset();
+    for (int idx = 0; idx < N; idx++) {
+        SingleResponse(idx, false);
+        // cout << E_sum(0) << endl;
+    }
+    return GroupResponse();
+}
+
+void Objectivescattering2D::Reset() {
+    E_sum(0) = E_ext(0);
+    E_sum(1) = E_ext(1);
+    E_sum(2) = E_ext(2);
+}
+
+double Objectivescattering2D::FTUCnsquare() {
+    double 
+}
+*/
+
+
+
+ObjectiveAbsPartialzslice::ObjectiveAbsPartialzslice(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_) {
+    Have_Penalty = HavePenalty_;
+    Have_Devx = true;
+    model = model_;
+    evomodel = evomodel_;
+    AProductCore* Core = (*model).get_Core();
+    N = (*Core).get_N();
+    Nx = (*Core).get_Nx();
+    Ny = (*Core).get_Ny();
+    Nz = (*Core).get_Nz();
+    d = (*Core).get_d();
+    al = (*model).get_al();
+    P = (*model).get_P();
+    E = VectorXcd::Zero(N * 3);
+    R = (*Core).get_R();
+    Cabs = 0.0;
+    E0 = (*model).get_E0();
+    double lam = (*Core).get_lam();
+    cout << "lam" << lam << endl;
+    K = (*Core).get_K();
+    K3 = pow(K, 3);
+    SpacePara* spaceparatmp = (*((*Core).get_CStr())).get_spacepara();
+    vector<int>* ParaDividePos = (*spaceparatmp).get_ParaDividePos();
+    int NPara = (*((*spaceparatmp).get_Para())).size();
+    int numPara = (*ParaDividePos).size();
+    list<double>::iterator it = parameters.begin();
+    vector<int> startpos;
+    vector<int> endpos;
+    while (it != parameters.end()) {
+        int geometrylabel = int(round(*it));
+        if (geometrylabel >= numPara || geometrylabel < 0) {
+            cout << "ERROR:ObjectiveAbsPartial--geometrylabel out of range" << endl;
+            throw 1;
+        }
+        startpos.push_back((*ParaDividePos)[geometrylabel]);
+        cout << "startpos.back(): " << startpos.back() << endl;
+        if (geometrylabel == numPara - 1) {
+            endpos.push_back(NPara - 1);
+        }
+        else {
+            endpos.push_back((*ParaDividePos)[geometrylabel + 1] - 1);
+        }
+        cout << "endpos.back(): " << endpos.back() << endl;
+        it++;
+    }
+    vector<vector<int>>* Paratogeometry = (*spaceparatmp).get_Paratogeometry();
+
+    for (int i = 0; i < startpos.size(); i++) {
+        for (int j = startpos[i]; j <= endpos[i]; j++) {
+            for (int k = 0; k < (*Paratogeometry)[j].size(); k++) {
+                integralpos.insert((*Paratogeometry)[j][k]);
+                //cout << (*Paratogeometry)[j][k] << endl;
+            }
+        }
+
+    }
+
+
+
+}
+
+void ObjectiveAbsPartialzslice::SingleResponse(int idx, bool deduction) {
+    if (integralpos.count(idx)) {
+        complex<double> al_tmp = (*al)(3 * idx);
+        Vector3cd P_tmp((*P)(3 * idx), (*P)(3 * idx + 1), (*P)(3 * idx + 2));
+
+        if (zslices.count((*R)(3 * idx + 2))) {
+            if (deduction == false) {
+                complex<double> tmp = (al_tmp * P_tmp).dot(P_tmp);
+                Cabs += (tmp.imag() - (2.0 / 3.0) * K3 * (P_tmp.dot(P_tmp)).real());
+            }
+            else {
+                complex<double> tmp = (al_tmp * P_tmp).dot(P_tmp);                    //Eigen dot product is conjugate linear in the first variable, and linear in the second one.
+                Cabs -= (tmp.imag() - (2.0 / 3.0) * K3 * (P_tmp.dot(P_tmp)).real());  //The Eigen Vector norm turns out to be the square-root term, instead of the one with square like C++ complex number norm.
+            }
+        }
+
+        
+        return;
+    }
+
+
+}
+
+double ObjectiveAbsPartialzslice::GroupResponse() {
+
+    if (Have_Penalty) {
+        return log10(Cabs * (4 * M_PI * K / pow(E0, 2))) - (*evomodel).L1Norm();
+    }
+    else {
+        return log10(Cabs * (4 * M_PI * K / pow(E0, 2)));
+    }
+
+}
+
+double ObjectiveAbsPartialzslice::GetVal() {
+    Reset();
+    for (int idx = 0; idx < N; idx++) {
+        SingleResponse(idx, false);
+    }
+    return GroupResponse();
+}
+
+void ObjectiveAbsPartialzslice::Reset() {
+    Cabs = 0.0;
+}
+
+
+
+
+ObjectiveIntegrateEPartial::ObjectiveIntegrateEPartial(list<double> parameters, DDAModel* model_, EvoDDAModel* evomodel_, bool HavePenalty_) {
+    Have_Penalty = HavePenalty_;
+    Have_Devx = true;
+    model = model_;
+    evomodel = evomodel_;
+    AProductCore* Core = (*model).get_Core();
+    N = (*Core).get_N();
+    Nx = (*Core).get_Nx();
+    Ny = (*Core).get_Ny();
+    Nz = (*Core).get_Nz();
+    d = (*Core).get_d();
+    al = (*model).get_al();
+    P = (*model).get_P();
+    E = VectorXcd::Zero(N * 3);
+    R = (*Core).get_R();
+    Total = 0.0;
+    E0 = (*model).get_E0();
+    double lam = (*Core).get_lam();
+    cout << "lam" << lam << endl;
+    K = (*Core).get_K();
+    K3 = pow(K, 3);
+    SpacePara* spaceparatmp = (*((*Core).get_CStr())).get_spacepara();
+    vector<int>* ParaDividePos = (*spaceparatmp).get_ParaDividePos();
+    int NPara = (*((*spaceparatmp).get_Para())).size();
+    int numPara = (*ParaDividePos).size();
+    list<double>::iterator it = parameters.begin();
+    vector<int> startpos;
+    vector<int> endpos;
+    while (it != parameters.end()) {
+        int geometrylabel = int(round(*it));
+        if (geometrylabel >= numPara || geometrylabel < 0) {
+            cout << "ERROR:ObjectiveAbsPartial--geometrylabel out of range" << endl;
+            throw 1;
+        }
+        startpos.push_back((*ParaDividePos)[geometrylabel]);
+        if (geometrylabel == numPara - 1) {
+            endpos.push_back(NPara - 1);
+        }
+        else {
+            endpos.push_back((*ParaDividePos)[geometrylabel + 1] - 1);
+        }
+        it++;
+    }
+    vector<vector<int>>* Paratogeometry = (*spaceparatmp).get_Paratogeometry();
+
+    for (int i = 0; i < startpos.size(); i++) {
+        for (int j = startpos[i]; j <= endpos[i]; j++) {
+            for (int k = 0; k < (*Paratogeometry)[j].size(); k++) {
+                integralpos.insert((*Paratogeometry)[j][k]);
+                //cout << (*Paratogeometry)[j][k] << endl;
+            }
+        }
+
+    }
+
+
+}
+
+void ObjectiveIntegrateEPartial::SingleResponse(int idx, bool deduction) {
+    if (integralpos.count(idx)) {
+        complex<double> al_tmp = (*al)(3 * idx);
+        Vector3cd P_tmp((*P)(3 * idx), (*P)(3 * idx + 1), (*P)(3 * idx + 2));
+        Vector3cd E_tmp = al_tmp * P_tmp;
+
+        if (deduction == false) {
+            double E_tmp_square = 0.0;
+            for (int i = 0; i < 3; i++) {
+                E_tmp_square += norm(E_tmp(i));
+            }
+            Total += pow(E_tmp_square, 2);
+        }
+        else {
+            double E_tmp_square = 0.0;
+            for (int i = 0; i < 3; i++) {
+                E_tmp_square += norm(E_tmp(i));
+            }
+            Total -= pow(E_tmp_square, 2);
+        }
+        return;
+    }
+
+
+}
+
+double ObjectiveIntegrateEPartial::GroupResponse() {
+
+    if (Have_Penalty) {
+        return log10(Total) - (*evomodel).L1Norm();
+    }
+    else {
+        return log10(Total);
+    }
+
+}
+
+double ObjectiveIntegrateEPartial::GetVal() {
+    Reset();
+    for (int idx = 0; idx < N; idx++) {
+        SingleResponse(idx, false);
+    }
+    return GroupResponse();
+}
+
+void ObjectiveIntegrateEPartial::Reset() {
+    Total = 0.0;
+}
