@@ -1,3 +1,6 @@
+#include "definition.h"
+
+
 Structure::Structure(VectorXi *total_space, VectorXi *geometry_, bool para_cond_){
     geometry = *geometry_;
     para_cond = para_cond_;
