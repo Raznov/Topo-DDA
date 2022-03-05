@@ -12,7 +12,7 @@ int main() {
     //tie(InputGeo, InputDiel) = InputInitial(open_position, model_label);
 
 
-    string save_position = "./Si-Absbyfar-fromones-sym-filter2/";       //output file
+    string save_position = "./TiO2-Absbyfar-fromones-sym-filter2/";       //output file
     Vector3d l;
     Vector3d center;
     l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
@@ -52,7 +52,7 @@ int main() {
     VectorXd lam(lam_num);
     lam << 800;
     VectorXcd material, material1;
-    list<string> mat_l{ "Air", "Si"};
+    list<string> mat_l{ "Air", "TiO2"};
     material = Get_X_material(mat_l, lam(0), "nm");              //Air as substrate. material with permittivity of 2.5 as design material.
     //material1 = Get_X_material(mat_l, lam(1), "nm");
 
