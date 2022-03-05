@@ -1,3 +1,5 @@
+#include "definition.h"
+
 FOMscattering2D::FOMscattering2D(list<double> parameters, DDAModel* model_) {
     Paralength = (parameters).size();
     FOMParameters = VectorXd::Zero(Paralength);

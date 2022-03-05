@@ -623,11 +623,6 @@ Vector3d nEPerpinXZ(double theta, double phi) {
     return nE;
 }
 
-int makedirect(string name) {
-    const char* tmp = name.c_str();
-    return _mkdir(tmp);
-}
-
 list<double> makelist(double start, double end, double interval) {
     list<double> result;
     int number = floor((end - start) / interval + 1);
