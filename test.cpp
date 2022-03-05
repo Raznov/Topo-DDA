@@ -12,7 +12,7 @@ int main() {
     //tie(InputGeo, InputDiel) = InputInitial(open_position, model_label);
 
 
-    string save_position = ".\\Absbyfar-fromones-sym-filter2\\";       //output file
+    string save_position = "./Absbyfar-fromones-sym-filter2/";       //output file
     Vector3d l;
     Vector3d center;
     l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
