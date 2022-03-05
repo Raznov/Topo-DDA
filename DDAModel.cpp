@@ -283,7 +283,7 @@ void DDAModel::bicgstab(int MAX_ITERATION, double MAX_ERROR, int EVOITERATION) {
     //Always starts with P=0 to avoid strange behaviour
     //P = VectorXcd::Zero(N * 3);
 
-    ofstream foutnew(".\\p330-lam542-beta8-TiO2-InE-circle-fordebug\\BUGINFO.txt");
+    ofstream foutnew("./p330-lam542-beta8-TiO2-InE-circle-fordebug/BUGINFO.txt");
 
     
 
@@ -609,32 +609,42 @@ void DDAModel::output_to_file(){
 
 void DDAModel::output_to_file(string save_position, int iteration, int ModelLabel){
     
+    cout << "fuck" << endl;
     string name;
-
-    name = save_position + "Model_output\\" + "Model_results" + to_string(ModelLabel) + "it" + to_string(iteration) + ".txt";
+    name = save_position + "Model_results" + to_string(ModelLabel) + "it" + to_string(iteration) + ".txt";
+    //name = save_position + "Model_output_verify/" + "Model_results" + "it" + to_string(iteration) + ".txt";
     ofstream fout(name);
-    for(int i=0;i<=P.size()-1;i++){
-        if(P(i).imag()<0){
-            fout<<P(i).real()<<P(i).imag()<<"j"<<endl;
+    /*
+    for (int i = 0; i <= P.size() - 1; i++) {
+        if (P(i).imag() < 0) {
+            fout << P(i).real() << P(i).imag() << "j" << endl;
         }
-        else{
-            fout<<P(i).real()<<"+"<<P(i).imag()<<"j"<<endl;
+        else {
+            fout << P(i).real() << "+" << P(i).imag() << "j" << endl;
         }
-        
+
     }
-    fout<<n_K<<endl;
-    fout<<n_E0<<endl;
-    fout<<EResult.size()<<endl;
-    fout<<RResult<<endl;
-    for(int i=0;i<=EResult.size()-1;i++){
-        if(EResult(i).imag()<0){
-            fout<<EResult(i).real()<<EResult(i).imag()<<"j"<<endl;
+    */
+    for (int i = 0; i <= EResult.size() - 1; i++) {
+        if (EResult(i).imag() < 0) {
+            fout << EResult(i).real() << EResult(i).imag() << "j" << endl;
         }
-        else{
-            fout<<EResult(i).real()<<"+"<<EResult(i).imag()<<"j"<<endl;
+        else {
+            fout << EResult(i).real() << "+" << EResult(i).imag() << "j" << endl;
         }
-        
+
     }
+
+    for (int i = 0; i <= P.size() - 1; i++) {
+        if (P(i).imag() < 0) {
+            fout << P(i).real() << P(i).imag() << "j" << endl;
+        }
+        else {
+            fout << P(i).real() << "+" << P(i).imag() << "j" << endl;
+        }
+
+    }
+
     fout.close();
 }
 
@@ -642,7 +652,7 @@ void DDAModel::output_to_file(string save_position, int iteration) {
 
     string name;
     name = save_position + "Model_results" + "it" + to_string(iteration) + ".txt";
-    //name = save_position + "Model_output_verify\\" + "Model_results" + "it" + to_string(iteration) + ".txt";
+    //name = save_position + "Model_output_verify/" + "Model_results" + "it" + to_string(iteration) + ".txt";
     ofstream fout(name);
     /*
     for (int i = 0; i <= P.size() - 1; i++) {
@@ -678,13 +688,14 @@ void DDAModel::output_to_file(string save_position, int iteration) {
     fout.close();
 }
 
+/*
 void DDAModel::output_to_file(string save_position, double wavelength, int iteration) {
 
     string name;
 
-    name = save_position + "Model_output" + to_string(int(wavelength)) + "\\Model_results" + "it" + to_string(iteration) + ".txt";
+    name = save_position + "Model_output" + to_string(int(wavelength)) + "/Model_results" + "it" + to_string(iteration) + ".txt";
     ofstream fout(name);
-    /*
+    
     for (int i = 0; i <= P.size() - 1; i++) {
         if (P(i).imag() < 0) {
             fout << P(i).real() << P(i).imag() << "j" << endl;
@@ -694,7 +705,7 @@ void DDAModel::output_to_file(string save_position, double wavelength, int itera
         }
 
     }
-    */
+    
     for (int i = 0; i <= EResult.size() - 1; i++) {
         if (EResult(i).imag() < 0) {
             fout << EResult(i).real() << EResult(i).imag() << "j" << endl;
@@ -706,6 +717,8 @@ void DDAModel::output_to_file(string save_position, double wavelength, int itera
     }
     fout.close();
 }
+*/
+
 
 void DDAModel::InitializeP(VectorXcd& Initializer) {
     P = Initializer;

@@ -1,12 +1,13 @@
 #include "definition.h"
 
-FilterOption::FilterOption(double beta_min_, double beta_max_, double ita_, string beta_type_, double rfilter_, bool fixit_, int MAX_ITERATION_FIXED_) {
+FilterOption::FilterOption(double beta_min_, double beta_max_, double ita_, string beta_type_, vector<filterinfo> rfilterlist_, bool fixit_, int MAX_ITERATION_FIXED_) {
 	beta_min = beta_min_;
 	beta_max = beta_max_;
 	beta = beta_min;
 	ita = ita_;
 	beta_type = beta_type_;
-	rfilter = rfilter_;
+	rfilterlist = rfilterlist_;
+	rfilter = rfilterlist[0].rfilter;
 	fixit = fixit_;
 	MAX_ITERATION_FIXED = MAX_ITERATION_FIXED_;
 	if (fixit) {
@@ -63,4 +64,17 @@ double FilterOption::get_ita() {
 
 double FilterOption::get_rfilter() {
 	return rfilter;
+}
+
+bool FilterOption::filterchange(int iteration) {
+	for (int i = 0; i <= rfilterlist.size() - 1; i++) {
+		if (iteration == rfilterlist[i].iteration) {
+			cout << "Original filter radius: " << rfilter << " at iteration " << i << endl;
+			rfilter = rfilterlist[i].rfilter;
+			cout << "New filter radius: " << rfilter << " at iteration " << i << endl;
+			return true;
+		}
+	}
+	return false;
+
 }

@@ -7,9 +7,9 @@ AProductCore::AProductCore(CoreStructure* CStr_, double lam_, VectorXcd material
     
     CStr = CStr_;
     lam = lam_;
+    nback = nback_;
     K = 2 * M_PI / (lam / nback);
     material = material_;
-    nback = nback_;
     for (int i = 0; i <= material.size() - 1; i++) {
         material(i) = material(i) / (nback * nback);
         if (sqrt(norm(material(i))) <= 1.01) {

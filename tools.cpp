@@ -1,5 +1,36 @@
 #include "definition.h"
 
+pair<VectorXi, VectorXd> InputInitial(string open_position, string model_label) {
+    string name1 = open_position + "Commondata.txt";
+    string name2 = open_position + "CoreStructure\\CoreStructure" + model_label + ".txt";
+    ofstream TotalTime;
+    TotalTime.open(open_position + "TotalTime.txt");
+
+    ifstream fin1(name1), fin2(name2);
+    int Nxtmp, Nytmp, Nztmp;
+    int Ntmp;
+    fin1 >> Nxtmp;
+    fin1 >> Nytmp;
+    fin1 >> Nztmp;
+    fin1 >> Ntmp;
+    cout << "Input geometry size: " << Ntmp << endl;
+    VectorXi geometrytmp = VectorXi::Zero(3 * Ntmp);
+    for (int i = 0; i <= Ntmp - 1; i++) {
+        fin1 >> geometrytmp(3 * i);
+        fin1 >> geometrytmp(3 * i + 1);
+        fin1 >> geometrytmp(3 * i + 2);
+    }
+    VectorXd dielinput = VectorXd::Zero(3 * Ntmp);
+    for (int i = 0; i <= Ntmp - 1; i++) {
+        fin2 >> dielinput(3 * i);
+        fin2 >> dielinput(3 * i + 1);
+        fin2 >> dielinput(3 * i + 2);
+    }
+    fin1.close();
+    fin2.close();
+    return pair<VectorXi, VectorXd>(geometrytmp, dielinput);
+}
+
 //One Evo data generation
 list<double> generatefocus(int min_num, int max_num, Vector3d lower_bound, Vector3d upper_bound, bool sym, double d) {
     //Center
@@ -90,6 +121,7 @@ void Evo_Focus(SpacePara* spacepara_tmp, CoreStructure* CStr, DDAModel* TestMode
     
 }
 
+/*
 void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATION_EVO, Vector3d move_focus) {
     ofstream TotalTime;
     TotalTime.open(save_position + "TotalTime.txt");
@@ -215,6 +247,7 @@ void Evo_single(string save_position, Vector3i bind, Vector3d l, int MAX_ITERATI
 
     return;
 }
+*/
 
 void eval_FOM(string name, DDAModel* TestModel, list<double> theta, list<double> phi) {
     ofstream fout(name);
@@ -301,7 +334,7 @@ void eval_FOM_2Dperiod(string name, DDAModel* TestModel, list<double> theta, lis
 }
 //Find the Max and Min of the input geometry in each direction
 MatrixXi find_scope_3_dim(VectorXi* x) {
-    int N = round((*x).size() / 3);
+    int N = round(int((*x).size()) / 3);
     MatrixXi result(3, 2);
     result(0, 0) = (*x)(0);
     result(0, 1) = (*x)(0);
@@ -590,6 +623,10 @@ Vector3d nEPerpinXZ(double theta, double phi) {
     return nE;
 }
 
+int makedirect(string name) {
+    const char* tmp = name.c_str();
+    return _mkdir(tmp);
+}
 
 list<double> makelist(double start, double end, double interval) {
     list<double> result;
@@ -615,13 +652,13 @@ double exp_update(const double x, const double x_max, const double y_min, const 
 }
 
 double piecewise_update(const double x, const double x_max, const double y_min, const double y_max) {
-    if (x <= 0.4 * x_max) {
+    if (x <= 0.5 * x_max) {
         return y_min;
     }
-    else if(0.4 * x_max < x&& x <= 0.6 * x_max) {
+    else if(0.5 * x_max < x&& x <= 0.7 * x_max) {
         return y_min+(y_max-y_min)/20;
     }
-    else if (0.6 * x_max < x && x <= 0.8 * x_max) {
+    else if (0.7 * x_max < x && x <= 0.8 * x_max) {
         return y_min + (y_max - y_min) / 10;
     }
     else {

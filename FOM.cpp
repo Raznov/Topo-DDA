@@ -1,5 +1,3 @@
-#include "definition.h"
-
 FOMscattering2D::FOMscattering2D(list<double> parameters, DDAModel* model_) {
     Paralength = (parameters).size();
     FOMParameters = VectorXd::Zero(Paralength);
@@ -26,7 +24,7 @@ FOMscattering2D::FOMscattering2D(list<double> parameters, DDAModel* model_) {
     E0 = (*model).get_E0();
     double lam = (*Core).get_lam();
     cout << "lam" << lam << endl;
-    K = 2 * M_PI / lam;
+    K = (*Core).get_K();
 
     double Lm = (*Core).get_Lm();
     double Ln = (*Core).get_Ln();
@@ -55,11 +53,12 @@ list<double> FOMscattering2D::GetVal() {
             //cout << tmp << endl;
             tmp = tmp * (2.0 * M_PI * 1.0i) / (K * K * ATUC * abs(ksz));
             //cout << tmp << endl;
-            tmp = tmp + E0 * n_E0;
+            //tmp = tmp + E0 * n_E0;
             //cout << tmp << endl;
             double tmpresult = (norm(tmp(0)) + norm(tmp(1)) + norm(tmp(2))) / pow(E0, 2);  //00 order transmission
             //cout << tmpresult << endl;
             result.push_back(tmpresult);
+            cout << tmpresult << endl;
         }  
         else {
             Vector3cd tmp = this->FTUC((*it));
@@ -137,7 +136,7 @@ FOMreflect2D::FOMreflect2D(list<double> parameters, DDAModel* model_) {
     E0 = (*model).get_E0();
     double lam = (*Core).get_lam();
     cout << "lam" << lam << endl;
-    K = 2 * M_PI / lam;
+    K = (*Core).get_K();
 
     double Lm = (*Core).get_Lm();
     double Ln = (*Core).get_Ln();
@@ -165,11 +164,13 @@ list<double> FOMreflect2D::GetVal() {
             double ksz = (*it)(2);                                 //x in the paper is actually z in our case.
             //cout << tmp << endl;
             tmp = tmp * (2.0 * M_PI * 1.0i) / (K * K * ATUC * abs(ksz));
+            tmp = tmp + E0 * n_E0;
             //cout << tmp << endl;
             //cout << tmp << endl;
             double tmpresult = (norm(tmp(0)) + norm(tmp(1)) + norm(tmp(2))) / pow(E0, 2);  //00 order transmission
             //cout << tmpresult << endl;
             result.push_back(tmpresult);
+            cout << tmpresult << endl;
         }
         else {
             Vector3cd tmp = this->FTUC((*it));
@@ -254,7 +255,7 @@ FOMscattering0D::FOMscattering0D(list<double> parameters, DDAModel* model_) {
     E0 = (*model).get_E0();
     double lam = (*Core).get_lam();
     cout << "lam" << lam << endl;
-    K = 2 * M_PI / lam;
+    K = (*Core).get_K();
 
 }
 

@@ -1224,25 +1224,92 @@ int main() {
 
 
 
-    Vector3d l;
-    double d;
-    double r = 10;
-    Vector3d center;
+    //string open_position = ".\\200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-r_filter2-beta80\\";
+    //string model_label = "99";
+    //VectorXi InputGeo;
+    //VectorXd InputDiel;
+    //tie(InputGeo, InputDiel) = InputInitial(open_position, model_label);
 
-    d = 10;
-    l << 19.0, 19.0, 19.0;    //Size of the initialization block. 81*81*17 pixels in total.
+
+    string save_position = ".\\ccylinder-allWater-TR-verify\\";       //output file
+    Vector3d l;
+    Vector3d center;
+    l << 19.0, 19.0, 37.0;    //Size of the initialization block. 81*81*17 pixels in total.
     center << l(0) / 2, l(1) / 2, l(2) / 2;      //Center of the block.
     int Nx, Ny, Nz;
-    Nx = round(l(0) + 3); Ny = round(l(1) + 3); Nz = round(l(2) + 1);
+    Nx = round(l(0) + 3); Ny = round(l(1) + 3); Nz = round(l(2) + 1);   //Size of the design space. Notice that this sets the limits for coordinates, 
+                                                                        //but actual pixels outside the 81*81*7 are not included in simulation. 
+                                                                        //However, if geometry has pixels outside this space, they will be cut off.
 
-    int N = 0;
-    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);
-    list<Structure> ln;
+    int N = 0;                                                          //N counts the number of pixels in the geometries simulated. Initail is one.
+
+                                                                        //This can be used to control the finest feature size of the designed structure.
+    double d = 10;                                                      //Size of pixel. Here 25nm.   
+    double E0 = 1.0;                                                    //Input field amplitude. 1V/m.
+    double epsilon = 100;                                                //Fixed learning rate of the optimization.
+    //double focus = (l(2) + 2) * d;   //nm                               //Focal spot is 50nm higher than the upper boundary of the intialization block.
+    //cout << focus << endl;
+    int MAX_ITERATION_DDA = 100000;
+    //Number of maximum DDA iterations.
+    double MAX_ERROR = 0.00001;                                         //Maximum error of DDA.
+    int MAX_ITERATION_EVO = 100;                                        //Number of topology optimization.
+
+    bool HavePathRecord = false;
+    bool HavePenalty = false;
+    bool HaveOriginHeritage = false;
+    bool HaveAdjointHeritage = false;
+    double PenaltyFactor = 0.0001;
+    Vector3d n_K;                                                       //Wave vector direction.
+    Vector3d n_E0;                                                      //Electric field polarization direction.
+
+    n_K << 0.0, 0.0, -1.0;
+    n_E0 << 1.0, 0.0, 0.0;
+
+
+    //material1 = Get_X_material(mat_l, lam(1), "nm");
+
+    ofstream TotalTime;
+    TotalTime.open(save_position + "TotalTime.txt");
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);                    //Total space is a block.
+    vector<Structure> ln;
     Space S(&total_space, Nx, Ny, Nz, N, &ln);
+    Vector3i direction;
 
-    Structure s1(S.get_total_space(), l, center);
-    //Structure s1(S.get_total_space(), r, center);
+    Vector3d l1, l2, l3, center1, center2, center3;
+    l1 << 19.0, 19.0, 19.0;
+    center1 << l1(0) / 2, l1(1) / 2, 27.5;
+    l2 << 19.0, 19.0, 7.0;
+    center2 << l2(0) / 2, l2(1) / 2, 13.5;
+    l3 << 19.0, 19.0, 9.0;
+    center3 << l3(0) / 2, l3(1) / 2, 4.5;
 
+    Vector3d center_rect;
+    double radius = 10;
+    double cylinh = 19.0;
+    center_rect << l1(0) / 2, l1(1) / 2, 27.5;
+    Structure s1_rect_start(S.get_total_space(), radius, cylinh, center_rect);
+    Structure s1(S.get_total_space(), l1, center1, &s1_rect_start);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
+    Structure s2(S.get_total_space(), l2, center2);
+    Structure s3(S.get_total_space(), l3, center3);
+
+    S = S + s1_rect_start;
+    S = S + s1;                                                         //Add the geometry into the space.
+    S = S + s2;
+    S = S + s3;
+
+    Vector3i bind(1, 1, 12);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
+
+
+    SpacePara spacepara(&S, bind, vector<string>{}, vector<double>{1.0, 0.0, 0.0, 0.0});
+
+    list<DDAModel> ModelList;
+    list<DDAModel*> ModelpointerList;
+    ofstream AngleInfo(save_position + "AngleInfo.txt");
+    ofstream nEInfo(save_position + "nEInfo.txt");
+    CoreStructure CStr(&spacepara, d);                                 //Used as a interface to update parameters       
+    list<AProductCore> CoreList;
+    list<AProductCore*> CorePointList;
     int m, n;
     double Lm, Ln;
     m = 50;
@@ -1250,24 +1317,6 @@ int main() {
     Lm = 20 * d;
     Ln = 20 * d;
 
-    S = S + s1;
-
-
-
-    //double lam = 400;
-    Vector3d n_K;
-    n_K << 0.0, 0.0, 1.0;
-    double E0 = 1.0;
-    Vector3d n_E0;
-    n_E0 << 1.0, 0.0, 0.0;
-
-    int MAX_ITERATION_DDA = 10000;
-    double MAX_ERROR = 0.00001;
-    Vector3i bind(1, 1, 1);
-    SpacePara spacepara(&S, bind, "ONES", "ZEROS", r, "CYLINDER");
-    CoreStructure CStr(&spacepara, d);
-    string save_position = ".\\Air-TiN-cylinder-scatter-r100-d10-lamscan-m200n200\\";
-    CStr.output_to_file(save_position + "CoreStructure\\", 0, "simple");
     ofstream Common;
     Common.open(save_position + "Commondata.txt");
     Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
@@ -1275,6 +1324,8 @@ int main() {
     Common << d << endl;
     Common << n_E0 << endl;
     Common << n_K << endl;
+    CStr.output_to_file(save_position + "CoreStructure\\", 0, "simple");
+
     int iteration = 0;
 
     list<double> ObjectParameter{ 0,0 };
@@ -1312,16 +1363,20 @@ int main() {
 
     list<double> lam_l;
     double lam_min = 400;
-    double lam_max = 800;
-    double lam_step = 25;
-    for (double lam = lam_min; lam <= lam_max; lam += lam_step) {
+    double lam_max = 1500;
+    double lam_step = 100;
+    for (double lam = lam_min; lam < lam_max; lam += lam_step) {
         lam_l.push_back(lam);
     }
 
+
+
     for (list<double>::iterator itlam = lam_l.begin(); itlam != lam_l.end(); itlam++) {
         double lam = *itlam;
-        Vector2cd material = Get_2_material("Air", "TiN", lam, "nm");
-        AProductCore Core(&CStr, lam, material, m, n, Lm, Ln, "FCD");
+        list<string> mat_l{ "H2O", "TiN" };
+        VectorXcd material = Get_X_material(mat_l, lam, "nm");
+        double nback = sqrt(real(material(0)));
+        AProductCore Core(&CStr, lam, material, nback, m, n, Lm, Ln, "FCD");
         DDAModel TestModel(&Core, n_K, E0, n_E0);
         TestModel.bicgstab(MAX_ITERATION_DDA, MAX_ERROR);
         TestModel.update_E_in_structure();
@@ -1378,22 +1433,447 @@ int main() {
         iresult_l++;
         iname++;
     }
+    return 0;
+
+}
+//Import T and R
+int main() {
 
 
 
 
+    string open_position = ".\\200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-r_filter2-beta80\\";
+    string model_label = "99";
+    VectorXi InputGeo;
+    VectorXd InputDiel;
+    tie(InputGeo, InputDiel) = InputInitial(open_position, model_label);
+
+
+    string save_position = ".\\import99-TR-verify\\";       //output file
+    Vector3d l;
+    Vector3d center;
+    l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
+    center << l(0) / 2, l(1) / 2, l(2) / 2;      //Center of the block.
+    int Nx, Ny, Nz;
+    Nx = round(l(0) + 3); Ny = round(l(1) + 3); Nz = round(l(2) + 1);   //Size of the design space. Notice that this sets the limits for coordinates, 
+                                                                        //but actual pixels outside the 81*81*7 are not included in simulation. 
+                                                                        //However, if geometry has pixels outside this space, they will be cut off.
+
+    int N = 0;                                                          //N counts the number of pixels in the geometries simulated. Initail is one.
+
+                                                                        //This can be used to control the finest feature size of the designed structure.
+    double d = 10;                                                      //Size of pixel. Here 25nm.   
+    double E0 = 1.0;                                                    //Input field amplitude. 1V/m.
+    double epsilon = 100;                                                //Fixed learning rate of the optimization.
+    //double focus = (l(2) + 2) * d;   //nm                               //Focal spot is 50nm higher than the upper boundary of the intialization block.
+    //cout << focus << endl;
+    int MAX_ITERATION_DDA = 100000;
+    //Number of maximum DDA iterations.
+    double MAX_ERROR = 0.00001;                                         //Maximum error of DDA.
+    int MAX_ITERATION_EVO = 100;                                        //Number of topology optimization.
+
+    bool HavePathRecord = false;
+    bool HavePenalty = false;
+    bool HaveOriginHeritage = false;
+    bool HaveAdjointHeritage = false;
+    double PenaltyFactor = 0.0001;
+    Vector3d n_K;                                                       //Wave vector direction.
+    Vector3d n_E0;                                                      //Electric field polarization direction.
+
+    n_K << 0.0, 0.0, -1.0;
+    n_E0 << 1.0, 0.0, 0.0;
+
+
+    //material1 = Get_X_material(mat_l, lam(1), "nm");
+
+    ofstream TotalTime;
+    TotalTime.open(save_position + "TotalTime.txt");
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);                    //Total space is a block.
+    vector<Structure> ln;
+    Space S(&total_space, Nx, Ny, Nz, N, &ln);
+    Vector3i direction;
+
+    Vector3d l1, l2, l3, center1, center2, center3;
+    l1 << 19.0, 19.0, 11.0;
+    center1 << l1(0) / 2, l1(1) / 2, 23.5;
+    l2 << 19.0, 19.0, 7.0;
+    center2 << l2(0) / 2, l2(1) / 2, 13.5;
+    l3 << 19.0, 19.0, 9.0;
+    center3 << l3(0) / 2, l3(1) / 2, 4.5;
+
+    Vector3d l_rect, center_rect;
+    l_rect << 7.0, 7.0, 11.0;
+    center_rect << l1(0) / 2, l1(1) / 2, 23.5;
+    //Structure s1_rect_start(S.get_total_space(), l_rect, center_rect);
+    Structure s1(S.get_total_space(), l1, center1);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
+    Structure s2(S.get_total_space(), l2, center2);
+    Structure s3(S.get_total_space(), l3, center3);
+
+
+    S = S + s1;                                                         //Add the geometry into the space.
+    //S = S + s1_rect_start;
+    S = S + s2;
+    S = S + s3;
+
+    Vector3i bind(1, 1, 12);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
+
+
+    SpacePara spacepara(&S, bind, &InputGeo, &InputDiel);
+
+    list<DDAModel> ModelList;
+    list<DDAModel*> ModelpointerList;
+    ofstream AngleInfo(save_position + "AngleInfo.txt");
+    ofstream nEInfo(save_position + "nEInfo.txt");
+    CoreStructure CStr(&spacepara, d);                                 //Used as a interface to update parameters       
+    list<AProductCore> CoreList;
+    list<AProductCore*> CorePointList;
+    int m, n;
+    double Lm, Ln;
+    m = 50;
+    n = 50;
+    Lm = 20 * d;
+    Ln = 20 * d;
+
+    ofstream Common;
+    Common.open(save_position + "Commondata.txt");
+    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
+    Common << (spacepara.get_geometry()) << endl;
+    Common << d << endl;
+    Common << n_E0 << endl;
+    Common << n_K << endl;
+    CStr.output_to_file(save_position + "CoreStructure\\", 0, "simple");
+
+    int iteration = 0;
+
+    list<double> ObjectParameter{ 0,0 };
+    list<string> name_l;
+    list<string> name_l_R;
+    //list<ofstream> fout_l;
+    list<list<double>> FOMresults_l;
+    list<list<double>> FOMresults_l_R;
+    int out_file_num = int(round(ObjectParameter.size() / 2));
+    list<double>::iterator ipara = ObjectParameter.begin();
+    for (int i = 0; i <= out_file_num - 1; i++) {
+        string name = "T";
+        name = name + to_string(int(*ipara));
+        ipara++;
+        name = name + to_string(int(*ipara));
+        ipara++;
+        name = name + ".txt";
+        name = save_position + name;
+        name_l.push_back(name);
+        list<double> tmp;
+        FOMresults_l.push_back(tmp);
+    }
+    for (int i = 0; i <= out_file_num - 1; i++) {
+        string name = "R";
+        name = name + to_string(int(*ipara));
+        ipara++;
+        name = name + to_string(int(*ipara));
+        ipara++;
+        name = name + ".txt";
+        name = save_position + name;
+        name_l_R.push_back(name);
+        list<double> tmp;
+        FOMresults_l_R.push_back(tmp);
+    }
+
+    list<double> lam_l;
+    double lam_min = 400;
+    double lam_max = 1500;
+    double lam_step = 100;
+    for (double lam = lam_min; lam < lam_max; lam += lam_step) {
+        lam_l.push_back(lam);
+    }
+
+
+
+    for (list<double>::iterator itlam = lam_l.begin(); itlam != lam_l.end(); itlam++) {
+        double lam = *itlam;
+        list<string> mat_l{ "H2O", "TiN", "Ti" };
+        VectorXcd material = Get_X_material(mat_l, lam, "nm");
+        double nback = sqrt(real(material(0)));
+        AProductCore Core(&CStr, lam, material, nback, m, n, Lm, Ln, "FCD");
+        DDAModel TestModel(&Core, n_K, E0, n_E0);
+        TestModel.bicgstab(MAX_ITERATION_DDA, MAX_ERROR);
+        TestModel.update_E_in_structure();
+        TestModel.solve_E();
+        TestModel.output_to_file(save_position + "Model_output\\", iteration);
+
+        iteration += 1;
+
+        FOMscattering2D FOMcal(ObjectParameter, &TestModel);
+        list<double> FOMresults = FOMcal.GetVal();
+        list<double>::iterator iresult = FOMresults.begin();
+        list<list<double>>::iterator iresult_l = FOMresults_l.begin();
+        for (int i = 0; i <= out_file_num - 1; i++) {
+            (*iresult_l).push_back(*iresult);
+            iresult++;
+            iresult_l++;
+        }
+
+        FOMreflect2D FOMcal_R(ObjectParameter, &TestModel);
+        list<double> FOMresults_R = FOMcal_R.GetVal();
+        list<double>::iterator iresult_R = FOMresults_R.begin();
+        list<list<double>>::iterator iresult_l_R = FOMresults_l_R.begin();
+        for (int i = 0; i <= out_file_num - 1; i++) {
+            (*iresult_l_R).push_back(*iresult_R);
+            iresult_R++;
+            iresult_l_R++;
+        }
+
+
+    }
+
+    list<string>::iterator iname = name_l.begin();
+    list<list<double>>::iterator iresult_l = FOMresults_l.begin();
+    for (int i = 0; i <= out_file_num - 1; i++) {
+        ofstream fout(*iname);
+        list<double>::iterator iresult = (*iresult_l).begin();
+        for (list<double>::iterator itlam = lam_l.begin(); itlam != lam_l.end(); itlam++) {
+            fout << (*itlam) << " " << (*iresult) << endl;
+            iresult++;
+        }
+        iresult_l++;
+        iname++;
+    }
+
+    list<string>::iterator iname_R = name_l_R.begin();
+    list<list<double>>::iterator iresult_l_R = FOMresults_l_R.begin();
+    for (int i = 0; i <= out_file_num - 1; i++) {
+        ofstream fout(*iname_R);
+        list<double>::iterator iresult_R = (*iresult_l_R).begin();
+        for (list<double>::iterator itlam_R = lam_l.begin(); itlam_R != lam_l.end(); itlam_R++) {
+            fout << (*itlam_R) << " " << (*iresult_R) << endl;
+            iresult_R++;
+        }
+        iresult_l++;
+        iname++;
+    }
+    return 0;
+
+}
+//2D cylinder T and R
+int main() {
 
 
 
 
+    //string open_position = ".\\200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-r_filter2-beta80\\";
+    //string model_label = "99";
+    //VectorXi InputGeo;
+    //VectorXd InputDiel;
+    //tie(InputGeo, InputDiel) = InputInitial(open_position, model_label);
+
+
+    string save_position = ".\\cylinder-TR-verify\\";       //output file
+    Vector3d l;
+    Vector3d center;
+    l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
+    center << l(0) / 2, l(1) / 2, l(2) / 2;      //Center of the block.
+    int Nx, Ny, Nz;
+    Nx = round(l(0) + 3); Ny = round(l(1) + 3); Nz = round(l(2) + 1);   //Size of the design space. Notice that this sets the limits for coordinates, 
+                                                                        //but actual pixels outside the 81*81*7 are not included in simulation. 
+                                                                        //However, if geometry has pixels outside this space, they will be cut off.
+
+    int N = 0;                                                          //N counts the number of pixels in the geometries simulated. Initail is one.
+
+                                                                        //This can be used to control the finest feature size of the designed structure.
+    double d = 10;                                                      //Size of pixel. Here 25nm.   
+    double E0 = 1.0;                                                    //Input field amplitude. 1V/m.
+    double epsilon = 100;                                                //Fixed learning rate of the optimization.
+    //double focus = (l(2) + 2) * d;   //nm                               //Focal spot is 50nm higher than the upper boundary of the intialization block.
+    //cout << focus << endl;
+    int MAX_ITERATION_DDA = 100000;
+    //Number of maximum DDA iterations.
+    double MAX_ERROR = 0.00001;                                         //Maximum error of DDA.
+    int MAX_ITERATION_EVO = 100;                                        //Number of topology optimization.
+
+    bool HavePathRecord = false;
+    bool HavePenalty = false;
+    bool HaveOriginHeritage = false;
+    bool HaveAdjointHeritage = false;
+    double PenaltyFactor = 0.0001;
+    Vector3d n_K;                                                       //Wave vector direction.
+    Vector3d n_E0;                                                      //Electric field polarization direction.
+
+    n_K << 0.0, 0.0, -1.0;
+    n_E0 << 1.0, 0.0, 0.0;
+
+
+    //material1 = Get_X_material(mat_l, lam(1), "nm");
+
+    ofstream TotalTime;
+    TotalTime.open(save_position + "TotalTime.txt");
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);                    //Total space is a block.
+    vector<Structure> ln;
+    Space S(&total_space, Nx, Ny, Nz, N, &ln);
+    Vector3i direction;
+
+    Vector3d l1, l2, l3, center1, center2, center3;
+    l1 << 19.0, 19.0, 11.0;
+    center1 << l1(0) / 2, l1(1) / 2, 23.5;
+    l2 << 19.0, 19.0, 7.0;
+    center2 << l2(0) / 2, l2(1) / 2, 13.5;
+    l3 << 19.0, 19.0, 9.0;
+    center3 << l3(0) / 2, l3(1) / 2, 4.5;
+
+    Vector3d l_rect, center_rect;
+    l_rect << 7.0, 7.0, 11.0;
+    center_rect << l1(0) / 2, l1(1) / 2, 23.5;
+    Structure s1_rect_start(S.get_total_space(), l_rect, center_rect);
+    Structure s1(S.get_total_space(), l1, center1, &s1_rect_start);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
+    Structure s2(S.get_total_space(), l2, center2);
+    Structure s3(S.get_total_space(), l3, center3);
+
+
+    S = S + s1;                                                         //Add the geometry into the space.
+    S = S + s1_rect_start;
+    S = S + s2;
+    S = S + s3;
+
+    Vector3i bind(1, 1, 12);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
+
+    bool Filter = false;
+    double r_f = 2.0;
+    vector<filterinfo> filterlist{ filterinfo{0,1.0}, filterinfo{40,2.0} };
+    FilterOption filteropt(0.0, 50.0, 0.5, "piecewise", filterlist);
+    string symmetry = "4fold";
+
+    SpacePara spacepara(&S, bind, vector<string>{}, vector<double>{0.0, 1.0, 1.0, 2.0}, Filter, & filteropt);
+
+    list<DDAModel> ModelList;
+    list<DDAModel*> ModelpointerList;
+    ofstream AngleInfo(save_position + "AngleInfo.txt");
+    ofstream nEInfo(save_position + "nEInfo.txt");
+    CoreStructure CStr(&spacepara, d);                                 //Used as a interface to update parameters       
+    list<AProductCore> CoreList;
+    list<AProductCore*> CorePointList;
+    int m, n;
+    double Lm, Ln;
+    m = 50;
+    n = 50;
+    Lm = 20 * d;
+    Ln = 20 * d;
+
+    ofstream Common;
+    Common.open(save_position + "Commondata.txt");
+    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
+    Common << (spacepara.get_geometry()) << endl;
+    Common << d << endl;
+    Common << n_E0 << endl;
+    Common << n_K << endl;
+    CStr.output_to_file(save_position + "CoreStructure\\", 0, "simple");
+
+    int iteration = 0;
+
+    list<double> ObjectParameter{ 0,0 };
+    list<string> name_l;
+    list<string> name_l_R;
+    //list<ofstream> fout_l;
+    list<list<double>> FOMresults_l;
+    list<list<double>> FOMresults_l_R;
+    int out_file_num = int(round(ObjectParameter.size() / 2));
+    list<double>::iterator ipara = ObjectParameter.begin();
+    for (int i = 0; i <= out_file_num - 1; i++) {
+        string name = "T";
+        name = name + to_string(int(*ipara));
+        ipara++;
+        name = name + to_string(int(*ipara));
+        ipara++;
+        name = name + ".txt";
+        name = save_position + name;
+        name_l.push_back(name);
+        list<double> tmp;
+        FOMresults_l.push_back(tmp);
+    }
+    for (int i = 0; i <= out_file_num - 1; i++) {
+        string name = "R";
+        name = name + to_string(int(*ipara));
+        ipara++;
+        name = name + to_string(int(*ipara));
+        ipara++;
+        name = name + ".txt";
+        name = save_position + name;
+        name_l_R.push_back(name);
+        list<double> tmp;
+        FOMresults_l_R.push_back(tmp);
+    }
+
+    list<double> lam_l;
+    double lam_min = 400;
+    double lam_max = 1500;
+    double lam_step = 100;
+    for (double lam = lam_min; lam < lam_max; lam += lam_step) {
+        lam_l.push_back(lam);
+    }
 
 
 
+    for (list<double>::iterator itlam = lam_l.begin(); itlam != lam_l.end(); itlam++) {
+        double lam = *itlam;
+        list<string> mat_l{ "H2O", "TiN", "Ti" };
+        VectorXcd material = Get_X_material(mat_l, lam, "nm");
+        double nback = sqrt(real(material(0)));
+        AProductCore Core(&CStr, lam, material, nback, m, n, Lm, Ln, "FCD");
+        DDAModel TestModel(&Core, n_K, E0, n_E0);
+        TestModel.bicgstab(MAX_ITERATION_DDA, MAX_ERROR);
+        TestModel.update_E_in_structure();
+        TestModel.solve_E();
+        TestModel.output_to_file(save_position + "Model_output\\", iteration);
+
+        iteration += 1;
+
+        FOMscattering2D FOMcal(ObjectParameter, &TestModel);
+        list<double> FOMresults = FOMcal.GetVal();
+        list<double>::iterator iresult = FOMresults.begin();
+        list<list<double>>::iterator iresult_l = FOMresults_l.begin();
+        for (int i = 0; i <= out_file_num - 1; i++) {
+            (*iresult_l).push_back(*iresult);
+            iresult++;
+            iresult_l++;
+        }
+
+        FOMreflect2D FOMcal_R(ObjectParameter, &TestModel);
+        list<double> FOMresults_R = FOMcal_R.GetVal();
+        list<double>::iterator iresult_R = FOMresults_R.begin();
+        list<list<double>>::iterator iresult_l_R = FOMresults_l_R.begin();
+        for (int i = 0; i <= out_file_num - 1; i++) {
+            (*iresult_l_R).push_back(*iresult_R);
+            iresult_R++;
+            iresult_l_R++;
+        }
 
 
+    }
 
+    list<string>::iterator iname = name_l.begin();
+    list<list<double>>::iterator iresult_l = FOMresults_l.begin();
+    for (int i = 0; i <= out_file_num - 1; i++) {
+        ofstream fout(*iname);
+        list<double>::iterator iresult = (*iresult_l).begin();
+        for (list<double>::iterator itlam = lam_l.begin(); itlam != lam_l.end(); itlam++) {
+            fout << (*itlam) << " " << (*iresult) << endl;
+            iresult++;
+        }
+        iresult_l++;
+        iname++;
+    }
 
-
+    list<string>::iterator iname_R = name_l_R.begin();
+    list<list<double>>::iterator iresult_l_R = FOMresults_l_R.begin();
+    for (int i = 0; i <= out_file_num - 1; i++) {
+        ofstream fout(*iname_R);
+        list<double>::iterator iresult_R = (*iresult_l_R).begin();
+        for (list<double>::iterator itlam_R = lam_l.begin(); itlam_R != lam_l.end(); itlam_R++) {
+            fout << (*itlam_R) << " " << (*iresult_R) << endl;
+            iresult_R++;
+        }
+        iresult_l++;
+        iname++;
+    }
     return 0;
 
 }
@@ -1684,7 +2164,7 @@ int main() {
 //Optimization of focal metasurfaces: size 2um 2um 400nm at 500nm for diel2d5 2D, nonperiodic filtered and binarized
 int main() {
 
-    string save_position = ".\\thick400-diel2d5-phi0theta0-lam500-size2000-focus450-2D\\";       //output file
+    string save_position = ".\\thick400-diel2d5-phi0theta0-lam500-size1000-focus450-2D\\";       //output file
     Vector3d l;
     Vector3d center;
     l << 80.0, 80.0, 16.0;    //Size of the initialization block. 81*81*17 pixels in total.
@@ -1704,7 +2184,7 @@ int main() {
     cout << focus << endl;
     int MAX_ITERATION_DDA = 100000;                                     //Number of maximum DDA iterations.
     double MAX_ERROR = 0.00001;                                         //Maximum error of DDA.
-    int MAX_ITERATION_EVO = 200;                                        //Number of topology optimization.
+    int MAX_ITERATION_EVO = 100;                                        //Number of topology optimization.
     list<double> ObjectParameter{ center(0) * d,center(1) * d,focus };  //Focal spot postition.
     bool HavePathRecord = false;
     bool HavePenalty = false;
@@ -1742,8 +2222,10 @@ int main() {
     list<double> BParal{};
     bool Filter = true;
     double r_f = 2.0;
-    FilterOption filteropt(0.0, 80.0, 0.5, "piecewise", r_f);
-    SpacePara spacepara(&S, bind, "ONES", FPGeometryl, BPGeometryl, BParal, Filter, &filteropt);                              //Initialize with material index of 1, which is permittivity=2.5 in this case.
+    vector<string> FParaInit{ "ZEROS" };
+    vector<filterinfo> filterlist{ filterinfo{0,1.0}, filterinfo{20,2.0} };
+    FilterOption filteropt(0.0, 80.0, 0.5, "piecewise", filterlist);
+    SpacePara spacepara(&S, bind, FParaInit, FPGeometryl, BPGeometryl, BParal, Filter, &filteropt);                              //Initialize with material index of 1, which is permittivity=2.5 in this case.
                                                                         //SpacePara is where the parameter<->geometry link is established.
     list<string> ObjectFunctionNames{ "PointE" };                       //Name of the object function.
     list<list<double>*> ObjectParameters{ &ObjectParameter };
@@ -1754,7 +2236,9 @@ int main() {
     CoreStructure CStr(&spacepara, d);                                 //Used as a interface to update parameters       
     list<AProductCore> CoreList;
     list<AProductCore*> CorePointList;
-    AProductCore Core1(&CStr, lam(0), material, "LDR");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
+    double nback = sqrt(real(material(0)));
+    cout << "nback" << nback << endl;
+    AProductCore Core1(&CStr, lam(0), material, nback, "LDR");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
     CorePointList.push_back(&Core1);
     ofstream Common;
     Common.open(save_position + "Commondata.txt");
@@ -2835,605 +3319,10 @@ int main() {
     return 0;
 
 }
-//Abs design
+//IntE sym design
 int main() {
 
-    string save_position = ".\\200nm3-gold-water-abs-lam600\\";       //output file
-    Vector3d l;
-    Vector3d center;
-    l << 19.0, 19.0, 19.0;    //Size of the initialization block. 81*81*17 pixels in total.
-    center << l(0) / 2, l(1) / 2, l(2) / 2;      //Center of the block.
-    int Nx, Ny, Nz;
-    Nx = round(l(0) + 3); Ny = round(l(1) + 3); Nz = round(l(2) + 1);   //Size of the design space. Notice that this sets the limits for coordinates, 
-                                                                        //but actual pixels outside the 81*81*7 are not included in simulation. 
-                                                                        //However, if geometry has pixels outside this space, they will be cut off.
-
-    int N = 0;                                                          //N counts the number of pixels in the geometries simulated. Initail is one.
-    Vector3i bind(1, 1, 20);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
-                                                                        //This can be used to control the finest feature size of the designed structure.
-    double d = 10;                                                      //Size of pixel. Here 25nm.   
-    double E0 = 1.0;                                                    //Input field amplitude. 1V/m.
-    double epsilon = 10;                                                //Fixed learning rate of the optimization.
-    //double focus = (l(2) + 2) * d;   //nm                               //Focal spot is 50nm higher than the upper boundary of the intialization block.
-    //cout << focus << endl;
-    int MAX_ITERATION_DDA = 100000;                                     //Number of maximum DDA iterations.
-    double MAX_ERROR = 0.00001;                                         //Maximum error of DDA.
-    int MAX_ITERATION_EVO = 20;                                        //Number of topology optimization.
-    list<double> ObjectParameter{ 0.0 };  //Focal spot postition.
-    bool HavePathRecord = false;
-    bool HavePenalty = false;
-    bool HaveOriginHeritage = false;
-    bool HaveAdjointHeritage = false;
-    double PenaltyFactor = 0.0001;
-    Vector3d n_K;                                                       //Wave vector direction.
-    Vector3d n_E0;                                                      //Electric field polarization direction.
-    int theta_num = 1;                                                  //Number of theta
-    VectorXd theta(theta_num);
-    theta << 0;                                                         //Theta values.
-    int phi_num = 1;                                                    //Number of phi
-    VectorXd phi(phi_num);
-    phi << 0;                                                           //Phi values. For details of how theta and phi are defined, read tutorial.
-    int lam_num = 1;
-    VectorXd lam(lam_num);
-    lam << 600;
-    Vector2cd material;
-    material = Get_2_material("H2O", "Au", lam(0), "nm");              //Air as substrate. material with permittivity of 2.5 as design material.
-
-
-    ofstream TotalTime;
-    TotalTime.open(save_position + "TotalTime.txt");
-    high_resolution_clock::time_point t_start = high_resolution_clock::now();
-    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);                    //Total space is a block.
-    list<Structure> ln;
-    Space S(&total_space, Nx, Ny, Nz, N, &ln);
-    Vector3i direction;
-    Structure s1(S.get_total_space(), l, center);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
-    S = S + s1;                                                         //Add the geometry into the space.
-    SpacePara spacepara(&S, bind, "RANDOM");                              //Initialize with material index of 1, which is permittivity=2.5 in this case.
-                                                                        //SpacePara is where the parameter<->geometry link is established.
-    list<string> ObjectFunctionNames{ "Abs" };                       //Name of the object function.
-    list<list<double>*> ObjectParameters{ &ObjectParameter };
-    list<DDAModel> ModelList;
-    list<DDAModel*> ModelpointerList;
-    ofstream AngleInfo(save_position + "AngleInfo.txt");
-    ofstream nEInfo(save_position + "nEInfo.txt");
-    CoreStructure CStr(&spacepara, d);                                 //Used as a interface to update parameters       
-    list<AProductCore> CoreList;
-    list<AProductCore*> CorePointList;
-    AProductCore Core1(&CStr, lam(0), material, "FCD");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
-    CorePointList.push_back(&Core1);
-    ofstream Common;
-    Common.open(save_position + "Commondata.txt");
-    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
-    Common << (spacepara.get_geometry()) << endl;
-    Common << d << endl;
-    Common << n_E0 << endl;
-    Common << n_K << endl;
-
-    list<AProductCore*>::iterator it = CorePointList.begin();
-    for (int k = 0; k <= lam_num - 1; k++) {                          //Each wavelength needs one new AProductCore. But if a structure working for multiple wavelengths
-                                                                      //needs to be designed, these AProductCore should share the same CoreStructure so that the parameters
-                                                                      //can be updated based on a gradient avergaed for all wavlengths. The majority of memory consumption is 
-                                                                      //for the A matrix which is wavlength dependent, so having many wavelengts can use huge memory. 3 wavlengths 
-                                                                      //for current structure should take up to 2 GB.
-        AProductCore* Core = (*it);
-        for (int i = 0; i <= theta_num - 1; i++) {                    //However, as you can see. For single wavelength, different angles and polarizations can share the same AProductCore.
-                                                                      //And one AProductCore can be shared among several DDAModel, such that the memory consumption for multiple-angle optimization
-                                                                      //should be similar to single-angle case. Of course, this is optimization for performance for a range of angles averaged. 
-            for (int j = 0; j <= phi_num - 1; j++) {
-                if (theta(i) != 0) {
-                    double theta_tmp = theta(i) * M_PI / 180;
-                    double phi_tmp = phi(j) * M_PI / 180;
-                    n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
-                    n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
-                    if (CheckPerp(n_E0, n_K) == false) {
-                        cout << "----------------------------------------theta" << theta[i] << "phi" << phi[j] << "Not perpendicular---------------------------------------" << endl;
-                    }
-                    if (k == 0) {
-                        AngleInfo << theta[i] << endl;
-                        AngleInfo << phi[j] << endl;
-                        nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
-                    }
-                    DDAModel Model(Core, n_K, E0, n_E0);
-                    ModelList.push_back(Model);
-                }
-            }
-        }
-        double theta_tmp = 0 * M_PI / 180;
-        double phi_tmp = 0 * M_PI / 180;
-        n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
-        n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
-        if (CheckPerp(n_E0, n_K) == false) {
-            cout << "----------------------------------------theta" << 0 << "phi" << 0 << "Not perpendicular---------------------------------------" << endl;
-        }
-        if (k == 0) {
-            AngleInfo << 0.0 << endl;
-            AngleInfo << 0.0 << endl;
-            nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
-        }
-        DDAModel Model(Core, n_K, E0, n_E0);
-        ModelList.push_back(Model);
-
-        it++;
-    }
-    AngleInfo.close();
-    nEInfo.close();
-    cout << "Number of DDA Model : " << ModelList.size() << endl;
-    list<DDAModel>::iterator it1 = ModelList.begin();
-    for (int i = 0; i <= ModelList.size() - 1; i++) {
-        ModelpointerList.push_back(&(*it1));
-        it1++;
-    }
-    EvoDDAModel EModel(&ObjectFunctionNames, &ObjectParameters, epsilon, HavePathRecord, HavePenalty, HaveOriginHeritage, HaveAdjointHeritage, PenaltyFactor, save_position, &CStr, ModelpointerList);
-    EModel.EvoOptimization(MAX_ITERATION_DDA, MAX_ERROR, MAX_ITERATION_EVO, "Adam");
-    high_resolution_clock::time_point t_end = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(t_end - t_start).count();
-    TotalTime << duration / 1000 << endl;
-    TotalTime.close();
-
-    return 0;
-
-}
-//periodic Abs design
-int main() {
-
-    string save_position = ".\\200nm3-Water-Gold-abs-lam500-period-random\\";       //output file
-    Vector3d l;
-    Vector3d center;
-    l << 19.0, 19.0, 19.0;    //Size of the initialization block. 81*81*17 pixels in total.
-    center << l(0) / 2, l(1) / 2, l(2) / 2;      //Center of the block.
-    int Nx, Ny, Nz;
-    Nx = round(l(0) + 3); Ny = round(l(1) + 3); Nz = round(l(2) + 1);   //Size of the design space. Notice that this sets the limits for coordinates, 
-                                                                        //but actual pixels outside the 81*81*7 are not included in simulation. 
-                                                                        //However, if geometry has pixels outside this space, they will be cut off.
-
-    int N = 0;                                                          //N counts the number of pixels in the geometries simulated. Initail is one.
-    Vector3i bind(4, 4, 20);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
-                                                                        //This can be used to control the finest feature size of the designed structure.
-    double d = 10;                                                      //Size of pixel. Here 25nm.   
-    double E0 = 1.0;                                                    //Input field amplitude. 1V/m.
-    double epsilon = 10;                                                //Fixed learning rate of the optimization.
-    //double focus = (l(2) + 2) * d;   //nm                               //Focal spot is 50nm higher than the upper boundary of the intialization block.
-    //cout << focus << endl;
-    int MAX_ITERATION_DDA = 100000;                                     //Number of maximum DDA iterations.
-    double MAX_ERROR = 0.00001;                                         //Maximum error of DDA.
-    int MAX_ITERATION_EVO = 20;                                        //Number of topology optimization.
-    list<double> ObjectParameter{ 0.0 };  //Focal spot postition.
-    bool HavePathRecord = false;
-    bool HavePenalty = false;
-    bool HaveOriginHeritage = false;
-    bool HaveAdjointHeritage = false;
-    double PenaltyFactor = 0.0001;
-    Vector3d n_K;                                                       //Wave vector direction.
-    Vector3d n_E0;                                                      //Electric field polarization direction.
-    int theta_num = 1;                                                  //Number of theta
-    VectorXd theta(theta_num);
-    theta << 0;                                                         //Theta values.
-    int phi_num = 1;                                                    //Number of phi
-    VectorXd phi(phi_num);
-    phi << 0;                                                           //Phi values. For details of how theta and phi are defined, read tutorial.
-    int lam_num = 1;
-    VectorXd lam(lam_num);
-    lam << 500;
-    Vector2cd material;
-    material = Get_2_material("H20", "Au", lam(0), "nm");              //Air as substrate. material with permittivity of 2.5 as design material.
-
-
-    ofstream TotalTime;
-    TotalTime.open(save_position + "TotalTime.txt");
-    high_resolution_clock::time_point t_start = high_resolution_clock::now();
-    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);                    //Total space is a block.
-    list<Structure> ln;
-    Space S(&total_space, Nx, Ny, Nz, N, &ln);
-    Vector3i direction;
-    Structure s1(S.get_total_space(), l, center);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
-    S = S + s1;                                                         //Add the geometry into the space.
-    SpacePara spacepara(&S, bind, "RANDOM");                              //Initialize with material index of 1, which is permittivity=2.5 in this case.
-                                                                        //SpacePara is where the parameter<->geometry link is established.
-    list<string> ObjectFunctionNames{ "Abs" };                       //Name of the object function.
-    list<list<double>*> ObjectParameters{ &ObjectParameter };
-    list<DDAModel> ModelList;
-    list<DDAModel*> ModelpointerList;
-    ofstream AngleInfo(save_position + "AngleInfo.txt");
-    ofstream nEInfo(save_position + "nEInfo.txt");
-    CoreStructure CStr(&spacepara, d);                                 //Used as a interface to update parameters       
-    list<AProductCore> CoreList;
-    list<AProductCore*> CorePointList;
-    int m, n;
-    double Lm, Ln;
-    m = 50;
-    n = 50;
-    Lm = 20 * d;
-    Ln = 20 * d;
-    AProductCore Core1(&CStr, lam(0), material, m, n, Lm, Ln, "FCD");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
-    CorePointList.push_back(&Core1);
-    ofstream Common;
-    Common.open(save_position + "Commondata.txt");
-    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
-    Common << (spacepara.get_geometry()) << endl;
-    Common << d << endl;
-    Common << n_E0 << endl;
-    Common << n_K << endl;
-
-    list<AProductCore*>::iterator it = CorePointList.begin();
-    for (int k = 0; k <= lam_num - 1; k++) {                          //Each wavelength needs one new AProductCore. But if a structure working for multiple wavelengths
-                                                                      //needs to be designed, these AProductCore should share the same CoreStructure so that the parameters
-                                                                      //can be updated based on a gradient avergaed for all wavlengths. The majority of memory consumption is 
-                                                                      //for the A matrix which is wavlength dependent, so having many wavelengts can use huge memory. 3 wavlengths 
-                                                                      //for current structure should take up to 2 GB.
-        AProductCore* Core = (*it);
-        for (int i = 0; i <= theta_num - 1; i++) {                    //However, as you can see. For single wavelength, different angles and polarizations can share the same AProductCore.
-                                                                      //And one AProductCore can be shared among several DDAModel, such that the memory consumption for multiple-angle optimization
-                                                                      //should be similar to single-angle case. Of course, this is optimization for performance for a range of angles averaged. 
-            for (int j = 0; j <= phi_num - 1; j++) {
-                if (theta(i) != 0) {
-                    double theta_tmp = theta(i) * M_PI / 180;
-                    double phi_tmp = phi(j) * M_PI / 180;
-                    n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
-                    n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
-                    if (CheckPerp(n_E0, n_K) == false) {
-                        cout << "----------------------------------------theta" << theta[i] << "phi" << phi[j] << "Not perpendicular---------------------------------------" << endl;
-                    }
-                    if (k == 0) {
-                        AngleInfo << theta[i] << endl;
-                        AngleInfo << phi[j] << endl;
-                        nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
-                    }
-                    DDAModel Model(Core, n_K, E0, n_E0);
-                    ModelList.push_back(Model);
-                }
-            }
-        }
-        double theta_tmp = 0 * M_PI / 180;
-        double phi_tmp = 0 * M_PI / 180;
-        n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
-        n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
-        if (CheckPerp(n_E0, n_K) == false) {
-            cout << "----------------------------------------theta" << 0 << "phi" << 0 << "Not perpendicular---------------------------------------" << endl;
-        }
-        if (k == 0) {
-            AngleInfo << 0.0 << endl;
-            AngleInfo << 0.0 << endl;
-            nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
-        }
-        DDAModel Model(Core, n_K, E0, n_E0);
-        ModelList.push_back(Model);
-
-        it++;
-    }
-    AngleInfo.close();
-    nEInfo.close();
-    cout << "Number of DDA Model : " << ModelList.size() << endl;
-    list<DDAModel>::iterator it1 = ModelList.begin();
-    for (int i = 0; i <= ModelList.size() - 1; i++) {
-        ModelpointerList.push_back(&(*it1));
-        it1++;
-    }
-    EvoDDAModel EModel(&ObjectFunctionNames, &ObjectParameters, epsilon, HavePathRecord, HavePenalty, HaveOriginHeritage, HaveAdjointHeritage, PenaltyFactor, save_position, &CStr, ModelpointerList);
-    EModel.EvoOptimization(MAX_ITERATION_DDA, MAX_ERROR, MAX_ITERATION_EVO, "Adam");
-    high_resolution_clock::time_point t_end = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(t_end - t_start).count();
-    TotalTime << duration / 1000 << endl;
-    TotalTime.close();
-
-    return 0;
-
-}
-//periodic Abs design with substrate
-int main() {
-
-    string save_position = ".\\100nm2-200nm-Water-TiN-abs-lam500-period-random\\";       //output file
-    Vector3d l;
-    Vector3d center;
-    l << 9.0, 9.0, 19.0;    //Size of the initialization block. 81*81*17 pixels in total.
-    center << l(0) / 2, l(1) / 2, l(2) / 2;      //Center of the block.
-    int Nx, Ny, Nz;
-    Nx = round(l(0) + 3); Ny = round(l(1) + 3); Nz = round(l(2) + 1);   //Size of the design space. Notice that this sets the limits for coordinates, 
-                                                                        //but actual pixels outside the 81*81*7 are not included in simulation. 
-                                                                        //However, if geometry has pixels outside this space, they will be cut off.
-
-    int N = 0;                                                          //N counts the number of pixels in the geometries simulated. Initail is one.
-    Vector3i bind(1, 1, 12);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
-                                                                        //This can be used to control the finest feature size of the designed structure.
-    double d = 10;                                                      //Size of pixel. Here 25nm.   
-    double E0 = 1.0;                                                    //Input field amplitude. 1V/m.
-    double epsilon = 10;                                                //Fixed learning rate of the optimization.
-    //double focus = (l(2) + 2) * d;   //nm                               //Focal spot is 50nm higher than the upper boundary of the intialization block.
-    //cout << focus << endl;
-    int MAX_ITERATION_DDA = 100000;                                     //Number of maximum DDA iterations.
-    double MAX_ERROR = 0.00001;                                         //Maximum error of DDA.
-    int MAX_ITERATION_EVO = 20;                                        //Number of topology optimization.
-    list<double> ObjectParameter{ 0.0 };  //Focal spot postition.
-    bool HavePathRecord = false;
-    bool HavePenalty = false;
-    bool HaveOriginHeritage = false;
-    bool HaveAdjointHeritage = false;
-    double PenaltyFactor = 0.0001;
-    Vector3d n_K;                                                       //Wave vector direction.
-    Vector3d n_E0;                                                      //Electric field polarization direction.
-    int theta_num = 1;                                                  //Number of theta
-    VectorXd theta(theta_num);
-    theta << 0;                                                         //Theta values.
-    int phi_num = 1;                                                    //Number of phi
-    VectorXd phi(phi_num);
-    phi << 0;                                                           //Phi values. For details of how theta and phi are defined, read tutorial.
-    int lam_num = 1;
-    VectorXd lam(lam_num);
-    lam << 500;
-    Vector2cd material;
-    material = Get_2_material("H2O", "TiN", lam(0), "nm");              //Air as substrate. material with permittivity of 2.5 as design material.
-
-
-    ofstream TotalTime;
-    TotalTime.open(save_position + "TotalTime.txt");
-    high_resolution_clock::time_point t_start = high_resolution_clock::now();
-    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);                    //Total space is a block.
-    list<Structure> ln;
-    Space S(&total_space, Nx, Ny, Nz, N, &ln);
-    Vector3i direction;
-
-    Vector3d l1, l2, center1, center2;
-    l1 << 9.0, 9.0, 11.0;
-    center1 << l1(0) / 2, l1(1) / 2, 13.5;
-    l2 << 9.0, 9.0, 7;
-    center2 << l2(0) / 2, l2(1) / 2, 3.5;
-
-    Structure s1(S.get_total_space(), l1, center1);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
-    Structure s2(S.get_total_space(), l2, center2);
-    S = S + s1;                                                         //Add the geometry into the space.
-    S = S + s2;
-
-    SpacePara spacepara(&S, bind, "RANDOM", "ONES");                              //Initialize with material index of 1, which is permittivity=2.5 in this case.
-                                                                        //SpacePara is where the parameter<->geometry link is established.
-    list<string> ObjectFunctionNames{ "Abs" };                       //Name of the object function.
-    list<list<double>*> ObjectParameters{ &ObjectParameter };
-    list<DDAModel> ModelList;
-    list<DDAModel*> ModelpointerList;
-    ofstream AngleInfo(save_position + "AngleInfo.txt");
-    ofstream nEInfo(save_position + "nEInfo.txt");
-    CoreStructure CStr(&spacepara, d);                                 //Used as a interface to update parameters       
-    list<AProductCore> CoreList;
-    list<AProductCore*> CorePointList;
-    int m, n;
-    double Lm, Ln;
-    m = 50;
-    n = 50;
-    Lm = 20 * d;
-    Ln = 20 * d;
-    AProductCore Core1(&CStr, lam(0), material, m, n, Lm, Ln, "FCD");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
-    CorePointList.push_back(&Core1);
-    ofstream Common;
-    Common.open(save_position + "Commondata.txt");
-    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
-    Common << (spacepara.get_geometry()) << endl;
-    Common << d << endl;
-    Common << n_E0 << endl;
-    Common << n_K << endl;
-
-    list<AProductCore*>::iterator it = CorePointList.begin();
-    for (int k = 0; k <= lam_num - 1; k++) {                          //Each wavelength needs one new AProductCore. But if a structure working for multiple wavelengths
-                                                                      //needs to be designed, these AProductCore should share the same CoreStructure so that the parameters
-                                                                      //can be updated based on a gradient avergaed for all wavlengths. The majority of memory consumption is 
-                                                                      //for the A matrix which is wavlength dependent, so having many wavelengts can use huge memory. 3 wavlengths 
-                                                                      //for current structure should take up to 2 GB.
-        AProductCore* Core = (*it);
-        for (int i = 0; i <= theta_num - 1; i++) {                    //However, as you can see. For single wavelength, different angles and polarizations can share the same AProductCore.
-                                                                      //And one AProductCore can be shared among several DDAModel, such that the memory consumption for multiple-angle optimization
-                                                                      //should be similar to single-angle case. Of course, this is optimization for performance for a range of angles averaged. 
-            for (int j = 0; j <= phi_num - 1; j++) {
-                if (theta(i) != 0) {
-                    double theta_tmp = theta(i) * M_PI / 180;
-                    double phi_tmp = phi(j) * M_PI / 180;
-                    n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
-                    n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
-                    if (CheckPerp(n_E0, n_K) == false) {
-                        cout << "----------------------------------------theta" << theta[i] << "phi" << phi[j] << "Not perpendicular---------------------------------------" << endl;
-                    }
-                    if (k == 0) {
-                        AngleInfo << theta[i] << endl;
-                        AngleInfo << phi[j] << endl;
-                        nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
-                    }
-                    DDAModel Model(Core, n_K, E0, n_E0);
-                    ModelList.push_back(Model);
-                }
-            }
-        }
-        double theta_tmp = 0 * M_PI / 180;
-        double phi_tmp = 0 * M_PI / 180;
-        n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
-        n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
-        if (CheckPerp(n_E0, n_K) == false) {
-            cout << "----------------------------------------theta" << 0 << "phi" << 0 << "Not perpendicular---------------------------------------" << endl;
-        }
-        if (k == 0) {
-            AngleInfo << 0.0 << endl;
-            AngleInfo << 0.0 << endl;
-            nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
-        }
-        DDAModel Model(Core, n_K, E0, n_E0);
-        ModelList.push_back(Model);
-
-        it++;
-    }
-    AngleInfo.close();
-    nEInfo.close();
-    cout << "Number of DDA Model : " << ModelList.size() << endl;
-    list<DDAModel>::iterator it1 = ModelList.begin();
-    for (int i = 0; i <= ModelList.size() - 1; i++) {
-        ModelpointerList.push_back(&(*it1));
-        it1++;
-    }
-    EvoDDAModel EModel(&ObjectFunctionNames, &ObjectParameters, epsilon, HavePathRecord, HavePenalty, HaveOriginHeritage, HaveAdjointHeritage, PenaltyFactor, save_position, &CStr, ModelpointerList);
-    EModel.EvoOptimization(MAX_ITERATION_DDA, MAX_ERROR, MAX_ITERATION_EVO, "Adam");
-    high_resolution_clock::time_point t_end = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(t_end - t_start).count();
-    TotalTime << duration / 1000 << endl;
-    TotalTime.close();
-
-    return 0;
-
-}
-//periodic PointE design with substrate
-int main() {
-
-    string save_position = ".\\200nm3-Water-TiN-PointE7-lam500-period-ones-2D\\";       //output file
-    Vector3d l;
-    Vector3d center;
-    l << 19.0, 19.0, 19.0;    //Size of the initialization block. 81*81*17 pixels in total.
-    center << l(0) / 2, l(1) / 2, l(2) / 2;      //Center of the block.
-    int Nx, Ny, Nz;
-    Nx = round(l(0) + 3); Ny = round(l(1) + 3); Nz = round(l(2) + 1);   //Size of the design space. Notice that this sets the limits for coordinates, 
-                                                                        //but actual pixels outside the 81*81*7 are not included in simulation. 
-                                                                        //However, if geometry has pixels outside this space, they will be cut off.
-
-    int N = 0;                                                          //N counts the number of pixels in the geometries simulated. Initail is one.
-    Vector3i bind(1, 1, 20);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
-                                                                        //This can be used to control the finest feature size of the designed structure.
-    double d = 10;                                                      //Size of pixel. Here 25nm.   
-    double E0 = 1.0;                                                    //Input field amplitude. 1V/m.
-    double epsilon = 100;                                                //Fixed learning rate of the optimization.
-    //double focus = (l(2) + 2) * d;   //nm                               //Focal spot is 50nm higher than the upper boundary of the intialization block.
-    //cout << focus << endl;
-    int MAX_ITERATION_DDA = 100000;                                     //Number of maximum DDA iterations.
-    double MAX_ERROR = 0.00001;                                         //Maximum error of DDA.
-    int MAX_ITERATION_EVO = 100;                                        //Number of topology optimization.
-
-    bool HavePathRecord = false;
-    bool HavePenalty = false;
-    bool HaveOriginHeritage = false;
-    bool HaveAdjointHeritage = false;
-    double PenaltyFactor = 0.0001;
-    Vector3d n_K;                                                       //Wave vector direction.
-    Vector3d n_E0;                                                      //Electric field polarization direction.
-    int theta_num = 1;                                                  //Number of theta
-    VectorXd theta(theta_num);
-    theta << 180;                                                         //Theta values.
-    int phi_num = 1;                                                    //Number of phi
-    VectorXd phi(phi_num);
-    phi << 0;                                                           //Phi values. For details of how theta and phi are defined, read tutorial.
-    int lam_num = 1;
-    VectorXd lam(lam_num);
-    lam << 500;
-    Vector2cd material;
-    material = Get_2_material("H2O", "TiN", lam(0), "nm");              //Air as substrate. material with permittivity of 2.5 as design material.
-
-
-    ofstream TotalTime;
-    TotalTime.open(save_position + "TotalTime.txt");
-    high_resolution_clock::time_point t_start = high_resolution_clock::now();
-    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);                    //Total space is a block.
-    list<Structure> ln;
-    Space S(&total_space, Nx, Ny, Nz, N, &ln);
-    Vector3i direction;
-
-    Vector3d l1, l2, center1, center2;
-    l1 << 19.0, 19.0, 11.0;
-    center1 << l1(0) / 2, l1(1) / 2, 13.5;
-    l2 << 19.0, 19.0, 7;
-    center2 << l2(0) / 2, l2(1) / 2, 3.5;
-
-    Structure s1(S.get_total_space(), l1, center1);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
-    Structure s2(S.get_total_space(), l2, center2);
-    S = S + s1;                                                         //Add the geometry into the space.
-    S = S + s2;
-
-    SpacePara spacepara(&S, bind, "ONES", "ONES");                              //Initialize with material index of 1, which is permittivity=2.5 in this case.
-                                                                        //SpacePara is where the parameter<->geometry link is established.
-    list<string> ObjectFunctionNames{ "PointE" };                       //Name of the object function.
-    list<double> ObjectParameter{ center2(0) * d,center2(1) * d,7.0 * d };  //Focal spot postition.
-    list<list<double>*> ObjectParameters{ &ObjectParameter };
-    list<DDAModel> ModelList;
-    list<DDAModel*> ModelpointerList;
-    ofstream AngleInfo(save_position + "AngleInfo.txt");
-    ofstream nEInfo(save_position + "nEInfo.txt");
-    CoreStructure CStr(&spacepara, d);                                 //Used as a interface to update parameters       
-    list<AProductCore> CoreList;
-    list<AProductCore*> CorePointList;
-    int m, n;
-    double Lm, Ln;
-    m = 50;
-    n = 50;
-    Lm = 20 * d;
-    Ln = 20 * d;
-    AProductCore Core1(&CStr, lam(0), material, m, n, Lm, Ln, "FCD");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
-    CorePointList.push_back(&Core1);
-    ofstream Common;
-    Common.open(save_position + "Commondata.txt");
-    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
-    Common << (spacepara.get_geometry()) << endl;
-    Common << d << endl;
-    Common << n_E0 << endl;
-    Common << n_K << endl;
-
-    list<AProductCore*>::iterator it = CorePointList.begin();
-    for (int k = 0; k <= lam_num - 1; k++) {                          //Each wavelength needs one new AProductCore. But if a structure working for multiple wavelengths
-                                                                      //needs to be designed, these AProductCore should share the same CoreStructure so that the parameters
-                                                                      //can be updated based on a gradient avergaed for all wavlengths. The majority of memory consumption is 
-                                                                      //for the A matrix which is wavlength dependent, so having many wavelengts can use huge memory. 3 wavlengths 
-                                                                      //for current structure should take up to 2 GB.
-        AProductCore* Core = (*it);
-        for (int i = 0; i <= theta_num - 1; i++) {                    //However, as you can see. For single wavelength, different angles and polarizations can share the same AProductCore.
-                                                                      //And one AProductCore can be shared among several DDAModel, such that the memory consumption for multiple-angle optimization
-                                                                      //should be similar to single-angle case. Of course, this is optimization for performance for a range of angles averaged. 
-            for (int j = 0; j <= phi_num - 1; j++) {
-                if (theta(i) != 0) {
-                    double theta_tmp = theta(i) * M_PI / 180;
-                    double phi_tmp = phi(j) * M_PI / 180;
-                    n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
-                    n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
-                    if (CheckPerp(n_E0, n_K) == false) {
-                        cout << "----------------------------------------theta" << theta[i] << "phi" << phi[j] << "Not perpendicular---------------------------------------" << endl;
-                    }
-                    if (k == 0) {
-                        AngleInfo << theta[i] << endl;
-                        AngleInfo << phi[j] << endl;
-                        nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
-                    }
-                    DDAModel Model(Core, n_K, E0, n_E0);
-                    ModelList.push_back(Model);
-                }
-            }
-        }
-        double theta_tmp = 0 * M_PI / 180;
-        double phi_tmp = 0 * M_PI / 180;
-        n_K << sin(theta_tmp) * cos(phi_tmp), sin(theta_tmp)* sin(phi_tmp), cos(theta_tmp);
-        n_E0 = nEPerpinXZ(theta_tmp, phi_tmp);
-        if (CheckPerp(n_E0, n_K) == false) {
-            cout << "----------------------------------------theta" << 0 << "phi" << 0 << "Not perpendicular---------------------------------------" << endl;
-        }
-        if (k == 0) {
-            AngleInfo << 0.0 << endl;
-            AngleInfo << 0.0 << endl;
-            nEInfo << n_E0(0) << " " << n_E0(1) << " " << n_E0(2) << endl;
-        }
-        DDAModel Model(Core, n_K, E0, n_E0);
-        ModelList.push_back(Model);
-
-        it++;
-    }
-    AngleInfo.close();
-    nEInfo.close();
-    cout << "Number of DDA Model : " << ModelList.size() << endl;
-    list<DDAModel>::iterator it1 = ModelList.begin();
-    for (int i = 0; i <= ModelList.size() - 1; i++) {
-        ModelpointerList.push_back(&(*it1));
-        it1++;
-    }
-    EvoDDAModel EModel(&ObjectFunctionNames, &ObjectParameters, epsilon, HavePathRecord, HavePenalty, HaveOriginHeritage, HaveAdjointHeritage, PenaltyFactor, save_position, &CStr, ModelpointerList);
-    EModel.EvoOptimization(MAX_ITERATION_DDA, MAX_ERROR, MAX_ITERATION_EVO, "Adam");
-    high_resolution_clock::time_point t_end = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(t_end - t_start).count();
-    TotalTime << duration / 1000 << endl;
-    TotalTime.close();
-
-    return 0;
-
-}
-//periodic PointE design wo 3layer and filter and binarization
-int main() {
-
-    string save_position = ".\\200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-3D\\";       //output file
+    string save_position = ".\\IntegrateE-rect88-sym\\";       //output file
     Vector3d l;
     Vector3d center;
     l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
@@ -3454,7 +3343,7 @@ int main() {
     int MAX_ITERATION_DDA = 100000;
     //Number of maximum DDA iterations.
     double MAX_ERROR = 0.00001;                                         //Maximum error of DDA.
-    int MAX_ITERATION_EVO = 100;                                        //Number of topology optimization.
+    int MAX_ITERATION_EVO = 200;                                        //Number of topology optimization.
 
     bool HavePathRecord = false;
     bool HavePenalty = false;
@@ -3471,20 +3360,21 @@ int main() {
     phi << 0;                                                           //Phi values. For details of how theta and phi are defined, read tutorial.
     int lam_num = 1;
     VectorXd lam(lam_num);
-    lam << 500;
-    VectorXcd material;
-    list<string> mat_l{ "Air", "TiN", "Ti" };
+    lam << 1000;
+    VectorXcd material, material1;
+    list<string> mat_l{ "H2O", "TiN", "Ti" };
     material = Get_X_material(mat_l, lam(0), "nm");              //Air as substrate. material with permittivity of 2.5 as design material.
-
+    //material1 = Get_X_material(mat_l, lam(1), "nm");
 
     ofstream TotalTime;
     TotalTime.open(save_position + "TotalTime.txt");
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
     VectorXi total_space = build_a_bulk(Nx, Ny, Nz);                    //Total space is a block.
-    list<Structure> ln;
+    vector<Structure> ln;
     Space S(&total_space, Nx, Ny, Nz, N, &ln);
     Vector3i direction;
 
+    vector<double> symaxis{ 9.5,9.5 };
     Vector3d l1, l2, l3, center1, center2, center3;
     l1 << 19.0, 19.0, 11.0;
     center1 << l1(0) / 2, l1(1) / 2, 23.5;
@@ -3493,31 +3383,59 @@ int main() {
     l3 << 19.0, 19.0, 9.0;
     center3 << l3(0) / 2, l3(1) / 2, 4.5;
 
-    Structure s1(S.get_total_space(), l1, center1);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
+    Vector3d l_rect, center_rect;
+    //l_rect << 3.0, 3.0, 11.0;
+    //center_rect << 7.5, 7.5, 23.5;
+    l_rect << 7.0, 7.0, 11.0;
+    center_rect << l1(0) / 2, l1(1) / 2, 23.5;
+
+    //Vector3d l_fix, center_fix;
+    //l_fix << 16.0, 16.0, 1.0;
+    //center_fix << l2(0) / 2, l2(1) / 2, 16.5;
+    Structure s1_rect_start(S.get_total_space(), l_rect, center_rect, true);
+    //Structure s2_fix(S.get_total_space(), l_fix, center_fix);
+
+    Structure s1(S.get_total_space(), l1, center1, &s1_rect_start, true);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
     Structure s2(S.get_total_space(), l2, center2);
     Structure s3(S.get_total_space(), l3, center3);
+
+    //Vector3d lsym, centersym;
+    //lsym << 19.0, 19.0, 11.0;
+    //centersym << lsym(0) / 2, lsym(1) / 2, 23.5;
+    //Structure s1div(S.get_total_space(), l1, center1);
+    //Structure s1andrectsym(S.get_total_space(), lsym, centersym, &s1div);
+
     S = S + s1;                                                         //Add the geometry into the space.
+    S = S + s1_rect_start;
+    //S = S + s2_fix;
+    //S = S + s1andrectsym;
     S = S + s2;
     S = S + s3;
 
-    Vector3i bind(1, 1, 1);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
+    Vector3i bind(1, 1, 12);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
 
 
     VectorXi* s1geometry = s1.get_geometry();
+    VectorXi* s1rectgeometry = s1_rect_start.get_geometry();
+    //VectorXi* s1andrectsymgeometry = s1andrectsym.get_geometry();
+    //VectorXi* s2_fixgeometry = s2_fix.get_geometry();
     VectorXi* s2geometry = s2.get_geometry();
     VectorXi* s3geometry = s3.get_geometry();
-    list<VectorXi*> FPGeometryl{ s1geometry };
-    list<VectorXi*> BPGeometryl{ s2geometry, s3geometry };
-    list<double> BParal{ 1.0, 2.0 };
-    bool Filter = false;
+    vector<string> FParaInit{ "ZEROS", "ONES" };
+    //list<VectorXi*> FPGeometryl{ s1geometry, s1rectgeometry };
+    //list<VectorXi*> BPGeometryl{ s2geometry, s3geometry };
+    vector<double> BParal{ 1.0, 2.0 };
+    bool Filter = true;
     double r_f = 2.0;
-    FilterOption filteropt(0.0, 80.0, 0.5, "piecewise", r_f);
+    vector<filterinfo> filterlist{ filterinfo{0,1.0}, filterinfo{80,2.0} };
+    FilterOption filteropt(0.0, 50.0, 0.5, "piecewise", filterlist);
+    string symmetry = "4fold";
 
-    SpacePara spacepara(&S, bind, "ONES", FPGeometryl, BPGeometryl, BParal, Filter);
+    SpacePara spacepara(&S, bind, FParaInit, BParal, Filter, &filteropt, symmetry, symaxis);
     //SpacePara is where the parameter<->geometry link is established.
-
-    list<string> ObjectFunctionNames{ "PointE" };                       //Name of the object function.
-    list<double> ObjectParameter{ center2(0) * d,center2(1) * d,17.0 * d };  //Focal spot postition.
+    //list<string> ObjectFunctionNames{ "AbsPartial" };                       //Name of the object function.
+    list<string> ObjectFunctionNames{ "IntegratedE" };
+    list<double> ObjectParameter{ 0, 1 };  //Focal spot postition.
     list<list<double>*> ObjectParameters{ &ObjectParameter };
     list<DDAModel> ModelList;
     list<DDAModel*> ModelpointerList;
@@ -3532,8 +3450,12 @@ int main() {
     n = 50;
     Lm = 20 * d;
     Ln = 20 * d;
-    AProductCore Core1(&CStr, lam(0), material, m, n, Lm, Ln, "FCD");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
+    double nback = sqrt(real(material(0)));
+    cout << "nback" << nback << endl;
+    AProductCore Core1(&CStr, lam(0), material, nback, m, n, Lm, Ln, "FCD");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
+    //AProductCore Core2(&CStr, lam(1), material1, nback, m, n, Lm, Ln, "FCD");
     CorePointList.push_back(&Core1);
+    //CorePointList.push_back(&Core2);
     ofstream Common;
     Common.open(save_position + "Commondata.txt");
     Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
@@ -3590,10 +3512,17 @@ int main() {
     return 0;
 
 }
-//periodic PointE design with 3layer and filter and binarization
+//reflect design
 int main() {
 
-    string save_position = ".\\200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-r_filter2-beta80\\";       //output file
+    string open_position = ".\\200nm2-sub100nm-Air-TiN-Ti-PointE7-lam500-period-ones-r_filter2-beta80\\";
+    string model_label = "99";
+    VectorXi InputGeo;
+    VectorXd InputDiel;
+    tie(InputGeo, InputDiel) = InputInitial(open_position, model_label);
+
+
+    string save_position = ".\\Absbyfar-fromit99-sym-filter2\\";       //output file
     Vector3d l;
     Vector3d center;
     l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
@@ -3608,13 +3537,13 @@ int main() {
                                                                         //This can be used to control the finest feature size of the designed structure.
     double d = 10;                                                      //Size of pixel. Here 25nm.   
     double E0 = 1.0;                                                    //Input field amplitude. 1V/m.
-    double epsilon = 100;                                                //Fixed learning rate of the optimization.
+    double epsilon = 1;                                                //Fixed learning rate of the optimization.
     //double focus = (l(2) + 2) * d;   //nm                               //Focal spot is 50nm higher than the upper boundary of the intialization block.
     //cout << focus << endl;
     int MAX_ITERATION_DDA = 100000;
     //Number of maximum DDA iterations.
     double MAX_ERROR = 0.00001;                                         //Maximum error of DDA.
-    int MAX_ITERATION_EVO = 100;                                        //Number of topology optimization.
+    int MAX_ITERATION_EVO = 400;                                        //Number of topology optimization.
 
     bool HavePathRecord = false;
     bool HavePenalty = false;
@@ -3631,19 +3560,20 @@ int main() {
     phi << 0;                                                           //Phi values. For details of how theta and phi are defined, read tutorial.
     int lam_num = 1;
     VectorXd lam(lam_num);
-    lam << 500;
-    VectorXcd material;
-    list<string> mat_l{ "Air", "TiN", "Ti" };
+    lam << 800;
+    VectorXcd material, material1;
+    list<string> mat_l{ "H2O", "TiN", "Ti" };
     material = Get_X_material(mat_l, lam(0), "nm");              //Air as substrate. material with permittivity of 2.5 as design material.
-
+    //material1 = Get_X_material(mat_l, lam(1), "nm");
 
     ofstream TotalTime;
     TotalTime.open(save_position + "TotalTime.txt");
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
     VectorXi total_space = build_a_bulk(Nx, Ny, Nz);                    //Total space is a block.
-    list<Structure> ln;
+    vector<Structure> ln;
     Space S(&total_space, Nx, Ny, Nz, N, &ln);
     Vector3i direction;
+
 
     Vector3d l1, l2, l3, center1, center2, center3;
     l1 << 19.0, 19.0, 11.0;
@@ -3653,29 +3583,38 @@ int main() {
     l3 << 19.0, 19.0, 9.0;
     center3 << l3(0) / 2, l3(1) / 2, 4.5;
 
-    Structure s1(S.get_total_space(), l1, center1);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
+    Vector3d l_rect, center_rect;
+    //l_rect << 3.0, 3.0, 11.0;
+    //center_rect << 7.5, 7.5, 23.5;
+    l_rect << 7.0, 7.0, 11.0;
+    center_rect << l1(0) / 2, l1(1) / 2, 23.5;
+    Structure s1_rect_start(S.get_total_space(), l_rect, center_rect, true);
+    Structure s1(S.get_total_space(), l1, center1, &s1_rect_start, true);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
     Structure s2(S.get_total_space(), l2, center2);
     Structure s3(S.get_total_space(), l3, center3);
+
+    //Vector3d lsym, centersym;
+    //lsym << 19.0, 19.0, 11.0;
+    //centersym << lsym(0) / 2, lsym(1) / 2, 23.5;
+    //Structure s1div(S.get_total_space(), l1, center1);
+    //Structure s1andrectsym(S.get_total_space(), lsym, centersym, &s1div);
+
     S = S + s1;                                                         //Add the geometry into the space.
+    S = S + s1_rect_start;
     S = S + s2;
     S = S + s3;
 
     Vector3i bind(1, 1, 12);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
 
-
-    VectorXi* s1geometry = s1.get_geometry();
-    VectorXi* s2geometry = s2.get_geometry();
-    VectorXi* s3geometry = s3.get_geometry();
-    list<VectorXi*> FPGeometryl{ s1geometry };
-    list<VectorXi*> BPGeometryl{ s2geometry, s3geometry };
-    list<double> BParal{ 1.0, 2.0 };
     bool Filter = true;
-    double r_f = 2.0;
-    FilterOption filteropt(0.0, 80.0, 0.5, "piecewise", r_f);
-    SpacePara spacepara(&S, bind, "ONES", FPGeometryl, BPGeometryl, BParal, Filter, &filteropt);
-    //SpacePara is where the parameter<->geometry link is established.
-    list<string> ObjectFunctionNames{ "PointE" };                       //Name of the object function.
-    list<double> ObjectParameter{ center2(0) * d,center2(1) * d,17.0 * d };  //Focal spot postition.
+    vector<filterinfo> filterlist{ filterinfo{0,1.0}, filterinfo{100,2.0} };
+    FilterOption filteropt(0.0, 50.0, 0.5, "piecewise", filterlist);
+    string symmetry = "4fold";
+    vector<double> symaxis{ 9.5,9.5 };
+    SpacePara spacepara(&S, bind, &InputGeo, &InputDiel, Filter, &filteropt, symmetry, symaxis);
+    //SpacePara spacepara(&S, bind, vector<string>{"ONES", "ONES"}, vector<double>{1.0, 2.0}, Filter, & filteropt, symmetry, symaxis);
+    list<string> ObjectFunctionNames{ "Absbyfar" };
+    list<double> ObjectParameter{ 0, 0 };  //Focal spot postition.
     list<list<double>*> ObjectParameters{ &ObjectParameter };
     list<DDAModel> ModelList;
     list<DDAModel*> ModelpointerList;
@@ -3690,7 +3629,9 @@ int main() {
     n = 50;
     Lm = 20 * d;
     Ln = 20 * d;
-    AProductCore Core1(&CStr, lam(0), material, m, n, Lm, Ln, "FCD");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
+    double nback = sqrt(real(material(0)));
+    cout << "nback" << nback << endl;
+    AProductCore Core1(&CStr, lam(0), material, nback, m, n, Lm, Ln, "FCD");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
     CorePointList.push_back(&Core1);
     ofstream Common;
     Common.open(save_position + "Commondata.txt");
@@ -4018,133 +3959,3 @@ int main() {
 
 
 //############################################################TMP###########################################################
-//2021-11-5
-int main() {
-
-    srand((unsigned)(time(0)));
-
-    int Nx, Ny, Nz;
-    Nx = 32; Ny = 32; Nz = 8;
-
-    int N = 0;
-    VectorXi total_space = build_a_bulk(Nx, Ny, Nz);
-    list<Structure> ln;
-    Space S(&total_space, Nx, Ny, Nz, N, &ln);
-
-    double d;
-
-    Vector3d center;
-    Vector3d l;
-
-    d = 20;
-
-    center << double(Nx - 1) / 2, double(Ny - 1) / 2, double(Nz - 1) / 2;
-    l << Nx - 1, Ny - 1, Nz - 1;
-
-    Structure s1(S.get_total_space(), l, center);
-
-
-
-    S = S + s1;
-
-    double lam = 700;
-    Vector3d n_K;
-    n_K << 0.0, 0.0, 1.0;
-    double E0 = 1.0;
-    Vector3d n_E0;
-    n_E0 << 1.0, 0.0, 0.0;
-    Vector2cd material = Get_2_material("Air", "SiO2", lam, "nm");
-
-
-
-
-    int MAX_ITERATION_DDA = 10000;
-    double MAX_ERROR = 0.00001;
-
-
-    bool HavePathRecord = true;
-    bool HavePenalty = false;
-    double PenaltyFactor = 0.0001;
-
-    Vector3i bind(4, 4, 4);
-
-    SpacePara spacepara(&S, bind, "ONES");
-
-    CoreStructure CStr(&spacepara, d);
-    AProductCore Core(&CStr, lam, material, "LDR");
-    DDAModel TestModel(&Core, n_K, E0, n_E0);
-
-    string save_position = ".\\32328-topogenerated-dataset-diffbind\\";
-
-    //TestModel.bicgstab(MAX_ITERATION_DDA, MAX_ERROR);
-    //TestModel.update_E_in_structure();
-    //TestModel.solve_E();
-    //TestModel.output_to_file(save_position, 0, 0);
-    //CStr.output_to_file(save_position, 0);
-    ofstream Common;
-    Common.open(save_position + "Commondata.txt");
-    Common << CStr.get_Nx() << endl << CStr.get_Ny() << endl << CStr.get_Nz() << endl << CStr.get_N() << endl;
-    Common << (spacepara.get_geometry()) << endl;
-    Common << d << endl;
-    Common << n_E0 << endl;
-    Common << n_K << endl;
-
-    int num_var = 500;
-    int min_num = 1;       //Smallest number of focus
-    int max_num = 1;       //Biggest number of focus
-    bool sym = false;
-    int start_num = 20;
-    int max_evo = 10;
-    Vector3d lower_bound, upper_bound;
-
-    ofstream TotalTime;
-    TotalTime.open(save_position + "TotalTime.txt");
-    high_resolution_clock::time_point t_start = high_resolution_clock::now();
-
-    lower_bound << center(0) - 2, center(1) - 2, 4;
-    upper_bound << center(0) - 2, center(1) - 2, 4;
-    Evo_Focus(&spacepara, &CStr, &TestModel, save_position, start_num, max_evo, min_num, max_num, lower_bound, upper_bound, sym);
-
-
-    /*
-    lower_bound << 1, 1, 1;
-    upper_bound << Nx - 2, Ny - 2, Nz - 2;
-    for (int i = 0; i <= num_var - 1; i++) {
-        SpacePara spacepara_tmp(&S, bind, "ONES", spacepara.get_geometryPara());
-        start_num += max_evo;
-        Evo_Focus(&spacepara_tmp, &CStr, &TestModel, save_position, start_num, max_evo, min_num, max_num, lower_bound, upper_bound, sym);
-    }
-
-    for (int i = 0; i <= num_var - 1; i++) {
-        SpacePara spacepara_tmp(&S, bind, "RANDOM", spacepara.get_geometryPara());
-        start_num += max_evo;
-        Evo_Focus(&spacepara_tmp, &CStr, &TestModel, save_position, start_num, max_evo, min_num, max_num, lower_bound, upper_bound, sym);
-    }
-
-    sym = true;
-    max_num = 2;
-    for (int i = 0; i <= num_var - 1; i++) {
-        SpacePara spacepara_tmp(&S, bind, "ONES", spacepara.get_geometryPara());
-        start_num += max_evo;
-        Evo_Focus(&spacepara_tmp, &CStr, &TestModel, save_position, start_num, max_evo, min_num, max_num, lower_bound, upper_bound, sym);
-    }
-
-    for (int i = 0; i <= num_var - 1; i++) {
-        SpacePara spacepara_tmp(&S, bind, "RANDOM", spacepara.get_geometryPara());
-        start_num += max_evo;
-        Evo_Focus(&spacepara_tmp, &CStr, &TestModel, save_position, start_num, max_evo, min_num, max_num, lower_bound, upper_bound, sym);
-    }
-    */
-
-    high_resolution_clock::time_point t_end = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(t_end - t_start).count();
-    TotalTime << duration / 1000 << endl;
-    TotalTime.close();
-
-
-
-
-
-    return 0;
-
-}

@@ -446,7 +446,7 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
 
             (*(*it_ModelList)).solve_E();
             out_start = high_resolution_clock::now();
-            (*(*it_ModelList)).output_to_file(save_position + "Model_output/", iteration + start_num);
+            (*(*it_ModelList)).output_to_file(save_position + "Model_output/", iteration + start_num, i);
             out_end = high_resolution_clock::now();
             duration = duration_cast<milliseconds>(out_end - out_start).count();
             output_time += duration;
@@ -772,7 +772,13 @@ void EvoDDAModel::EvoOptimization(int MAX_ITERATION, double MAX_ERROR, int MAX_I
         //cout << "epsilon = " << epsilon << endl;
         //cout << "step = "<< step.mean() << endl;
 
-           
+        if ((*spacepara).get_Filter()) {
+            if ((*((*spacepara).get_Filterstats())).filterchange(iteration)) {
+                (*spacepara).ChangeFilter();
+            }
+        }
+        
+
         (*CStr).UpdateStr(step, iteration, MAX_ITERATION_EVO - 1);
         it_ModelList = ModelList.begin();
         for (int i = 0; i <= ModelNum - 1; i++) {
@@ -1184,8 +1190,23 @@ ObjectiveDDAModel* EvoDDAModel::ObjectiveFactory(string ObjectName, list<double>
     if (MajorObjectFunctionName == "scattering0D") {
         return new Objectivescattering0D(ObjectParameters, ObjDDAModel, this, HavePenalty);
     }
+    if (MajorObjectFunctionName == "scattering2D") {
+        return new Objectivescattering2D(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
     if (MajorObjectFunctionName == "Abs") {
         return new ObjectiveAbs(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "AbsPartial") {
+        return new ObjectiveAbsPartial(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "AbsPartialzslice") {
+        return new ObjectiveAbsPartialzslice(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "IntegratedEPartial") {
+        return new ObjectiveIntegrateEPartial(ObjectParameters, ObjDDAModel, this, HavePenalty);
+    }
+    if (MajorObjectFunctionName == "Absbyfar") {
+        return new ObjectiveAbsbyfar(ObjectParameters, ObjDDAModel, this, HavePenalty);
     }
 
     /*
@@ -1276,7 +1297,10 @@ VectorXd EvoDDAModel::gradients_filtered(VectorXd gradients, int current_it, int
         for (int j = 0; j <= num_weight - 1; j++) {
             double weight = (*FreeWeight)[i][j].weight;
             int weightpos = (*FreeWeight)[i][j].position;
-            result(weightpos) += (weight / sum_weight);
+            if (weightpos < NFpara) {                        //If there are non-paras also weighted but do not need to calculate gradients to.
+                result(weightpos) += (weight / sum_weight);     
+            }
+            
         }
     }
 
