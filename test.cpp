@@ -12,7 +12,7 @@ int main() {
     //tie(InputGeo, InputDiel) = InputInitial(open_position, model_label);
 
 
-    string save_position = "./TiO2-Absbyfar-fromones-sym-filter5/";       //output file
+    string save_position = "./600nm-TiO2-Absbyfar-fromones-sym-filter5/";       //output file
     Vector3d l;
     Vector3d center;
     l << 29.0, 29.0, 19.0;    //Size of the initialization block. 81*81*17 pixels in total.
@@ -102,7 +102,7 @@ int main() {
     string symmetry = "4fold";
     vector<double> symaxis{ 9.5,9.5 };
     //SpacePara spacepara(&S, bind, &InputGeo, &InputDiel, Filter, &filteropt, symmetry, symaxis);
-    SpacePara spacepara(&S, bind, vector<string>{"ONES", "ONES"}, vector<double>{1.0, 1.0}, Filter, & filteropt, symmetry, symaxis);
+    SpacePara spacepara(&S, bind, vector<string>{"ONES"}, vector<double>{}, Filter, & filteropt, symmetry, symaxis);
     list<string> ObjectFunctionNames{ "Absbyfar" };
     list<double> ObjectParameter{ 0, 0 };  //Focal spot postition.
     list<list<double>*> ObjectParameters{ &ObjectParameter };
