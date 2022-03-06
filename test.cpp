@@ -66,10 +66,10 @@ int main() {
 
 
     Vector3d l1, l2, l3, center1, center2, center3;
-    l1 << 29.0, 29.0, 19.0;
-    center1 << l1(0) / 2, l1(1) / 2, 9.5;
-    //l2 << 19.0, 19.0, 7.0;
-    //center2 << l2(0) / 2, l2(1) / 2, 13.5;
+    l1 << 29.0, 29.0, 11.0;
+    center1 << l1(0) / 2, l1(1) / 2, 13.5;
+    l2 << 29.0, 29.0, 7.0;
+    center2 << l2(0) / 2, l2(1) / 2, 3.5;
     //l3 << 19.0, 19.0, 9.0;
     //center3 << l3(0) / 2, l3(1) / 2, 4.5;
 
@@ -80,7 +80,7 @@ int main() {
     //center_rect << l1(0) / 2, l1(1) / 2, 23.5;
     //Structure s1_rect_start(S.get_total_space(), l_rect, center_rect, true);
     Structure s1(S.get_total_space(), l1, center1, true);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
-    //Structure s2(S.get_total_space(), l2, center2);
+    Structure s2(S.get_total_space(), l2, center2);
     //Structure s3(S.get_total_space(), l3, center3);
 
     //Vector3d lsym, centersym;
@@ -91,10 +91,10 @@ int main() {
 
     S = S + s1;                                                         //Add the geometry into the space.
     //S = S + s1_rect_start;
-    //S = S + s2;
+    S = S + s2;
     //S = S + s3;
 
-    Vector3i bind(1, 1, 20);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
+    Vector3i bind(1, 1, 12);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
 
     bool Filter = true;
     vector<filterinfo> filterlist{ filterinfo{0,1.2}, filterinfo{100,2.0} };
@@ -102,7 +102,7 @@ int main() {
     string symmetry = "4fold";
     vector<double> symaxis{ 9.5,9.5 };
     //SpacePara spacepara(&S, bind, &InputGeo, &InputDiel, Filter, &filteropt, symmetry, symaxis);
-    SpacePara spacepara(&S, bind, vector<string>{"ONES"}, vector<double>{}, Filter, & filteropt, symmetry, symaxis);
+    SpacePara spacepara(&S, bind, vector<string>{"ONES"}, vector<double>{1.0}, Filter, & filteropt, symmetry, symaxis);
     list<string> ObjectFunctionNames{ "Absbyfar" };
     list<double> ObjectParameter{ 0, 0 };  //Focal spot postition.
     list<list<double>*> ObjectParameters{ &ObjectParameter };
