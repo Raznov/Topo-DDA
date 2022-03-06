@@ -15,7 +15,7 @@ int main() {
     string save_position = "./TiO2-Absbyfar-fromones-sym-filter5/";       //output file
     Vector3d l;
     Vector3d center;
-    l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
+    l << 29.0, 29.0, 19.0;    //Size of the initialization block. 81*81*17 pixels in total.
     center << l(0) / 2, l(1) / 2, l(2) / 2;      //Center of the block.
     int Nx, Ny, Nz;
     Nx = round(l(0) + 3); Ny = round(l(1) + 3); Nz = round(l(2) + 1);   //Size of the design space. Notice that this sets the limits for coordinates, 
@@ -66,22 +66,22 @@ int main() {
 
 
     Vector3d l1, l2, l3, center1, center2, center3;
-    l1 << 19.0, 19.0, 11.0;
-    center1 << l1(0) / 2, l1(1) / 2, 23.5;
-    l2 << 19.0, 19.0, 7.0;
-    center2 << l2(0) / 2, l2(1) / 2, 13.5;
-    l3 << 19.0, 19.0, 9.0;
-    center3 << l3(0) / 2, l3(1) / 2, 4.5;
+    l1 << 29.0, 29.0, 19.0;
+    center1 << l1(0) / 2, l1(1) / 2, 9.5;
+    //l2 << 19.0, 19.0, 7.0;
+    //center2 << l2(0) / 2, l2(1) / 2, 13.5;
+    //l3 << 19.0, 19.0, 9.0;
+    //center3 << l3(0) / 2, l3(1) / 2, 4.5;
 
-    Vector3d l_rect, center_rect;
+    //Vector3d l_rect, center_rect;
     //l_rect << 3.0, 3.0, 11.0;
     //center_rect << 7.5, 7.5, 23.5;
-    l_rect << 7.0, 7.0, 11.0;
-    center_rect << l1(0) / 2, l1(1) / 2, 23.5;
-    Structure s1_rect_start(S.get_total_space(), l_rect, center_rect, true);
-    Structure s1(S.get_total_space(), l1, center1, &s1_rect_start, true);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
-    Structure s2(S.get_total_space(), l2, center2);
-    Structure s3(S.get_total_space(), l3, center3);
+    //l_rect << 7.0, 7.0, 11.0;
+    //center_rect << l1(0) / 2, l1(1) / 2, 23.5;
+    //Structure s1_rect_start(S.get_total_space(), l_rect, center_rect, true);
+    Structure s1(S.get_total_space(), l1, center1, true);                       //Initialize the block which is 80*80*16 in terms of intervals or 81*81*17 in terms of pixels.
+    //Structure s2(S.get_total_space(), l2, center2);
+    //Structure s3(S.get_total_space(), l3, center3);
 
     //Vector3d lsym, centersym;
     //lsym << 19.0, 19.0, 11.0;
@@ -90,14 +90,14 @@ int main() {
     //Structure s1andrectsym(S.get_total_space(), lsym, centersym, &s1div);
 
     S = S + s1;                                                         //Add the geometry into the space.
-    S = S + s1_rect_start;
-    S = S + s2;
-    S = S + s3;
+    //S = S + s1_rect_start;
+    //S = S + s2;
+    //S = S + s3;
 
-    Vector3i bind(1, 1, 12);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
+    Vector3i bind(1, 1, 20);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
 
     bool Filter = true;
-    vector<filterinfo> filterlist{ filterinfo{0,1.2}, filterinfo{100,3.0}, filterinfo{200,5.0} };
+    vector<filterinfo> filterlist{ filterinfo{0,1.2}, filterinfo{100,2.0} };
     FilterOption filteropt(0.0, 50.0, 0.5, "piecewise", filterlist);
     string symmetry = "4fold";
     vector<double> symaxis{ 9.5,9.5 };
@@ -117,8 +117,8 @@ int main() {
     double Lm, Ln;
     m = 50;
     n = 50;
-    Lm = 20 * d;
-    Ln = 20 * d;
+    Lm = 30 * d;
+    Ln = 30 * d;
     double nback = sqrt(real(material(0)));
     cout << "nback" << nback << endl;
     AProductCore Core1(&CStr, lam(0), material, nback, m, n, Lm, Ln, "FCD");                //Matrix vector product is carried out in AProductCore class. So in this step, wavelength and actual permittivity comes in.
