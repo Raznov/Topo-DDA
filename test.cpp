@@ -12,7 +12,7 @@ int main() {
     //tie(InputGeo, InputDiel) = InputInitial(open_position, model_label);
 
 
-    string save_position = "./TiO2-Absbyfar-fromones-sym-filter3/";       //output file
+    string save_position = "./TiO2-Absbyfar-fromones-sym-filter5/";       //output file
     Vector3d l;
     Vector3d center;
     l << 19.0, 19.0, 29.0;    //Size of the initialization block. 81*81*17 pixels in total.
@@ -97,7 +97,7 @@ int main() {
     Vector3i bind(1, 1, 12);                                             //binding in x,y,z. 2 means every 2 pixels will have the same material index. 3 means every 3.
 
     bool Filter = true;
-    vector<filterinfo> filterlist{ filterinfo{0,1.2}, filterinfo{100,2.0}, filterinfo{200,3.0} };
+    vector<filterinfo> filterlist{ filterinfo{0,1.2}, filterinfo{100,3.0}, filterinfo{200,5.0} };
     FilterOption filteropt(0.0, 50.0, 0.5, "piecewise", filterlist);
     string symmetry = "4fold";
     vector<double> symaxis{ 9.5,9.5 };
