@@ -102,7 +102,7 @@ int main() {
     string symmetry = "4fold";
     vector<double> symaxis{ 14.5,14.5 };
     //SpacePara spacepara(&S, bind, &InputGeo, &InputDiel, Filter, &filteropt, symmetry, symaxis);
-    SpacePara spacepara(&S, bind, vector<string>{"ONES"}, vector<double>{1.0}, Filter, & filteropt, symmetry, symaxis);
+    SpacePara spacepara(&S, bind, vector<string>{"ONES"}, vector<double>{0.0}, Filter, & filteropt, symmetry, symaxis);
     list<string> ObjectFunctionNames{ "Absbyfar" };
     list<double> ObjectParameter{ 0, 0 };  //Focal spot postition.
     list<list<double>*> ObjectParameters{ &ObjectParameter };
