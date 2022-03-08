@@ -100,7 +100,7 @@ int main() {
     vector<filterinfo> filterlist{ filterinfo{0,1.2}, filterinfo{100,2.0} };
     FilterOption filteropt(0.0, 50.0, 0.5, "piecewise", filterlist);
     string symmetry = "4fold";
-    vector<double> symaxis{ 9.5,9.5 };
+    vector<double> symaxis{ 14.5,14.5 };
     //SpacePara spacepara(&S, bind, &InputGeo, &InputDiel, Filter, &filteropt, symmetry, symaxis);
     SpacePara spacepara(&S, bind, vector<string>{"ONES"}, vector<double>{1.0}, Filter, & filteropt, symmetry, symaxis);
     list<string> ObjectFunctionNames{ "Absbyfar" };
